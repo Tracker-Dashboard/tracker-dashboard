@@ -14,15 +14,15 @@
     "cheerio": "^1.0.0",
     "express": "^5.2.1",
     "https-proxy-agent": "^9.1.0",
-    "playwright": "^1.62.1",
+    "playwright": "^1.63.0",
     "socks-proxy-agent": "^10.1.0",
     "ssh2": "^1.17.0",
-    "top-user-agents": "^2.1.133",
+    "top-user-agents": "^2.1.134",
     "tough-cookie": "^6.0.2"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
-    "@types/node": "^25.9.5",
+    "@types/node": "^25.9.6",
     "@types/ssh2": "^1.15.6",
     "tsx": "^4.23.13",
     "typescript": "^6.0.3"
