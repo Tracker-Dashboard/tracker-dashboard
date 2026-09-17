@@ -27,7 +27,7 @@
     "responseType": "html",
     "fields": {
       "ratio": {
-        "regex": ">RATIO<[\\s\\S]{0,180}?_statValue[^>]*>\\s*(?<value>\\d[\\d\\s.,]*)\\s*<",
+        "regex": "(?:>RATIO<[\\s\\S]{0,180}?_statValue[^>]*>\\s*|>RATIO:\\s*)(?<value>\\d[\\d\\s.,]*)\\s*<",
         "transform": "number"
       },
       "uploadedBytes": {

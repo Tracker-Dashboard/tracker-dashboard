@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import axios from 'axios';
 import { fetchTracker, invalidateAllSessions, invalidateSession } from './fetcher.js';
 import { resetBrowserProfile, closeBrowserSession, fetchRawHtmlWithBrowser, getBrowserRuntimeStatus } from './browserBackend.js';
+import { SingleFlight } from './singleFlight.js';
 import { getFlareSolverrStatus, getTrawlStatus } from './flareSolverr.js';
 import {
   cleanCrossSeedBaseUrl,
@@ -882,8 +883,9 @@ async function mapWithConcurrency<T, R>(
 // Timeout dur par tracker : au-dela, on libere le slot de concurrence et on TUE le
 // contexte Chromium bloque (sinon un seul tracker qui pendouille fige tout le refresh).
 const TRACKER_FETCH_TIMEOUT_MS = Math.max(30_000, Number(process.env.TRACKER_FETCH_TIMEOUT_MS) || 90_000);
+const trackerFetchSingleFlight = new SingleFlight<TrackerStats>();
 
-async function fetchTrackerBounded(
+async function fetchTrackerBoundedOnce(
   tracker: TrackerConfig,
   creds: { username: string; password: string },
 ): Promise<TrackerStats> {
@@ -910,6 +912,17 @@ async function fetchTrackerBounded(
   } finally {
     if (timer) clearTimeout(timer);
   }
+}
+
+async function fetchTrackerBounded(
+  tracker: TrackerConfig,
+  creds: { username: string; password: string },
+): Promise<TrackerStats> {
+  // Une sauvegarde de cookie, un refresh individuel et une synchronisation globale
+  // peuvent viser le meme tracker au meme moment. Un seul navigateur persistant peut
+  // utiliser son profil : partager la lecture evite qu'un timeout ferme le contexte
+  // encore utilise par un autre appel.
+  return trackerFetchSingleFlight.run(tracker.id, () => fetchTrackerBoundedOnce(tracker, creds));
 }
 
 // Fenetre de fraicheur au boot : en dessous, on ressert la base sans re-scraper.

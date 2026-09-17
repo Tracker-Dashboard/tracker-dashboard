@@ -31,6 +31,7 @@ Draupnirr
 - **Yggrasil** : changement de domaine pour Draupnirr. Pas de changement d'ID ni de .json pour ne pas casser l'existant.
 - **AstraTorrent** : domaine mis à jour vers `astratorrent.la`, lecture des statistiques du nouveau portail V2 et conservation de l’association avec les annonces historiques en `.cc`.
 - **C411** : une session navigateur collée est désormais utilisée avant le login HTTP automatisé, afin de conserver les validations Cloudflare obtenues depuis la même sortie proxy.
+- **TR4KER** : extraction du ratio adaptée au nouvel en-tête et regroupement des rafraîchissements concurrents afin de protéger le profil navigateur partagé.
 - **Yggrasil** : ajout du tracker avec authentification automatique par e-mail/mot de passe et récupération de l’upload, du download, du ratio et du temps de seed.
 - **V3X** : les statistiques sont désormais relevées depuis la page « Mon activité », y compris le buffer, le temps de seed, les points horaires et le nombre de seeds en cours.
 - **LeSaloon v2 et DigitalCore** : ajout des deux trackers avec lecture navigateur des statistiques et authentification par cookie de session, leurs connexions étant protégées par un défi interactif ou un CAPTCHA.

@@ -374,13 +374,28 @@ const tr4kerHomeFixture = `
   <div class="user-stat"><span>RATIO</span><div class="home_statValue">45.67</div></div>
   <div class="user-stat"><span>UPLOAD</span><div class="home_statValue">12.34 TB</div></div>
   <div class="user-stat"><span>DOWNLOAD</span><div class="home_statValue">56.78 GB</div></div>`;
+const tr4kerHeaderRatioFixture = `
+  <a href="/mon-compte/profil" aria-label="Mon compte">
+    <span class="_ratio_76vm1_157">RATIO: 2116.48</span>
+  </a>`;
 const tr4kerValue = field => new RegExp(field.regex, 's').exec(tr4kerHomeFixture)?.groups?.value?.trim();
+const tr4kerHeaderRatio = new RegExp(tr4ker.fetch?.fields?.ratio?.regex, 's')
+  .exec(tr4kerHeaderRatioFixture)?.groups?.value?.trim();
 if (
   tr4kerValue(tr4ker.fetch?.fields?.uploadedBytes) !== '12.34 TB'
   || tr4kerValue(tr4ker.fetch?.fields?.downloadedBytes) !== '56.78 GB'
   || tr4kerValue(tr4ker.fetch?.fields?.ratio) !== '45.67'
+  || tr4kerHeaderRatio !== '2116.48'
 ) {
   errors.push('TR4KER home-page extractors must parse the rendered upload, download and ratio values');
+}
+
+const coalescesConcurrentTrackerFetches = (
+  server.includes('const trackerFetchSingleFlight = new SingleFlight<TrackerStats>();')
+  && server.includes('return trackerFetchSingleFlight.run(tracker.id, () => fetchTrackerBoundedOnce(tracker, creds));')
+);
+if (!coalescesConcurrentTrackerFetches) {
+  errors.push('Concurrent refreshes for the same tracker must share one bounded browser fetch');
 }
 
 const lesRescapesUsesBrowserLogin = (
