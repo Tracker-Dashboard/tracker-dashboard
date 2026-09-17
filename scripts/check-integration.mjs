@@ -38,6 +38,18 @@ const lesRescapes = JSON.parse(fs.readFileSync(lesRescapesPath, 'utf8'));
 const { applyEnginePreset } = await import('../dist/trackerTemplates.js');
 const errors = [];
 
+const trackerCardActionsUseAccessibleIcons = (
+  html.includes("const CARD_ICON_FICHE = '<svg")
+  && html.includes("const CARD_ICON_REFRESH = '<svg")
+  && html.includes('${CARD_ICON_FICHE}')
+  && html.includes('${CARD_ICON_REFRESH}')
+  && html.includes('aria-label="Ouvrir la fiche du tracker"')
+  && html.includes('aria-label="Rafraichir ce tracker"')
+);
+if (!trackerCardActionsUseAccessibleIcons) {
+  errors.push('Tracker card details and refresh actions must use accessible icons');
+}
+
 const avistazTrackers = [avistazPath, cinemazPath, privatehdPath]
   .map(file => applyEnginePreset(JSON.parse(fs.readFileSync(file, 'utf8'))));
 const exoticaz = applyEnginePreset(JSON.parse(fs.readFileSync(exoticazPath, 'utf8')));

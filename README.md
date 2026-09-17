@@ -26,6 +26,8 @@ Au premier accès, l'application demande de créer le compte administrateur de l
 **Export Prometheus + Grafana** : endpoint `/metrics` (protégé par token via `METRICS_TOKEN`) exposant les stats des trackers activés (`tracker_*`) et des clients BitTorrent (`tracker_qbit_*`). Dashboard Grafana JSON dans `grafana/dashboard.json` — voir [grafana/README.md](grafana/README.md).
 
 ## Changements récents
+
+- **Actions des cartes** : les boutons « Fiche » et « MàJ » utilisent désormais des icônes avec infobulles et libellés accessibles.
 Draupnirr
 
 - **Yggrasil** : changement de domaine pour Draupnirr. Pas de changement d'ID ni de .json pour ne pas casser l'existant.

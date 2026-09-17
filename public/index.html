@@ -1190,6 +1190,7 @@
       font-weight: 700;
     }
     .card-refresh:hover { border-color: var(--accent); color: var(--text); }
+    .card-refresh svg { width: 15px; height: 15px; display: block; }
     .card-edit-btn {
       border-color: color-mix(in srgb, var(--muted) 40%, transparent);
       background: transparent;
@@ -3184,6 +3185,8 @@
   const REQ_ICON_BROWSER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M10 4v4"/><path d="M2 8h20"/><path d="M6 4v4"/></svg>';
   const STAT_ICON_ACTIVE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>';
   const STAT_ICON_CREDS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></svg>';
+  const CARD_ICON_FICHE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.062 12.348a1 1 0 0 1 0-.696C3.6 7.58 7.5 5 12 5s8.4 2.58 9.938 6.652a1 1 0 0 1 0 .696C20.4 16.42 16.5 19 12 19s-8.4-2.58-9.938-6.652"/><circle cx="12" cy="12" r="3"/></svg>';
+  const CARD_ICON_REFRESH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 4v5h5"/><path d="M4 13a8.1 8.1 0 0 0 15.5 2M20 20v-5h-5"/></svg>';
 
   // Compteurs du bas de menu : trackers activés, répartis par mode de connexion
   // (identifiants / cookie collé) + dépendance au runtime navigateur.
@@ -3272,7 +3275,7 @@
   function cardFicheButton(stat) {
     return `
       <button class="card-refresh card-fiche-btn" data-tracker="${escapeHtml(stat.id)}" onclick="openTrackerFiche(this.dataset.tracker)" title="Ouvrir la fiche du tracker" aria-label="Ouvrir la fiche du tracker">
-        Fiche
+        ${CARD_ICON_FICHE}
       </button>`;
   }
 
@@ -3283,7 +3286,7 @@
   function cardRefreshButton(stat) {
     return `
       <button class="card-refresh" data-tracker="${escapeHtml(stat.id)}" onclick="refreshTracker(this.dataset.tracker, this)" title="Rafraichir ce tracker" aria-label="Rafraichir ce tracker">
-        MàJ
+        ${CARD_ICON_REFRESH}
       </button>`;
   }
 
