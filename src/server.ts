@@ -1962,6 +1962,8 @@ function betaTrackerMatchScore(announceHost: string, tracker: TrackerConfig): nu
   const base = trackerHost(tracker.baseUrl);
   if (announce === 'unknown' || base === 'unknown') return 0;
   let score = 0;
+  const aliases = (tracker.announceHosts ?? []).map(trackerHost);
+  if (aliases.includes(announce) || aliases.map(hostDomainKey).includes(hostDomainKey(announce))) score += 120;
   if (announce === base) score += 120;
   if (hostDomainKey(announce) === hostDomainKey(base)) score += 90;
   if (announce.includes(base) || base.includes(announce)) score += 45;
@@ -2041,6 +2043,11 @@ function qbitStatsWithTrackerIds(settings: BetaSettings, activeTrackers: Tracker
     const host = trackerHost(tracker.baseUrl);
     trackerHosts.set(host, tracker.id);
     trackerHosts.set(hostDomainKey(host), tracker.id);
+    for (const alias of tracker.announceHosts ?? []) {
+      const aliasHost = trackerHost(alias);
+      trackerHosts.set(aliasHost, tracker.id);
+      trackerHosts.set(hostDomainKey(aliasHost), tracker.id);
+    }
   }
   for (const mapping of settings.announceMappings) {
     const host = trackerHost(mapping.announceHost);
@@ -2073,6 +2080,11 @@ function qbitSeedingByTrackerId(trackers: TrackerConfig[]): Map<string, { count:
     const host = trackerHost(tracker.baseUrl);
     trackerHosts.set(host, tracker.id);
     trackerHosts.set(hostDomainKey(host), tracker.id);
+    for (const alias of tracker.announceHosts ?? []) {
+      const aliasHost = trackerHost(alias);
+      trackerHosts.set(aliasHost, tracker.id);
+      trackerHosts.set(hostDomainKey(aliasHost), tracker.id);
+    }
   }
   for (const mapping of settings.announceMappings) {
     const host = trackerHost(mapping.announceHost);

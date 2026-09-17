@@ -29,6 +29,7 @@ const redacted = JSON.parse(fs.readFileSync(redactedPath, 'utf8'));
 const tr4ker = JSON.parse(fs.readFileSync(tr4kerPath, 'utf8'));
 const speedapp = JSON.parse(fs.readFileSync(path.join(root, 'config', 'trackers', 'speedapp.json'), 'utf8'));
 const memphis = JSON.parse(fs.readFileSync(path.join(root, 'config', 'trackers', 'memphis.json'), 'utf8'));
+const astratorrent = JSON.parse(fs.readFileSync(path.join(root, 'config', 'trackers', 'astratorrent.json'), 'utf8'));
 const lesaloonv2 = JSON.parse(fs.readFileSync(path.join(root, 'config', 'trackers', 'lesaloonv2.json'), 'utf8'));
 const digitalcore = JSON.parse(fs.readFileSync(path.join(root, 'config', 'trackers', 'digitalcore.json'), 'utf8'));
 const v3x = JSON.parse(fs.readFileSync(path.join(root, 'config', 'trackers', 'v3x.json'), 'utf8'));
@@ -133,6 +134,22 @@ const extractorValue = (tracker, field, fixture) => {
     ? new RegExp(extractor.regex, 's').exec(fixture)?.groups?.value?.trim()
     : undefined;
 };
+
+const astraV2Fixture = `<script>window.__ASTRA_USER__={"uploaded_bytes":33318010683,"downloaded_bytes":0,"ratio":"1.500","bonus_points":1741};</script>`;
+const supportsAstraTorrentLa = (
+  astratorrent.baseUrl === 'https://astratorrent.la/v2'
+  && astratorrent.login?.url === 'login.php'
+  && astratorrent.fetch?.url === 'compte.php'
+  && astratorrent.announceHosts?.includes('astratorrent.cc')
+  && extractorValue(astratorrent, 'uploadedBytes', astraV2Fixture) === '33318010683'
+  && extractorValue(astratorrent, 'downloadedBytes', astraV2Fixture) === '0'
+  && extractorValue(astratorrent, 'ratio', astraV2Fixture) === '1.500'
+  && extractorValue(astratorrent, 'seedBonus', astraV2Fixture) === '1741'
+  && server.includes('tracker.announceHosts ?? []')
+);
+if (!supportsAstraTorrentLa) {
+  errors.push('AstraTorrent must use the .la V2 site, parse embedded account stats and retain its legacy .cc announce host');
+}
 
 const lesaloonFixture = `
   <font>Rang</font><font>[</font><span><strong>Membre VIP</strong></span><font>]</font>

@@ -158,6 +158,8 @@ export interface TrackerConfig {
   id: string;
   name: string;
   baseUrl: string;
+  /** Anciens hotes d'annonce encore presents dans les clients BitTorrent. */
+  announceHosts?: string[];
   enabled?: boolean;
   /**
    * Duplicata : id du tracker source dont cette entree reprend la definition
