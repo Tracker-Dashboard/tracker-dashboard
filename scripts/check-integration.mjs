@@ -105,6 +105,22 @@ if (!supportsAffectedTrackerLogins) {
   errors.push('SpeedApp email login, Memphis cookie-only refresh and duplicated TR4KER browser readiness must remain supported');
 }
 
+const httpModePrefersStoredCookie = (() => {
+  const start = fetcher.indexOf('// Mode HTTP : un cookie colle doit etre tente avant le login automatise.');
+  const end = fetcher.indexOf('// Login si nécessaire.', start);
+  if (start < 0 || end < 0) return false;
+  const block = fetcher.slice(start, end);
+  const cookieAttempt = block.indexOf('const viaCookie = await tryCurlFastPath();');
+  const credentialAttempt = block.indexOf('const viaCurl = await attemptHttpViaCurl();');
+  return cookieAttempt >= 0
+    && credentialAttempt > cookieAttempt
+    && block.includes('if (viaCookie) return viaCookie;')
+    && fetcher.includes('stats.fields.unreadMessages = await fetchUnreadMessages(tracker');
+})();
+if (!httpModePrefersStoredCookie) {
+  errors.push('HTTP trackers must try a stored browser cookie before replaying an automated credential login');
+}
+
 const memphisRuntimeWaitsForSpaStats = (
   memphis.fetch?.url === '/?view=profile'
   && memphis.fetch?.mode === 'browser'

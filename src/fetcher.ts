@@ -1117,6 +1117,15 @@ export async function fetchTracker(
     if (isAnubisChallenge(result.body)) return null;
     try {
       const stats = buildStatsFromHtml(url, result.body); // throw si aucune valeur extraite
+      if (tracker.fetch.unreadFetch) {
+        stats.fields.unreadMessages = await fetchUnreadMessages(tracker, async (unreadUrl) => {
+          const unread = await curlImpersonateGet(tracker.id, unreadUrl, {
+            cookie,
+            timeoutMs: 30_000,
+          }).catch(() => null);
+          return unread ? { status: unread.status, body: unread.body } : null;
+        }, {});
+      }
       // Requête secondaire (extraFetch) : buildStatsFromHtml ne la gère que via un
       // extraHtml pré-fourni (navigateur). En fast-path curl léger on la récupère ici,
       // avec le même cookie impersoné, puis on injecte (ex. seeding Gazelle via
@@ -1407,9 +1416,15 @@ export async function fetchTracker(
       }
     }
 
-    // Mode HTTP : on tente d'abord le login+fetch via curl-impersonate (empreinte
-    // navigateur). Si indisponible/echec -> on poursuit sur la voie axios ci-dessous.
+    // Mode HTTP : un cookie colle doit etre tente avant le login automatise. Sans
+    // cela, les trackers comme C411 ignorent une session navigateur valide et
+    // rejouent inutilement un POST de login bloque par Cloudflare.
     if (!isRetry) {
+      const viaCookie = await tryCurlFastPath();
+      if (viaCookie) return viaCookie;
+
+      // Sans cookie valide, tenter le login+fetch via curl-impersonate. Si cette
+      // voie echoue, poursuivre avec la session Axios historique ci-dessous.
       const viaCurl = await attemptHttpViaCurl();
       if (viaCurl) return viaCurl;
     }
