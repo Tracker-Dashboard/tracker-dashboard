@@ -1165,7 +1165,15 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      flex: none;
+      margin-left: auto;
     }
+    /* Tuiles étroites : le nom et ses marqueurs (cookie, navigateur, cross-seed)
+       gardent au moins 100px ; sinon les boutons d'action passent sous le nom
+       au lieu de chevaucher. */
+    .card-header { flex-wrap: wrap; gap: 6px 8px; }
+    .card-header > .tracker-name-line { flex: 1 1 100px; flex-wrap: wrap; row-gap: 3px; }
+    .card-header .card-name { min-width: 0; overflow-wrap: break-word; }
     .card-badges {
       display: flex;
       flex-wrap: wrap;
@@ -1976,7 +1984,7 @@
     <span class="nav-subcontrol-icon">▦</span> <span id="view-toggle-label">Vue lignes</span>
   </button>
   <div class="nav-subcontrol nav-cardsize" id="cardsize-control" title="Taille des cartes (100% = taille par défaut)">
-    <input id="cardsize-range" type="range" min="60" max="160" step="5" value="100" oninput="applyCardWidth(this.value)" onchange="saveCardWidth(this.value)" aria-label="Taille des cartes" />
+    <input id="cardsize-range" type="range" min="80" max="160" step="5" value="100" oninput="applyCardWidth(this.value)" onchange="saveCardWidth(this.value)" aria-label="Taille des cartes" />
     <span id="cardsize-value">100%</span>
   </div>
 
@@ -6123,7 +6131,7 @@
   // betaSettings.features.cardWidthPct : il est donc partage entre appareils et
   // survit au redemarrage du serveur.
   const CARD_WIDTH_BASE_PX = 320;
-  const CARD_WIDTH_MIN_PCT = 60;
+  const CARD_WIDTH_MIN_PCT = 80;
   const CARD_WIDTH_MAX_PCT = 160;
 
   function clampCardWidthPct(pct) {

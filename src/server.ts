@@ -1854,7 +1854,7 @@ function saveBetaSettingsPayload(raw: unknown): BetaSettings {
   const features = {
     graphsEnabled: rawFeatures.graphsEnabled !== false,
     calendarEnabled: rawFeatures.calendarEnabled !== false,
-    cardWidthPct: Math.min(160, Math.max(60, Math.round(Number(rawFeatures.cardWidthPct)) || 100)),
+    cardWidthPct: Math.min(160, Math.max(80, Math.round(Number(rawFeatures.cardWidthPct)) || 100)),
   };
 
   const rawSchedule = body.schedule ?? current.schedule;
