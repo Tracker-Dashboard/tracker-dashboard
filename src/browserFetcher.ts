@@ -615,7 +615,7 @@ async function ensureLoggedIn(
     });
     const candidates = [
       `input[id="${name}"]`,
-      `[name="${name}"]`,
+      `input[name="${name}"], textarea[name="${name}"], select[name="${name}"], button[name="${name}"]`,
       ['username', 'email', 'login', 'identifier'].includes(name.toLowerCase()) ? 'input[name="identifier"]' : '',
       ['username', 'email', 'login', 'identifier'].includes(name.toLowerCase()) ? 'input[name="username"]' : '',
       ['username', 'email', 'login', 'identifier'].includes(name.toLowerCase()) ? 'input[name="login"]' : '',
@@ -632,6 +632,7 @@ async function ensureLoggedIn(
       const target = input.first();
       const type = ((await target.getAttribute('type')) ?? 'text').toLowerCase();
       if (type === 'hidden') continue;
+      if (type === 'submit' || type === 'button') break; // ex: cle "login" designe le bouton submit (Gazelle classique), pas un champ a remplir
       if (type === 'checkbox') {
         if (value === 'true' || value === 'on' || value === '1') {
           // Une checkbox de login (ex: "remember me") est souvent stylisee/masquee par
@@ -658,8 +659,9 @@ async function ensureLoggedIn(
   if (totpSecret) {
     const code = generateTotp(totpSecret);
     if (code) {
+      const otpFieldName = tracker.login.otpField || tracker.login.otpStep?.field;
       const otpCandidates = [
-        tracker.login.otpField ? `[name="${tracker.login.otpField}"]` : '',
+        otpFieldName ? `input[name="${otpFieldName}"]` : '',
         'input[name="two_step_code"]', // UNIT3D
         'input[name="code"]',
         'input[name="otp"]',
@@ -762,15 +764,17 @@ async function ensureLoggedIn(
   // ── 2FA en deux etapes : page de challenge apres le mot de passe ────────────
   if (totpSecret) {
     const postHtml = await safeContent(page);
+    const otpFieldName = tracker.login.otpField || tracker.login.otpStep?.field;
     const onTwoFa = /two-factor-challenge/i.test(page.url()) ||
       /two-factor-challenge/i.test(postHtml) ||
       /Two[\s-]?Factor Authentication/i.test(postHtml) ||
       /One Time Password/i.test(postHtml) ||
-      (/name=["']code["']/i.test(postHtml) && /recovery_code/i.test(postHtml));
+      (/name=["']code["']/i.test(postHtml) && /recovery_code/i.test(postHtml)) ||
+      (otpFieldName ? new RegExp(`name=["']${otpFieldName}["']`, 'i').test(postHtml) : false);
     if (onTwoFa) {
       const code = generateTotp(totpSecret);
       if (code) {
-        for (const s of ['input[name="code"]', 'input[name="two_step_code"]', 'input[name="otp"]', 'input[name="totp"]', 'input[autocomplete="one-time-code"]', 'input[inputmode="numeric"]', 'input[type="tel"]', '#code']) {
+        for (const s of [otpFieldName ? `input[name="${otpFieldName}"]` : '', 'input[name="code"]', 'input[name="two_step_code"]', 'input[name="otp"]', 'input[name="totp"]', 'input[autocomplete="one-time-code"]', 'input[inputmode="numeric"]', 'input[type="tel"]', '#code'].filter(Boolean)) {
           const inp = page.locator(s);
           if (await inp.count() === 0) continue;
           const t = inp.first();
