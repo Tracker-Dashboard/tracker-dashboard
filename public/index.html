@@ -1598,10 +1598,10 @@
     }
     .definition-row {
       display: grid;
-      grid-template-columns: 260px 72px 90px 108px minmax(260px, 1fr) minmax(220px, 1fr) 98px 112px 86px;
+      grid-template-columns: 320px 72px 90px 108px minmax(0, 1fr) 112px 86px;
       align-items: center;
       column-gap: 10px;
-      min-width: 1420px;
+      min-width: 900px;
       border-top: 1px solid var(--border);
       padding: 8px 10px;
       font-size: 13px;
@@ -1680,6 +1680,20 @@
       justify-content: stretch;
     }
     .definition-actions button { width: 100%; }
+    .definition-actions-reset { grid-column: 6; }
+    /* Identifiants / cookie : ligne dédiée sous le bandeau nom + badges + actions */
+    .definition-credentials {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px 16px;
+      margin-top: 6px;
+    }
+    .definition-credentials .tracker-field { flex: 1 1 240px; max-width: 340px; }
+    .definition-credentials .tracker-cookie-field { flex: 1 1 100%; max-width: none; }
+    .definition-credentials .definition-actions { flex: 0 0 auto; }
+    .definition-credentials .definition-actions button { width: auto; }
     .definition-extra-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
     .definition-extra-actions button { white-space: nowrap; }
     .definition-rename { display: flex; align-items: center; gap: 6px; }
@@ -1753,7 +1767,7 @@
     }
     @media (max-width: 760px) {
       #tracker-definitions-panel { width: 100%; }
-      .definition-row { min-width: 1420px; }
+      .definition-row { min-width: 900px; }
     }
     .schedule-row {
       background: var(--surface);
@@ -6714,34 +6728,35 @@
                 ${isNew ? '<span class="definition-badge">Nouveau</span>' : '<span class="definition-new-slot"></span>'}
                 <span class="definition-badge ${isEnabled ? '' : 'definition-badge-muted'}">${isEnabled ? 'Actif' : 'Disponible'}</span>
                 ${statusBadge}
-                ${cookieOnly ? `
-                <div class="tracker-field tracker-cookie-field" style="grid-column: span 2">
-                  <label>Cookie de session <span style="color:var(--muted)">— seul mode de connexion de ce site${credential.hasCookie ? ' · <b style="color:var(--green)">défini</b>' : ''}</span></label>
-                  ${cookieFieldHtml}
-                </div>
-                <div class="definition-actions"></div>` : `
-                <div class="tracker-field">
-                  <label>Utilisateur</label>
-                  <input class="tracker-input" id="credential-user-${safeId}" value="${escapeHtml(credential.username || '')}" autocomplete="off">
-                </div>
-                <div class="tracker-field">
-                  <label>Mot de passe</label>
-                  <input class="tracker-input" id="credential-pass-${safeId}" type="password" value="${credential.hasPassword ? '••••••••' : ''}" autocomplete="new-password">
-                </div>
-                <div class="definition-actions">
-                  <button class="btn-save" style="padding:6px 8px" onclick="saveTrackerCredential('${safeId}')">Enregistrer</button>
-                </div>`}
-                <div class="definition-actions">
+                <div class="definition-actions definition-actions-reset">
                   <button class="btn-test" style="padding:6px 10px" onclick="resetCredential('${safeId}')">Réinitialiser</button>
+                </div>
+                <div class="definition-actions">
+                  <button class="btn-test" style="padding:6px 10px" onclick="setTrackerEnabled('${safeId}', ${isEnabled ? 'false' : 'true'})">${isEnabled ? 'Retirer' : 'Ajouter'}</button>
+                </div>
+                <div class="definition-credentials">
+                ${cookieOnly ? `
+                  <div class="tracker-field tracker-cookie-field">
+                    <label>Cookie de session <span style="color:var(--muted)">— seul mode de connexion de ce site${credential.hasCookie ? ' · <b style="color:var(--green)">défini</b>' : ''}</span></label>
+                    ${cookieFieldHtml}
+                  </div>` : `
+                  <div class="tracker-field">
+                    <label>Utilisateur</label>
+                    <input class="tracker-input" id="credential-user-${safeId}" value="${escapeHtml(credential.username || '')}" autocomplete="off">
+                  </div>
+                  <div class="tracker-field">
+                    <label>Mot de passe</label>
+                    <input class="tracker-input" id="credential-pass-${safeId}" type="password" value="${credential.hasPassword ? '••••••••' : ''}" autocomplete="new-password">
+                  </div>
+                  <div class="definition-actions">
+                    <button class="btn-save" style="padding:6px 8px" onclick="saveTrackerCredential('${safeId}')">Enregistrer</button>
+                  </div>`}
                 </div>
                 ${!cookieOnly && cookieInstructions ? `
                 <div class="tracker-field tracker-cookie-field" style="grid-column:1/-1">
                   <label>Cookie de session <span style="color:var(--muted)">— recommandé pour ${escapeHtml(definition.name)}${credential.hasCookie ? ' · <b style="color:var(--green)">défini</b>' : ''}</span></label>
                   ${cookieFieldHtml}
                 </div>` : ''}
-                <div class="definition-actions">
-                  <button class="btn-test" style="padding:6px 10px" onclick="setTrackerEnabled('${safeId}', ${isEnabled ? 'false' : 'true'})">${isEnabled ? 'Retirer' : 'Ajouter'}</button>
-                </div>
                 <div class="definition-extra-actions" style="grid-column:1/-1">
                   <div class="definition-rename">
                     <label for="rename-${safeId}">Nom d'affichage</label>

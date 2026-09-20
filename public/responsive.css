@@ -189,6 +189,10 @@
     grid-template-columns: 80px minmax(0, 1fr);
   }
   .definition-actions { flex: 0 0 auto; }
+  .definition-actions-reset { grid-column: auto; }
+  .definition-credentials { flex: 1 1 100%; min-width: 0; }
+  .definition-credentials .tracker-field { flex: 1 1 100%; max-width: none; }
+  .definition-credentials .tracker-cookie-field { grid-template-columns: minmax(0, 1fr); }
   .definition-advanced { width: 100%; }
   .advanced-cookie-row { flex-direction: column; align-items: stretch; }
   .advanced-cookie-row .tracker-input,
