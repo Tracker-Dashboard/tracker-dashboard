@@ -26,18 +26,39 @@ import { fetchWithFlareSolverr, isFlareSolverrCandidate } from './flareSolverr.j
 
 // ─── Transforms ──────────────────────────────────────────────────────────────
 
+/**
+ * Normalise une chaîne numérique scrapée en notation JS (« 1234.56 »).
+ * Gère « 1,011.86 » (US), « 1.011,86 » (EU), « 1 011,86 » (FR), « 1,5 » et « 1,234,567 ».
+ * Si les deux séparateurs sont présents, le dernier est la décimale.
+ * Un séparateur unique et isolé (« 1,5 » / « 1.5 ») reste traité comme décimal.
+ */
+export function normalizeNumberString(input: unknown): string {
+  let s = String(input).replace(/[\s\u202f\u00a0]/g, '');
+  const lastDot = s.lastIndexOf('.');
+  const lastComma = s.lastIndexOf(',');
+  if (lastDot !== -1 && lastComma !== -1) {
+    const dec = lastDot > lastComma ? '.' : ',';
+    const thou = dec === '.' ? ',' : '.';
+    s = s.split(thou).join('').replace(dec, '.');
+  } else if (lastComma !== -1) {
+    s = s.split(',').length > 2 ? s.split(',').join('') : s.replace(',', '.');
+  } else if (lastDot !== -1 && s.split('.').length > 2) {
+    s = s.split('.').join('');
+  }
+  return s;
+}
+
 function parseBytes(raw: unknown): number {
   if (typeof raw === 'number') return raw;
   // Normaliser les espaces insecables encodes en entites HTML (&nbsp; &#160; &#xa0;)
   // et le caractere   -> espace, sinon le nombre et l'unite restent colles.
   const s = String(raw)
     .replace(/&nbsp;|&#160;|&#xa0;/gi, ' ')
-    .replace(/ /g, ' ')
-    .trim()
-    .replace(',', '.');
-  const m = s.match(/([\d\s.\u202f]+)\s*([KMGTPE](?:i?B|io|o)|B|o)/i);
-  if (!m) return parseFloat(s) || 0;
-  const n = parseFloat(m[1].replace(/[\s\u202f]/g, ''));
+    .replace(/\u00a0/g, ' ')
+    .trim();
+  const m = s.match(/([\d\s.,\u202f]+)\s*([KMGTPE](?:i?B|io|o)|B|o)/i);
+  if (!m) return parseFloat(normalizeNumberString(s)) || 0;
+  const n = parseFloat(normalizeNumberString(m[1]));
   const u = m[2].toUpperCase();
   const map: Record<string, number> = {
     B: 1,
@@ -101,7 +122,7 @@ function applyTransform(raw: unknown, tf?: string): string | number {
     case 'number': {
       const s = String(raw).trim();
       if (/^(infinite|infinity|inf|∞)$/i.test(s)) return '∞';
-      return parseFloat(s.replace(',', '.')) || 0;
+      return parseFloat(normalizeNumberString(s)) || 0;
     }
     case 'integer': return parseInt(String(raw), 10) || 0;
     default:        return String(raw);

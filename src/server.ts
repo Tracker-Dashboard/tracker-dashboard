@@ -3,7 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import axios from 'axios';
-import { fetchTracker, invalidateAllSessions, invalidateSession } from './fetcher.js';
+import { fetchTracker, invalidateAllSessions, invalidateSession, normalizeNumberString } from './fetcher.js';
 import { resetBrowserProfile, closeBrowserSession, fetchRawHtmlWithBrowser, getBrowserRuntimeStatus } from './browserBackend.js';
 import { SingleFlight } from './singleFlight.js';
 import { getFlareSolverrStatus, getTrawlStatus } from './flareSolverr.js';
@@ -1537,7 +1537,7 @@ function escapeLabel(value: string): string {
 function toNumber(value: unknown): number | null {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
   if (typeof value === 'string' && value.trim() !== '') {
-    const n = parseFloat(value.replace(/[\s ]/g, '').replace(',', '.'));
+    const n = parseFloat(normalizeNumberString(value));
     return Number.isFinite(n) ? n : null;
   }
   return null;
