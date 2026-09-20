@@ -1,0 +1,70 @@
+{
+  "id": "passthepopcorn",
+  "name": "PassThePopcorn",
+  "baseUrl": "https://passthepopcorn.me",
+  "enabled": false,
+  "engine": "gazelle",
+  "login": {
+    "url": "login.php",
+    "method": "POST",
+    "contentType": "form",
+    "body": {},
+    "failurePatterns": [
+      "login.php",
+      "type=\"password\"",
+      "name=\"password\""
+    ],
+    "cookieOnly": true,
+    "cookieInstructions": "Connecte-toi à PassThePopcorn dans une fenêtre privée (captcha à affiches), exporte tous les cookies (session, PHPSESSID, img) avec la même IP de sortie que ce tracker dans le dashboard, puis ferme la fenêtre sans cliquer sur Logout : la déconnexion invalide la session côté serveur."
+  },
+  "fetch": {
+    "url": "index.php",
+    "mode": "browser",
+    "responseType": "html",
+    "fields": {
+      "uploadedBytes": {
+        "regex": "id=\"stats_seeding\"[\\s\\S]{0,250}?title=\"(?<value>[\\d.,]+\\s*(?:[KMGTPE]i?B|B))\"",
+        "transform": "bytes"
+      },
+      "downloadedBytes": {
+        "regex": "id=\"stats_leeching\"[\\s\\S]{0,250}?title=\"(?<value>[\\d.,]+\\s*(?:[KMGTPE]i?B|B))\"",
+        "transform": "bytes"
+      },
+      "ratio": {
+        "regex": "id=\"stats_ratio\"[\\s\\S]{0,250}?title=\"Ratio:\\s*(?<value>[\\d.,]+|inf(?:inite|inity)?|∞)",
+        "transform": "number"
+      },
+      "bufferBytes": {
+        "regex": "id=\"stats_ratio\"[\\s\\S]{0,250}?Buffer:\\s*(?<value>-?[\\d.,]+\\s*(?:[KMGTPE]i?B|B))\"",
+        "transform": "bytes"
+      },
+      "seedBonus": {
+        "regex": "id=\"nav_bonus\"[\\s\\S]{0,250}?>Bonus \\((?<value>[\\d.,\\s]+)\\)<",
+        "transform": "string"
+      },
+      "unreadMessages": {
+        "regex": "You have (?<value>\\d+|\\ba) new message",
+        "transform": "string"
+      }
+    },
+    "extraFetch": {
+      "url": "user.php?id={{id}}",
+      "field": "seeding",
+      "responseType": "html",
+      "idExtract": {
+        "regex": "id=\"nav_userinfo\"[\\s\\S]{0,200}?href=\"user\\.php\\?id=(?<value>\\d+)\""
+      },
+      "regex": "<li>Seeding:\\s*(?<value>\\d+)(?![\\d,.])",
+      "transform": "integer",
+      "extraFields": {
+        "memberClass": {
+          "regex": "<li>Class:\\s*(?<value>[^<]+?)\\s*</li>",
+          "transform": "string"
+        }
+      }
+    }
+  },
+  "dashboard": {
+    "byteUnit": "binary"
+  }
+}
