@@ -1174,6 +1174,26 @@
     .card-header { flex-wrap: wrap; gap: 6px 8px; }
     .card-header > .tracker-name-line { flex: 1 1 100px; flex-wrap: wrap; row-gap: 3px; }
     .card-header .card-name { min-width: 0; overflow-wrap: break-word; }
+    /* Tuiles : header en grille fixe sur 2 lignes, sans wrap conditionnel.
+       Ligne 1 : logo + nom (toute la largeur, jamais coupe en deux).
+       Ligne 2 : pictos a gauche, boutons d'action a droite (reservee meme sans picto).
+       La hauteur est donc identique pour toutes les tuiles, quelle que soit la
+       largeur de la tuile ou la longueur du nom. */
+    .card-header.card-header--2l {
+      display: grid; grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas: "name name" "marks actions";
+      align-items: center; gap: 6px 8px;
+    }
+    .card-header--2l > .tracker-name-line--split { display: contents; }
+    .card-header--2l .card-name {
+      grid-area: name; display: block; min-width: 0;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .card-header--2l .tracker-marks-line {
+      grid-area: marks; display: flex; flex-wrap: wrap; align-items: center;
+      gap: 6px; min-width: 0; min-height: 20px;
+    }
+    .card-header--2l > .card-header-actions { grid-area: actions; justify-self: end; margin-left: 0; }
     .card-badges {
       display: flex;
       flex-wrap: wrap;
@@ -3248,16 +3268,19 @@
     return marks.length ? `<span class="req-marks">${marks.join('')}</span>` : '';
   }
 
-  function trackerName(stat) {
+  function trackerName(stat, { split = false } = {}) {
     const href = trackerLink(stat);
     const name = escapeHtml(stat.name);
     const logo = trackerLogo(stat.id);
-    const staleTitle = stat.stale ? ` title="${escapeHtml(stat.stale.error || 'Probleme pendant le dernier refresh')}"` : '';
+    const staleTitle = stat.stale ? ` title="${escapeHtml(stat.stale.error || 'Probleme pendant le dernier refresh')}"` : (split ? ` title="${name}"` : '');
     const cls = stat.stale ? 'card-name is-stale' : 'card-name';
     const dot = stat.stale ? '<span class="stale-dot"></span>' : '';
     const tracker = href
       ? `<a class="${cls}"${staleTitle} href="${escapeHtml(href)}" target="_blank" rel="noreferrer noopener">${logo}${name}${dot}</a>`
       : `<span class="${cls}"${staleTitle}>${logo}${name}${dot}</span>`;
+    if (split) {
+      return `<span class="tracker-name-line tracker-name-line--split">${tracker}<span class="tracker-marks-line">${requirementMarks(stat)}${crossSeedTrackerMarks(stat.id)}</span></span>`;
+    }
     return `<span class="tracker-name-line">${tracker}${requirementMarks(stat)}${crossSeedTrackerMarks(stat.id)}</span>`;
   }
 
@@ -6356,8 +6379,8 @@
       const incidentBox = renderIncidentBox(stat);
       return `
         <div class="card card--err"${cardDragAttrs(stat)}>
-          <div class="card-header">
-            ${trackerName(stat)}
+          <div class="card-header card-header--2l">
+            ${trackerName(stat, { split: true })}
             <div class="card-header-actions">
               ${cardFicheButton(stat)}
               ${editTrackerButton(stat)}
@@ -6425,15 +6448,15 @@
 
     return `
       <div class="card card--ok"${cardDragAttrs(stat)}>
-        <div class="card-header">
-          ${trackerName(stat)}
+        <div class="card-header card-header--2l">
+          ${trackerName(stat, { split: true })}
           <div class="card-header-actions">
             ${cardFicheButton(stat)}
             ${editTrackerButton(stat)}
             ${cardRefreshButton(stat)}
           </div>
         </div>
-        <div class="card-badges">${mpBadge(stat)}${memberClassBadge(stat)}${staleBadge(stat)}${ratiolessBadge(stat)}</div>
+        <div class="card-badges">${memberClassBadge(stat)}${mpBadge(stat)}${staleBadge(stat)}${ratiolessBadge(stat)}</div>
 
         <div class="stats">${hasXpFields ? xpGrid : standardGrid}
         </div>
