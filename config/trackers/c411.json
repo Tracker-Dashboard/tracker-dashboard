@@ -30,7 +30,8 @@
     "failurePatterns": [
       "\"message\":\"Unauthenticated",
       "\"authenticated\":false"
-    ]
+    ],
+    "cookieOnly": true
   },
   "fetch": {
     "url": "api/auth/me",
