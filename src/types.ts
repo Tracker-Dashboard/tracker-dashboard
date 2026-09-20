@@ -148,6 +148,13 @@ export interface FetchStep {
     idExtract?: { regex: string };
     /** Nom du champ de fields.* alimenté par cette requête (ex: "memberClass"). */
     field: string;
+    /**
+     * Champs supplémentaires extraits de la MÊME réponse que `field` (une seule requête
+     * secondaire). Clé = nom du champ (ex: "memberClass"), valeur = extracteur (path JSON
+     * ou regex HTML + transform). Chaque champ est indépendant : un échec d'extraction
+     * n'empêche pas les autres.
+     */
+    extraFields?: Record<string, FieldExtractor>;
   } & FieldExtractor;
 }
 

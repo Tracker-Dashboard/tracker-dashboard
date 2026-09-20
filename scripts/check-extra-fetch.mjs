@@ -74,6 +74,45 @@ if (extractExtraFieldResponse({
   throw new Error('extraFetch malformed JSON must remain best-effort');
 }
 
+const multiFieldConfig = {
+  url: 'user.php?id={{id}}',
+  field: 'seeding',
+  regex: '<li>Seeding:\\s*(?<value>\\d+)(?![\\d,.])',
+  transform: 'integer',
+  extraFields: {
+    memberClass: { regex: '<li>Class:\\s*(?<value>[^<]+?)\\s*</li>', transform: 'string' },
+  },
+};
+const multiFieldProfile = '<li>Class: Elite</li><li>Seeding: 3\t[<a href="#">View</a>]</li><li>Seeding size: 21.48 GiB</li>';
+
+const multiFieldResult = extractExtraFieldResponse(multiFieldConfig, multiFieldProfile);
+if (multiFieldResult?.field !== 'seeding'
+  || multiFieldResult.value !== 3
+  || multiFieldResult.extras?.memberClass !== 'Elite') {
+  throw new Error('extraFetch extraFields must extract several fields from one response');
+}
+
+const partialResult = extractExtraFieldResponse(multiFieldConfig, '<li>Class: Elite</li><li>Seeding: 1,234 [<a');
+if (partialResult?.field !== 'memberClass' || partialResult.value !== 'Elite' || partialResult.extras) {
+  throw new Error('extraFetch must keep extra fields when the main field is missing');
+}
+
+const jsonMultiResult = extractExtraFieldResponse({
+  url: 'ajax.php?action=user&id={{id}}',
+  field: 'seeding',
+  responseType: 'json',
+  path: 'response.community.seeding',
+  transform: 'integer',
+  extraFields: { memberClass: { path: 'response.personal.class', transform: 'string' } },
+}, JSON.stringify({ response: { community: { seeding: 5 }, personal: { class: 'Power User' } } }));
+if (jsonMultiResult?.value !== 5 || jsonMultiResult.extras?.memberClass !== 'Power User') {
+  throw new Error('extraFetch extraFields JSON extraction failed');
+}
+
+if (extractExtraFieldResponse(multiFieldConfig, '<p>nothing</p>') !== null) {
+  throw new Error('extraFetch must return null when no field is extracted');
+}
+
 if (!isAntiBotPage('<script src="/cdn-cgi/challenge-platform/h/b/orchestrate/chl_page/v1"></script>')) {
   throw new Error('Cloudflare managed challenge must be detected');
 }

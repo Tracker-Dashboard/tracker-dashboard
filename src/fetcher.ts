@@ -171,25 +171,51 @@ function extractHtml(
 
 type ExtraFetchConfig = NonNullable<TrackerConfig['fetch']['extraFetch']>;
 
+/**
+ * Résultat d'une requête secondaire (extraFetch) : le premier couple champ/valeur
+ * extrait (le champ principal `field` s'il est trouvé) et, le cas échéant, les autres
+ * champs de `extraFields` extraits de la même réponse.
+ */
+export interface ExtraFieldResult {
+  field: string;
+  value: string | number;
+  extras?: Record<string, string | number>;
+}
+
+/** Écrit dans `target` le champ principal et les champs supplémentaires d'un extraFetch. */
+function applyExtraFieldResult(
+  target: Record<string, string | number>,
+  extra: ExtraFieldResult,
+): void {
+  target[extra.field] = extra.value;
+  if (extra.extras) Object.assign(target, extra.extras);
+}
+
 /** Extrait la valeur d'une réponse extraFetch, quel que soit son transport. */
 export function extractExtraFieldResponse(
   ef: ExtraFetchConfig,
   body: string,
-): { field: string; value: string | number } | null {
-  const single: Record<string, FieldExtractor> = {
+): ExtraFieldResult | null {
+  const extractors: Record<string, FieldExtractor> = {
     [ef.field]: { path: ef.path, regex: ef.regex, transform: ef.transform },
+    ...(ef.extraFields ?? {}),
   };
   const responseType = ef.responseType ?? (ef.path ? 'json' : 'html');
   let out: { values: Record<string, string | number>; byteUnit: 'decimal' | 'binary' | null };
   if (responseType === 'json') {
     let json: unknown;
     try { json = JSON.parse(body); } catch { return null; }
-    out = extractJson(json, single);
+    out = extractJson(json, extractors);
   } else {
-    out = extractHtml(body, single);
+    out = extractHtml(body, extractors);
   }
-  const value = out.values[ef.field];
-  return value !== undefined && value !== '' ? { field: ef.field, value } : null;
+  const found = Object.entries(out.values)
+    .filter(([, value]) => value !== undefined && value !== '');
+  if (found.length === 0) return null;
+  const [[field, value], ...rest] = found;
+  return rest.length > 0
+    ? { field, value, extras: Object.fromEntries(rest) }
+    : { field, value };
 }
 
 function hasExtractedValues(fields: Record<string, string | number>): boolean {
@@ -318,7 +344,7 @@ export async function fetchExtraField(
   request: UnreadMessagesRequest,
   headers: Record<string, string>,
   creds: { username: string; password: string },
-): Promise<{ field: string; value: string | number } | null> {
+): Promise<ExtraFieldResult | null> {
   const ef = tracker.fetch.extraFetch;
   if (!ef) return null;
   try {
@@ -344,7 +370,7 @@ async function fetchExtraFieldViaAxios(
   primaryBody: string,
   headers: Record<string, string>,
   creds: { username: string; password: string },
-): Promise<{ field: string; value: string | number } | null> {
+): Promise<ExtraFieldResult | null> {
   return fetchExtraField(tracker, primaryBody, async (url, requestHeaders) => {
     const res = await client.get<string>(url, { responseType: 'text', headers: requestHeaders });
     return { status: res.status, body: res.data };
@@ -357,7 +383,7 @@ async function fetchExtraFieldViaCurl(
   primaryBody: string,
   headers: Record<string, string>,
   creds: { username: string; password: string },
-): Promise<{ field: string; value: string | number } | null> {
+): Promise<ExtraFieldResult | null> {
   return fetchExtraField(tracker, primaryBody, async (url, requestHeaders) => {
     return session.request(url, { headers: requestHeaders, timeoutMs: 30_000 });
   }, headers, creds);
@@ -372,7 +398,7 @@ async function fetchExtraFieldViaCurlCookie(
   primaryBody: string,
   cookie: string,
   creds: { username: string; password: string },
-): Promise<{ field: string; value: string | number } | null> {
+): Promise<ExtraFieldResult | null> {
   return fetchExtraField(tracker, primaryBody, async (url) => {
     const r = await curlImpersonateGet(tracker.id, url, { cookie, timeoutMs: 30_000 }).catch(() => null);
     return r ? { status: r.status, body: r.body } : null;
@@ -1079,7 +1105,7 @@ export async function fetchTracker(
     const ef = tracker.fetch.extraFetch;
     if (ef && extraHtml) {
       const extra = extractExtraFieldResponse(ef, extraHtml);
-      if (extra) fields[extra.field] = extra.value;
+      if (extra) applyExtraFieldResult(fields, extra);
     }
 
     // L'unité d'affichage suit ce que le site écrit réellement (« GB » -> décimal,
@@ -1154,7 +1180,7 @@ export async function fetchTracker(
       const ef = tracker.fetch.extraFetch;
       if (ef?.url) {
         const extra = await fetchExtraFieldViaCurlCookie(tracker, result.body, cookie, creds);
-        if (extra) stats.fields[extra.field] = extra.value;
+        if (extra) applyExtraFieldResult(stats.fields, extra);
       }
       console.log(`  [${tracker.name}] Fast-path curl-impersonate OK (navigateur evite)`);
       return stats;
@@ -1324,7 +1350,7 @@ export async function fetchTracker(
           }
           if (tracker.fetch.extraFetch) {
             const extra = await fetchExtraFieldViaCurl(sess, tracker, fetchRes.body, fetchHeaders, creds);
-            if (extra) stats.fields[extra.field] = extra.value;
+            if (extra) applyExtraFieldResult(stats.fields, extra);
           }
           console.log(`  [${tracker.name}] Login+fetch via curl-impersonate OK (JSON/MFA)`);
           return stats;
@@ -1375,7 +1401,7 @@ export async function fetchTracker(
         }
         if (tracker.fetch.extraFetch) {
           const extra = await fetchExtraFieldViaCurl(sess, tracker, fetchRes.body, { Referer: loginUrl }, creds);
-          if (extra) stats.fields[extra.field] = extra.value;
+          if (extra) applyExtraFieldResult(stats.fields, extra);
         }
         console.log(`  [${tracker.name}] Login+fetch via curl-impersonate OK (axios evite)`);
         return stats;
@@ -1552,7 +1578,7 @@ export async function fetchTracker(
     // Champ secondaire générique (ex. classe de membre IPTorrents, page /u/<id>).
     if (tracker.fetch.extraFetch) {
       const extra = await fetchExtraFieldViaAxios(session.client, tracker, res.data, fetchHeaders, creds);
-      if (extra) fields[extra.field] = extra.value;
+      if (extra) applyExtraFieldResult(fields, extra);
     }
 
     const resolvedByteUnit = detectedByteUnit ?? tracker.dashboard?.byteUnit ?? 'binary';
