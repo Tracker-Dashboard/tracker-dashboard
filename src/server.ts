@@ -1427,7 +1427,9 @@ async function runBetaScheduledCycle(): Promise<void> {
   const credentials = loadCredentialsFromDb();
   const overridden = new Set(settings.scheduleOverrides.map(override => override.trackerId));
   const trackers = loadTrackerConfigsFromDb().filter(tracker => (
-    tracker.enabled !== false && credentials[tracker.id] && !overridden.has(tracker.id)
+    tracker.enabled !== false
+    && (credentials[tracker.id] || storedCookieReady(tracker))
+    && !overridden.has(tracker.id)
   ));
   const previousFailures = new Set(settings.schedule.lastFailedTrackerIds);
   pendingScheduledRuns.add('__global__');
@@ -1449,7 +1451,7 @@ async function runBetaTrackerSchedule(override: BetaTrackerScheduleOverride): Pr
   if (isRefreshing || pendingScheduledRuns.has(override.trackerId)) return;
   const settings = loadBetaSettings();
   const tracker = loadTrackerConfigsFromDb().find(item => item.id === override.trackerId && item.enabled !== false);
-  if (!tracker || !loadCredentialsFromDb()[tracker.id]) return;
+  if (!tracker || (!loadCredentialsFromDb()[tracker.id] && !storedCookieReady(tracker))) return;
   const previousFailures = new Set(cachedStats.filter(stat => stat.status === 'error').map(stat => stat.id));
   pendingScheduledRuns.add(tracker.id);
   try {
