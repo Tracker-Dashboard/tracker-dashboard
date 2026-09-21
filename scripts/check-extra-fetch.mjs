@@ -132,4 +132,15 @@ if (!isTwoFactorPage(torrentLeechOtpFixture) || extractOtpFieldName(torrentLeech
   throw new Error('TorrentLeech one-time-password page must be detected with its submitted OTP field');
 }
 
+const splitUnitExtra = extractExtraFieldResponse({
+  url: 'profile',
+  responseType: 'html',
+  field: 'uploadedBytes',
+  regex: '>Upload<[\\s\\S]{0,180}?_metricValue_[^>]*>\\s*(?<value>[\\d.,]+)\\s*</span>\\s*<span[^>]*_metricUnit_[^>]*>\\s*(?<unit>[KMGT]B)\\s*<',
+  transform: 'bytes',
+}, '<span>Upload</span><span class="_metricValueRow_x"><span class="_metricValue_x">1.64</span><span class="_metricUnit_x">TB</span></span>');
+if (splitUnitExtra?.field !== 'uploadedBytes' || splitUnitExtra.value !== 1_640_000_000_000) {
+  throw new Error('An HTML extractor with a (?<unit>) group must combine the value and the unit before conversion');
+}
+
 console.log('extraFetch response extraction OK.');

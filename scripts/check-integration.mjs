@@ -373,33 +373,47 @@ if (redacted.fetch?.fields?.requiredRatio && !synchronizesAllBundledTrackers) {
 }
 
 const tr4kerUsesDisplayedTotals = (
-  tr4ker.fetch?.url === '/'
+  tr4ker.fetch?.url === 'mon-compte/profil'
   && tr4ker.fetch?.mode === 'browser'
   && tr4ker.fetch?.responseType === 'html'
   && !JSON.stringify(tr4ker.fetch).includes('api/me')
 );
 if (!tr4kerUsesDisplayedTotals) {
-  errors.push('TR4KER must scrape the totals displayed by the authenticated site, without /api/me');
+  errors.push('TR4KER must scrape the totals displayed on the authenticated profile page, without /api/me');
 }
 
-const tr4kerHomeFixture = `
-  <div class="user-stat"><span>RATIO</span><div class="home_statValue">45.67</div></div>
-  <div class="user-stat"><span>UPLOAD</span><div class="home_statValue">12.34 TB</div></div>
-  <div class="user-stat"><span>DOWNLOAD</span><div class="home_statValue">56.78 GB</div></div>`;
-const tr4kerHeaderRatioFixture = `
-  <a href="/mon-compte/profil" aria-label="Mon compte">
-    <span class="_ratio_76vm1_157">RATIO: 2116.48</span>
-  </a>`;
-const tr4kerValue = field => new RegExp(field.regex, 's').exec(tr4kerHomeFixture)?.groups?.value?.trim();
-const tr4kerHeaderRatio = new RegExp(tr4ker.fetch?.fields?.ratio?.regex, 's')
-  .exec(tr4kerHeaderRatioFixture)?.groups?.value?.trim();
+const tr4kerProfileFixture = `
+  <div class="_metric_bt9qi_261"><span class="_metricLabel_bt9qi_329">Ratio</span><span class="_metricValue_bt9qi_263 _ratioGood_bt9qi_364">45.67</span></div>
+  <div class="_metric_bt9qi_261"><span class="_metricLabel_bt9qi_329">Seeds</span><span class="_metricValue_bt9qi_263">272</span></div>
+  <div class="_metric_bt9qi_261"><span class="_metricLabel_bt9qi_329">Upload</span><span class="_metricValueRow_bt9qi_338"><span class="_metricValue_bt9qi_263">12.34</span><span class="_metricUnit_bt9qi_354">TB</span></span></div>
+  <div class="_metric_bt9qi_261"><span class="_metricLabel_bt9qi_329">Download</span><span class="_metricValueRow_bt9qi_338"><span class="_metricValue_bt9qi_263">56.78</span><span class="_metricUnit_bt9qi_354">GB</span></span></div>
+  <h3>Derniers uploads</h3>`;
+const tr4kerShopFixture = `
+  <div class="_balanceInfo_jylo5_98"><span class="_balanceLabel_jylo5_104">Crédit</span><span class="_balanceValue_jylo5_112">248\u202f745</span></div>
+  <p>Comment fonctionnent les crédits ?</p>`;
+// Reproduit extractHtml : un groupe optionnel (?<unit>) est concaténé à (?<value>).
+const tr4kerValue = (field, html) => {
+  const groups = new RegExp(field?.regex ?? '(?!)', 's').exec(html)?.groups;
+  if (!groups?.value) return undefined;
+  return (groups.unit ? `${groups.value} ${groups.unit}` : groups.value).trim();
+};
+const tr4kerFields = tr4ker.fetch?.fields;
 if (
-  tr4kerValue(tr4ker.fetch?.fields?.uploadedBytes) !== '12.34 TB'
-  || tr4kerValue(tr4ker.fetch?.fields?.downloadedBytes) !== '56.78 GB'
-  || tr4kerValue(tr4ker.fetch?.fields?.ratio) !== '45.67'
-  || tr4kerHeaderRatio !== '2116.48'
+  tr4kerValue(tr4kerFields?.uploadedBytes, tr4kerProfileFixture) !== '12.34 TB'
+  || tr4kerValue(tr4kerFields?.downloadedBytes, tr4kerProfileFixture) !== '56.78 GB'
+  || tr4kerValue(tr4kerFields?.ratio, tr4kerProfileFixture) !== '45.67'
+  || tr4kerValue(tr4kerFields?.seeding, tr4kerProfileFixture) !== '272'
 ) {
-  errors.push('TR4KER home-page extractors must parse the rendered upload, download and ratio values');
+  errors.push('TR4KER profile-page extractors must parse the rendered upload, download, ratio and seeds values');
+}
+
+const tr4kerBonus = tr4ker.fetch?.extraFetch;
+if (
+  tr4kerBonus?.url !== 'shop'
+  || tr4kerBonus?.field !== 'seedBonus'
+  || tr4kerValue(tr4kerBonus, tr4kerShopFixture) !== '248\u202f745'
+) {
+  errors.push('TR4KER must read the bonus points (credit) from the shop page');
 }
 
 const coalescesConcurrentTrackerFetches = (
