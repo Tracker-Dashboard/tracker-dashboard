@@ -41,6 +41,10 @@
       "seeding": {
         "regex": ">[Ss][Ee][Ee][Dd][Ss]<[\\s\\S]{0,180}?_metricValue_[^>]*>\\s*(?<value>\\d+)\\s*<",
         "transform": "integer"
+      },
+      "memberClass": {
+        "regex": "_roleBadge_[^>]*>\\s*(?<value>[^<]+)<",
+        "transform": "string"
       }
     },
     "extraFetch": {
