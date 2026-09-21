@@ -162,7 +162,11 @@ function extractHtml(
   for (const [name, ext] of Object.entries(fields)) {
     if (!ext.regex) continue;
     const match = new RegExp(ext.regex, 's').exec(html);
-    const val   = match?.groups?.['value'] ?? match?.[1];
+    const rawValue = match?.groups?.['value'] ?? match?.[1];
+    // Groupe optionnel (?<unit>...) : pour les sites qui écrivent la valeur et son unité
+    // dans deux balises distinctes (ex. TR4KER : <span>1.64</span><span>TB</span>).
+    const rawUnit = match?.groups?.['unit'];
+    const val   = rawValue && rawUnit ? `${rawValue} ${rawUnit}` : rawValue;
     out[name]   = applyTransform(val, ext.transform);
     if (!byteUnit && ext.transform === 'bytes') byteUnit = detectByteUnitFromString(val);
   }

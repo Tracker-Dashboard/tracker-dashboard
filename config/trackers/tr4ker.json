@@ -22,22 +22,33 @@
     "cookieOnly": true
   },
   "fetch": {
-    "url": "/",
+    "url": "mon-compte/profil",
     "mode": "browser",
     "responseType": "html",
     "fields": {
       "ratio": {
-        "regex": "(?:>RATIO<[\\s\\S]{0,180}?_statValue[^>]*>\\s*|>RATIO:\\s*)(?<value>\\d[\\d\\s.,]*)\\s*<",
+        "regex": ">[Rr][Aa][Tt][Ii][Oo]<[\\s\\S]{0,180}?_metricValue_[^>]*>\\s*(?<value>\\d[\\d\\s.,]*)\\s*<",
         "transform": "number"
       },
       "uploadedBytes": {
-        "regex": ">UPLOAD<[\\s\\S]{0,180}?_statValue[^>]*>\\s*(?<value>\\d[\\d\\s.,]*\\s*(?:[KMGTPE](?:i?B|io|o)|B|o))\\s*<",
+        "regex": ">[Uu][Pp][Ll][Oo][Aa][Dd]<[\\s\\S]{0,180}?_metricValue_[^>]*>\\s*(?<value>\\d[\\d\\s.,]*)\\s*</span>\\s*<span[^>]*_metricUnit_[^>]*>\\s*(?<unit>[KMGTPE](?:i?B|io|o)|B|o)\\s*<",
         "transform": "bytes"
       },
       "downloadedBytes": {
-        "regex": ">DOWNLOAD<[\\s\\S]{0,180}?_statValue[^>]*>\\s*(?<value>\\d[\\d\\s.,]*\\s*(?:[KMGTPE](?:i?B|io|o)|B|o))\\s*<",
+        "regex": ">[Dd][Oo][Ww][Nn][Ll][Oo][Aa][Dd]<[\\s\\S]{0,180}?_metricValue_[^>]*>\\s*(?<value>\\d[\\d\\s.,]*)\\s*</span>\\s*<span[^>]*_metricUnit_[^>]*>\\s*(?<unit>[KMGTPE](?:i?B|io|o)|B|o)\\s*<",
         "transform": "bytes"
+      },
+      "seeding": {
+        "regex": ">[Ss][Ee][Ee][Dd][Ss]<[\\s\\S]{0,180}?_metricValue_[^>]*>\\s*(?<value>\\d+)\\s*<",
+        "transform": "integer"
       }
+    },
+    "extraFetch": {
+      "url": "shop",
+      "responseType": "html",
+      "field": "seedBonus",
+      "regex": ">Crédit<[\\s\\S]{0,180}?_balanceValue_[^>]*>\\s*(?<value>\\d[\\d\\s.,]*)\\s*<",
+      "transform": "string"
     }
   },
   "dashboard": {
