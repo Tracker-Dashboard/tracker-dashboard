@@ -28,7 +28,9 @@ RUN npm install -g "npm@${NPM_VERSION}" \
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \
     CLOAKBROWSER_CACHE_DIR=/app/.cloakbrowser \
     CLOAKBROWSER_AUTO_UPDATE=false
-COPY package*.json ./
+# Manifest verrouillé du runtime navigateur : CloakBrowser ne doit pas entrer
+# dans l'image principale tracker-dashboard.
+COPY browser-runtime/package*.json ./
 RUN npm ci --omit=dev
 RUN npx playwright install --with-deps chromium \
   && chmod -R a+rX /ms-playwright \
