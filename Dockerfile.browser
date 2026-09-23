@@ -25,15 +25,9 @@ WORKDIR /app
 ARG NPM_VERSION=11.17.0
 RUN npm install -g "npm@${NPM_VERSION}" \
   && node -e "const v=require('/usr/local/lib/node_modules/npm/node_modules/tar/package.json').version; const [a,b,c]=v.split('.').map(Number); if (a < 7 || (a === 7 && (b < 5 || (b === 5 && c < 16)))) throw new Error('npm embeds vulnerable tar '+v); console.log('npm tar', v);"
-ARG APP_IMAGE_SOURCE=local
-ARG APP_IMAGE_VERSION=dev
-ARG APP_IMAGE_REVISION=unknown
-ARG APP_IMAGE_REF=local
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \
-    APP_IMAGE_SOURCE=$APP_IMAGE_SOURCE \
-    APP_IMAGE_VERSION=$APP_IMAGE_VERSION \
-    APP_IMAGE_REVISION=$APP_IMAGE_REVISION \
-    APP_IMAGE_REF=$APP_IMAGE_REF
+    CLOAKBROWSER_CACHE_DIR=/app/.cloakbrowser \
+    CLOAKBROWSER_AUTO_UPDATE=false
 COPY package*.json ./
 RUN npm ci --omit=dev
 RUN npx playwright install --with-deps chromium \
@@ -41,10 +35,7 @@ RUN npx playwright install --with-deps chromium \
   && node -e "const fs=require('fs'); const { chromium } = require('playwright'); const p=chromium.executablePath(); if (!fs.existsSync(p)) throw new Error('Chromium Playwright introuvable: '+p); console.log('chromium playwright', p);"
 
 # ── CloakBrowser (moteur navigateur furtif, opt-in) ─────────────────────────
-ENV CLOAKBROWSER_CACHE_DIR=/app/.cloakbrowser \
-    CLOAKBROWSER_AUTO_UPDATE=false
-RUN npm install --omit=dev --no-save cloakbrowser playwright-core \
-  && node -e "import('cloakbrowser').then(m => m.ensureBinary && m.ensureBinary()).catch(e => { console.error('CloakBrowser binary skip:', e.message); })" \
+RUN node -e "import('cloakbrowser').then(m => m.ensureBinary && m.ensureBinary()).catch(e => { console.error('CloakBrowser binary skip:', e.message); })" \
   || echo "::warning:: CloakBrowser indisponible a la construction — Chromium par defaut."
 
 # npm/npx ne sont necessaires qu'a la construction.
@@ -52,6 +43,17 @@ RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
   && node -e "const fs=require('fs'); for (const p of ['/usr/local/lib/node_modules/npm','/usr/local/bin/npm','/usr/local/bin/npx']) if (fs.existsSync(p)) throw new Error('Artefact npm encore present: '+p); console.log('npm retire de l image runtime');"
 
 COPY --from=builder /app/dist ./dist
+
+# Ces metadonnees changent a chaque publication : les declarer apres les couches
+# lourdes preserve le cache Playwright/Chromium/CloakBrowser entre deux SHA.
+ARG APP_IMAGE_SOURCE=local
+ARG APP_IMAGE_VERSION=dev
+ARG APP_IMAGE_REVISION=unknown
+ARG APP_IMAGE_REF=local
+ENV APP_IMAGE_SOURCE=$APP_IMAGE_SOURCE \
+    APP_IMAGE_VERSION=$APP_IMAGE_VERSION \
+    APP_IMAGE_REVISION=$APP_IMAGE_REVISION \
+    APP_IMAGE_REF=$APP_IMAGE_REF
 
 EXPOSE 3001
 CMD ["node", "--experimental-sqlite", "dist/browserRuntime.js"]

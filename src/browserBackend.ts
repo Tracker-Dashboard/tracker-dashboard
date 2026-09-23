@@ -17,6 +17,7 @@ import { resolveProxyForTracker, toSshConfig } from './proxy.js';
 import { getSshLocalEndpoint } from './sshTunnel.js';
 import { getTrackerCookie, getTrackerTotpSecret, getJsonSetting } from './db.js';
 import { type TrackerConfig } from './types.js';
+import { BROWSER_RUNTIME_API_VERSION } from './browserRuntimeApi.js';
 
 export interface BrowserFetchResult {
   html: string;
@@ -35,6 +36,9 @@ export interface BrowserRuntimeStatus {
   playwright?: string;
   chromiumVersion?: string;
   chromiumExecutable?: string;
+  apiVersion?: number;
+  expectedApiVersion: number;
+  compatible?: boolean;
   revision?: string;
   expectedRevision?: string;
   upToDate?: boolean;
@@ -204,9 +208,11 @@ export async function getBrowserRuntimeStatus(): Promise<BrowserRuntimeStatus> {
     }).finally(() => clearTimeout(timer));
     const data = await response.json().catch(() => ({} as Record<string, unknown>));
     if (!response.ok) {
-      return { mode: 'remote', configured: Boolean(process.env.BROWSER_RUNTIME_URL), available: false, url: RUNTIME_URL, expectedRevision: EXPECTED_REVISION || undefined, error: `HTTP ${response.status}` };
+      return { mode: 'remote', configured: Boolean(process.env.BROWSER_RUNTIME_URL), available: false, url: RUNTIME_URL, expectedApiVersion: BROWSER_RUNTIME_API_VERSION, expectedRevision: EXPECTED_REVISION || undefined, error: `HTTP ${response.status}` };
     }
     const revision = typeof data.revision === 'string' ? data.revision : undefined;
+    const apiVersion = typeof data.apiVersion === 'number' ? data.apiVersion : undefined;
+    const compatible = apiVersion === BROWSER_RUNTIME_API_VERSION;
     return {
       mode: 'remote',
       configured: Boolean(process.env.BROWSER_RUNTIME_URL),
@@ -216,14 +222,18 @@ export async function getBrowserRuntimeStatus(): Promise<BrowserRuntimeStatus> {
       playwright: typeof data.playwright === 'string' ? data.playwright : undefined,
       chromiumVersion: typeof data.chromiumVersion === 'string' ? data.chromiumVersion : undefined,
       chromiumExecutable: typeof data.chromiumExecutable === 'string' ? data.chromiumExecutable : undefined,
+      apiVersion,
+      expectedApiVersion: BROWSER_RUNTIME_API_VERSION,
+      compatible,
       revision,
       expectedRevision: EXPECTED_REVISION || undefined,
-      upToDate: EXPECTED_REVISION && revision ? revision === EXPECTED_REVISION : undefined,
+      // Compatibilite de protocole uniquement : la revision reste informative.
+      upToDate: compatible,
       cloakbrowser: (data.cloakbrowser && typeof data.cloakbrowser === 'object')
         ? data.cloakbrowser as { available: boolean; version?: string }
         : undefined,
     };
   } catch (err) {
-    return { mode: 'remote', configured: Boolean(process.env.BROWSER_RUNTIME_URL), available: false, url: RUNTIME_URL, expectedRevision: EXPECTED_REVISION || undefined, error: err instanceof Error ? err.message : String(err) };
+    return { mode: 'remote', configured: Boolean(process.env.BROWSER_RUNTIME_URL), available: false, url: RUNTIME_URL, expectedApiVersion: BROWSER_RUNTIME_API_VERSION, expectedRevision: EXPECTED_REVISION || undefined, error: err instanceof Error ? err.message : String(err) };
   }
 }

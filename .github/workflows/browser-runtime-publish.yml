@@ -1,4 +1,4 @@
-name: Build & Publish Docker Image
+name: Build & Publish Browser Runtime
 
 on:
   workflow_dispatch:
@@ -7,6 +7,22 @@ on:
       - main
     tags:
       - 'v*'
+    paths:
+      - 'Dockerfile.browser'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tsconfig.json'
+      - 'src/browserRuntime.ts'
+      - 'src/browserRuntimeApi.ts'
+      - 'src/browserFetcher.ts'
+      - 'src/cookies.ts'
+      - 'src/db.ts'
+      - 'src/proxy.ts'
+      - 'src/sshTunnel.ts'
+      - 'src/totp.ts'
+      - 'src/trackerTemplates.ts'
+      - 'src/types.ts'
+      - 'src/userAgent.ts'
   pull_request:
     branches:
       - main
@@ -15,10 +31,26 @@ on:
       - reopened
       - synchronize
       - closed
+    paths:
+      - 'Dockerfile.browser'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tsconfig.json'
+      - 'src/browserRuntime.ts'
+      - 'src/browserRuntimeApi.ts'
+      - 'src/browserFetcher.ts'
+      - 'src/cookies.ts'
+      - 'src/db.ts'
+      - 'src/proxy.ts'
+      - 'src/sshTunnel.ts'
+      - 'src/totp.ts'
+      - 'src/trackerTemplates.ts'
+      - 'src/types.ts'
+      - 'src/userAgent.ts'
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: tracker-dashboard/tracker-dashboard
+  IMAGE_NAME: tracker-dashboard/tracker-dashboard-browser
 
 jobs:
   build-and-push:
@@ -47,14 +79,9 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            # latest sur push main, relance manuelle ou PR fusionnee. Le dernier cas
-            # couvre les fusions automatiques au GITHUB_TOKEN qui ne recreent pas
-            # toujours un evenement push exploitable par Actions.
             type=raw,value=latest,enable=${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true) }}
-            # tag semver si push d'un tag v*
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            # sha court pour traçabilité
             type=sha,prefix=sha-
 
       - name: Set up QEMU
@@ -67,6 +94,7 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
+          file: ./Dockerfile.browser
           platforms: linux/amd64,linux/arm64
           push: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true) }}
           tags: ${{ steps.meta.outputs.tags }}
@@ -76,5 +104,5 @@ jobs:
             APP_IMAGE_VERSION=${{ steps.meta.outputs.version }}
             APP_IMAGE_REVISION=${{ github.sha }}
             APP_IMAGE_REF=${{ github.ref_name }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=browser
+          cache-to: type=gha,mode=max,scope=browser

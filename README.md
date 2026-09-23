@@ -212,7 +212,7 @@ docker run -d \
 
 Avec `--network container:tracker-dashboard`, Tracker Dashboard joint automatiquement le runtime sur `http://127.0.0.1:3001`. Avec `--volumes-from tracker-dashboard`, les profils navigateur et cookies restent sur le même volume `./config`. Le service navigateur ne touche pas la base : l'app principale reste la source de vérité et lui transmet ce qu'il faut par appel interne.
 
-Si le runtime navigateur est absent, les trackers en `mode: browser` affichent une erreur claire et la WebUI donne la commande d'installation. L'état et les versions (Playwright/Chromium/CloakBrowser) sont visibles dans **Proxies → Moteur navigateur → Runtime navigateur**. La WebUI signale aussi si le runtime navigateur ne correspond pas à la révision de l'application.
+Si le runtime navigateur est absent, les trackers en `mode: browser` affichent une erreur claire et la WebUI donne la commande d'installation. L'état et les versions (Playwright/Chromium/CloakBrowser) sont visibles dans **Proxies → Moteur navigateur → Runtime navigateur**. La WebUI signale aussi si le protocole du runtime navigateur n'est pas compatible avec l'application ; les révisions restent affichées comme information de traçabilité.
 
 ### Moteur navigateur (CloakBrowser)
 

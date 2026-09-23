@@ -7296,15 +7296,16 @@
       const s = d.status || {};
       updateBrowserRuntimeAvailability(Boolean(s.available));
       if (s.available) {
-        const stale = s.upToDate === false;
+        const stale = s.compatible === false;
         badge.textContent = stale ? 'Runtime navigateur — mise à jour requise' : 'Runtime navigateur — disponible';
         badge.className = stale ? 'definition-badge definition-badge-muted' : 'definition-badge';
         if (stale) badge.style.color = 'var(--yellow)';
         const cloak = s.cloakbrowser?.available ? `oui${s.cloakbrowser.version ? ' (' + escapeHtml(s.cloakbrowser.version) + ')' : ''}` : 'non';
+        const revision = s.revision ? ` · Révision <b>${escapeHtml(s.revision)}</b>` : '';
         const updateHint = stale
-          ? `<br><span style="color:var(--yellow)">Le runtime navigateur ne correspond pas à la révision de l'application. Mettez à jour <code>tracker-dashboard-browser</code>.</span>`
+          ? `<br><span style="color:var(--yellow)">Le protocole du runtime navigateur n'est pas compatible avec l'application (runtime ${escapeHtml(String(s.apiVersion ?? '?'))}, attendu ${escapeHtml(String(s.expectedApiVersion ?? '?'))}). Mettez à jour <code>tracker-dashboard-browser</code>.</span>`
           : '';
-        detail.innerHTML = `Playwright <b>${escapeHtml(s.playwright || '?')}</b> · Chromium <b>${escapeHtml(s.chromiumVersion || '?')}</b> · CloakBrowser ${cloak}<br><span style="color:var(--muted)">${escapeHtml(s.url || '')}</span>${updateHint}`;
+        detail.innerHTML = `Playwright <b>${escapeHtml(s.playwright || '?')}</b> · Chromium <b>${escapeHtml(s.chromiumVersion || '?')}</b> · CloakBrowser ${cloak}${revision}<br><span style="color:var(--muted)">${escapeHtml(s.url || '')}</span>${updateHint}`;
       } else {
         badge.textContent = 'Runtime navigateur — absent';
         badge.className = 'definition-badge definition-badge-muted';

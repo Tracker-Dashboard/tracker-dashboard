@@ -11,7 +11,10 @@
 // fonction DB n'est jamais appelee ici — tout passe par les overrides du payload.)
 
 import express from 'express';
+import { readFileSync } from 'fs';
 import { createRequire } from 'module';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 import { execFile } from 'child_process';
 import { chromium } from 'playwright';
 import {
@@ -22,6 +25,7 @@ import {
   closeBrowserSessions,
   type BrowserFetchOverrides,
 } from './browserFetcher.js';
+import { BROWSER_RUNTIME_API_VERSION } from './browserRuntimeApi.js';
 
 const require = createRequire(import.meta.url);
 const PORT = Number(process.env.BROWSER_RUNTIME_PORT || 3001);
@@ -51,7 +55,12 @@ async function cloakbrowserInfo(): Promise<{ available: boolean; version?: strin
     const spec = 'cloakbrowser'; // specifier non litteral -> non resolu a la compilation
     await import(spec);
     let version: string | undefined;
-    try { version = require('cloakbrowser/package.json').version; } catch { /* version best-effort */ }
+    try {
+      // cloakbrowser n'exporte pas son package.json : le lire depuis le module
+      // resolu conserve la version visible dans le statut WebUI.
+      const packageJson = join(dirname(fileURLToPath(import.meta.resolve('cloakbrowser'))), '..', 'package.json');
+      version = JSON.parse(readFileSync(packageJson, 'utf8')).version;
+    } catch { /* version best-effort */ }
     return { available: true, version };
   } catch {
     return { available: false };
@@ -79,6 +88,7 @@ app.get('/version', async (_req, res) => {
   res.json({
     ok: true,
     runtime: 'tracker-dashboard-browser',
+    apiVersion: BROWSER_RUNTIME_API_VERSION,
     revision: process.env.APP_IMAGE_REVISION || 'unknown',
     version: process.env.APP_IMAGE_VERSION || 'dev',
     ref: process.env.APP_IMAGE_REF || 'local',
