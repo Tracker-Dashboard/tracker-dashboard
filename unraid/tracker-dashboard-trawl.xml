@@ -16,6 +16,6 @@
   <ExtraParams>--restart=unless-stopped</ExtraParams>
   <PostArgs/>
   <Config Name="Port interne" Target="PORT" Default="8192" Mode="" Description="Conserver 8192 : FlareSolverr utilise deja 8191 dans le reseau partage de Tracker Dashboard." Type="Variable" Display="always-hide" Required="true" Mask="false">8192</Config>
-  <Config Name="Niveau de journalisation" Target="LOG_LEVEL" Default="warning" Mode="" Description="Niveau de logs TRAWL." Type="Variable" Display="advanced" Required="true" Mask="false">warning</Config>
+  <Config Name="Niveau de journalisation" Target="LOG_LEVEL" Default="warn" Mode="" Description="Niveau de logs TRAWL." Type="Variable" Display="advanced" Required="true" Mask="false">warn</Config>
   <Config Name="Fuseau horaire" Target="TZ" Default="Europe/Paris" Mode="" Description="Fuseau IANA utilise par TRAWL." Type="Variable" Display="always" Required="true" Mask="false">Europe/Paris</Config>
 </Container>

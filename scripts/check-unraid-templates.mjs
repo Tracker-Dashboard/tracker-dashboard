@@ -46,6 +46,8 @@ assert.equal(flare('Config[Type="Variable"][Target="HOST"]').text(), '127.0.0.1'
 const trawl = parsed.get('tracker-dashboard-trawl');
 assert.equal(trawl('Container > Repository').text(), 'ghcr.io/germondai/trawl:baseline');
 assert.equal(trawl('Config[Type="Variable"][Target="PORT"]').text(), '8192');
+assert.equal(trawl('Config[Type="Variable"][Target="LOG_LEVEL"]').text(), 'warn');
+assert.equal(trawl('Config[Type="Variable"][Target="LOG_LEVEL"]').attr('Default'), 'warn');
 
 const guide = fs.readFileSync(path.join(unraidDir, 'README.md'), 'utf8');
 const installer = fs.readFileSync(path.join(unraidDir, 'install-templates.sh'), 'utf8');

@@ -487,13 +487,16 @@ if (!yggUsesFlareSolverrFallback) {
   errors.push('YGGReborn must use the FlareSolverr anti-bot fallback');
 }
 
+const trawlComposeBlock = compose.match(
+  /^  tracker-dashboard-trawl:\n(?:^(?:    |\s*$).*(?:\n|$))*/m,
+)?.[0] ?? '';
+
 const shipsFlareSolverrSidecar = (
   compose.includes('tracker-dashboard-flaresolverr:')
   && compose.includes('ghcr.io/flaresolverr/flaresolverr:latest')
-  && compose.includes('tracker-dashboard-trawl:')
-  && compose.includes('ghcr.io/germondai/trawl:baseline')
-  && compose.includes('PORT: 8192')
-  && compose.includes('LOG_LEVEL: warning')
+  && trawlComposeBlock.includes('ghcr.io/germondai/trawl:baseline')
+  && trawlComposeBlock.includes('PORT: 8192')
+  && trawlComposeBlock.includes('LOG_LEVEL: warn')
   && compose.includes('network_mode: "service:tracker-dashboard"')
   && compose.includes('HOST: 127.0.0.1')
   && html.includes('/api/flaresolverr/status')
@@ -502,6 +505,7 @@ const shipsFlareSolverrSidecar = (
   && server.includes("app.get('/api/trawl/status'")
   && readme.includes('### Repli Cloudflare (FlareSolverr puis TRAWL)')
   && readme.includes('ghcr.io/germondai/trawl:baseline')
+  && /ghcr\.io\/germondai\/trawl:baseline[\s\S]*?LOG_LEVEL:\s*warn/.test(readme)
 );
 if (!shipsFlareSolverrSidecar) {
   errors.push('FlareSolverr and TRAWL anti-bot sidecar wiring must remain available in Compose, WebUI and README');

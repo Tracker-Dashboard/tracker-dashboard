@@ -46,5 +46,5 @@ services:
     network_mode: "service:tracker-dashboard"
     environment:
       PORT: 8192
-      LOG_LEVEL: warning
+      LOG_LEVEL: warn
       TZ: Europe/Paris

@@ -249,7 +249,7 @@ services:
     network_mode: "container:tracker-dashboard"
     environment:
       PORT: 8192
-      LOG_LEVEL: warning
+      LOG_LEVEL: warn
       TZ: Europe/Paris
 ```
 
