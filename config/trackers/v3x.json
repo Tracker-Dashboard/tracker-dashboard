@@ -51,7 +51,7 @@
         "transform": "number"
       },
       "seeding": {
-        "regex": "[Ss]eeds?\\s+en\\s+cours(?:[^<]|<!--[\\s\\S]*?-->){0,80}?<span[^>]*\\brounded-full\\b[^>]*>\\s*(?<value>\\d+)\\s*</span>",
+        "regex": "[Ss]eeds?\\s+en\\s+cours(?:[^<]|<!--[\\s\\S]*?-->){0,80}?<span[^>]*>\\s*(?<value>\\d+)\\s*</span>",
         "transform": "integer"
       }
     }

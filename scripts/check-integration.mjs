@@ -226,7 +226,7 @@ const v3xActivityFixture = `
   ${v3xStatCard('Temps de seed', '25j 21h')}
   ${v3xStatCard('Points', '52')}
   ${v3xStatCard('Points / h', '+4')}
-  <button class="px-4 py-2 text-sm"><span><svg width="14"><path d="M2 20"></path></svg></span>Seeds en cours<span class="px-1.5 py-0.5 text-[10px]">5</span></button>`;
+  <button class="px-4 py-2 text-sm"><span><svg width="14"><path d="M2 20"></path></svg></span>Seeds en cours<!-- --> · <!-- -->293 Gio<span class="rounded-full px-1.5 py-0.5 text-[10px]">5</span></button>`;
 const v3xUppercaseActivityFixture = `
   ${v3xStatCard('UPLOAD', '84.8 Gio')}
   ${v3xStatCard('DOWNLOAD', '1.00 Gio')}
@@ -244,7 +244,7 @@ const supportsV3xActivityStats = (
   && extractorValue(v3x, 'bufferBytes', v3xActivityFixture) === '+78.9 Gio'
   && extractorValue(v3x, 'ratio', v3xActivityFixture) === '79.89'
   && extractorValue(v3x, 'seedTime', v3xActivityFixture) === '25j 21h'
-  && extractorValue(v3x, 'points', v3xActivityFixture) === '52'
+  && extractorValue(v3x, 'seedBonus', v3xActivityFixture) === '52'
   && extractorValue(v3x, 'pointsPerHour', v3xActivityFixture) === '+4'
   && extractorValue(v3x, 'seeding', v3xActivityFixture) === '5'
   && extractorValue(v3x, 'uploadedBytes', v3xUppercaseActivityFixture) === '84.8 Gio'
@@ -252,7 +252,7 @@ const supportsV3xActivityStats = (
   && extractorValue(v3x, 'bufferBytes', v3xUppercaseActivityFixture) === '+83.8 Gio'
   && extractorValue(v3x, 'ratio', v3xUppercaseActivityFixture) === '84.76'
   && extractorValue(v3x, 'seedTime', v3xUppercaseActivityFixture) === '48j 3h'
-  && extractorValue(v3x, 'points', v3xUppercaseActivityFixture) === '74'
+  && extractorValue(v3x, 'seedBonus', v3xUppercaseActivityFixture) === '74'
   && extractorValue(v3x, 'pointsPerHour', v3xUppercaseActivityFixture) === '+5'
 );
 if (!supportsV3xActivityStats) {
