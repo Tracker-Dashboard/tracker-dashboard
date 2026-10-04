@@ -173,6 +173,27 @@ async function getContext(tracker: TrackerConfig, overrides?: BrowserFetchOverri
   return context;
 }
 
+/**
+ * V3X : les libelles de « Mon activite » s'affichent avant les valeurs chargees par
+ * l'API (points, nombre de seeds). On attend ces valeurs, sans bloquer la lecture
+ * si elles n'arrivent pas (ex. aucun seed en cours : pas de badge).
+ */
+async function waitForV3xActivityValues(page: Page): Promise<void> {
+  await page.waitForFunction(
+    () => {
+      const label = Array.from(document.querySelectorAll('span'))
+        .find(span => /^\s*points\s*$/i.test(span.textContent ?? ''));
+      const pointsReady = /\d/.test(label?.nextElementSibling?.textContent ?? '');
+      const seedsButton = Array.from(document.querySelectorAll('button'))
+        .find(button => /Seeds\s+en\s+cours/i.test(button.textContent ?? ''));
+      const seedsReady = /\d/.test(seedsButton?.querySelector('span.rounded-full')?.textContent ?? '');
+      return pointsReady && seedsReady;
+    },
+    null,
+    { timeout: 15_000 },
+  ).catch(() => {});
+}
+
 async function waitForAnubis(page: Page): Promise<void> {
   let lastHtml = '';
   for (let i = 0; i < 45; i += 1) {
@@ -840,6 +861,9 @@ export async function fetchWithBrowser(
       await revealMilkieStats(page);
     }
     const authConfirmed = await waitForTrackerContent(tracker, page);
+    if (tracker.id === 'v3x' && authConfirmed) {
+      await waitForV3xActivityValues(page);
+    }
     const html = await safeContent(page);
     const primaryUrl = page.url();
 
