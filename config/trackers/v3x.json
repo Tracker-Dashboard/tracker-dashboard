@@ -15,7 +15,7 @@
       "Nom d'utilisateur ou email",
       "Mot de passe oublié"
     ],
-    "cookieInstructions": "V3X nécessite un cookie de session valide. Connecte-toi sur v3x.club avec la même IP de sortie que ce tracker, puis copie le cookie sous la forme v3x_sid=VALEUR. Ne partage jamais cette valeur : elle donne accès à ta session. Renouvelle-la si le message « session navigateur non authentifiée » apparaît."
+    "cookieInstructions": "V3X nécessite un cookie de session valide. Connecte-toi sur v3x.club avec la même IP de sortie que ce tracker. Le cookie est posé sur api.v3x.club, pas sur v3x.club : ouvre https://api.v3x.club, puis copie le cookie v3x_sid (Firefox : Outils de développement → Stockage → Cookies → https://api.v3x.club ; Chrome : Application → Cookies) sous la forme v3x_sid=VALEUR. Ne partage jamais cette valeur : elle donne accès à ta session. Renouvelle-la si le message « session navigateur non authentifiée » apparaît."
   },
   "fetch": {
     "url": "/activity",
@@ -42,7 +42,7 @@
         "regex": "[Tt][Ee][Mm][Pp][Ss]\\s+[Dd][Ee]\\s+[Ss][Ee][Ee][Dd][\\s\\S]{0,80}?</span>\\s*<span[^>]*\\bfont-mono\\b[^>]*>\\s*(?<value>\\d+\\s*j(?:\\s*\\d+\\s*h)?(?:\\s*\\d+\\s*m)?)",
         "transform": "string"
       },
-      "points": {
+      "seedBonus": {
         "regex": "[Pp][Oo][Ii][Nn][Tt][Ss](?!\\s*/\\s*[Hh])[\\s\\S]{0,80}?</span>\\s*<span[^>]*\\bfont-mono\\b[^>]*>\\s*(?<value>[\\d\\s.,]+)",
         "transform": "string"
       },
@@ -51,7 +51,7 @@
         "transform": "number"
       },
       "seeding": {
-        "regex": "[Ss]eeds?\\s+en\\s+cours\\s*<span[^>]*>\\s*(?<value>\\d+)\\s*</span>",
+        "regex": "[Ss]eeds?\\s+en\\s+cours(?:[^<]|<!--[\\s\\S]*?-->){0,80}?<span[^>]*>\\s*(?<value>\\d+)\\s*</span>",
         "transform": "integer"
       }
     }
