@@ -1,0 +1,52 @@
+{
+  "id": "scenetime",
+  "name": "SceneTime",
+  "baseUrl": "https://www.scenetime.com",
+  "enabled": false,
+  "login": {
+    "url": "login.php",
+    "postUrl": "takelogin1.php",
+    "method": "POST",
+    "contentType": "form",
+    "body": {
+      "username": "{{username}}",
+      "password": "{{password}}",
+      "remember": "1"
+    },
+    "failurePatterns": [
+      "takelogin1.php",
+      "name=\"password\"",
+      "Members Sign In"
+    ],
+    "cookieOnly": true
+  },
+  "fetch": {
+    "url": "/",
+    "responseType": "html",
+    "fields": {
+      "uploadedBytes": {
+        "regex": "title=\"Total uploaded\">[\\s\\S]{0,120}?<span>\\s*(?<value>[\\d.,]+\\s*[KMGTPE]i?B)\\s*</span>",
+        "transform": "bytes"
+      },
+      "downloadedBytes": {
+        "regex": "title=\"Total downloaded\">[\\s\\S]{0,120}?<span>\\s*(?<value>[\\d.,]+\\s*[KMGTPE]i?B)\\s*</span>",
+        "transform": "bytes"
+      },
+      "ratio": {
+        "regex": "st-stat--ratio[^>]*>\\s*<i[^>]*></i>\\s*(?<value>[\\d.,]+|Inf\\.?|∞)",
+        "transform": "number"
+      },
+      "seeding": {
+        "regex": "st-stat--seed[^>]*>[\\s\\S]{0,120}?<span class=\"green\">\\s*(?<value>\\d+)\\s*</span>",
+        "transform": "integer"
+      },
+      "seedBonus": {
+        "regex": "st-stat--bp\"[^>]*data-bp=\"(?<value>\\d+)\"",
+        "transform": "string"
+      }
+    }
+  },
+  "dashboard": {
+    "byteUnit": "decimal"
+  }
+}
