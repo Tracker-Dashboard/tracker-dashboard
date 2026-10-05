@@ -17,12 +17,12 @@
     "playwright": "^1.63.0",
     "socks-proxy-agent": "^10.1.0",
     "ssh2": "^1.17.0",
-    "top-user-agents": "^2.1.137",
+    "top-user-agents": "^2.1.138",
     "tough-cookie": "^6.0.2"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
-    "@types/node": "^25.9.8",
+    "@types/node": "^25.9.9",
     "@types/ssh2": "^1.15.6",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3"
