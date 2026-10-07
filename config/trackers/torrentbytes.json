@@ -1,0 +1,54 @@
+{
+  "id": "torrentbytes",
+  "name": "TorrentBytes",
+  "baseUrl": "https://www.torrentbytes.net",
+  "enabled": false,
+  "login": {
+    "url": "login.php",
+    "postUrl": "takelogin.php",
+    "method": "POST",
+    "contentType": "form",
+    "body": {
+      "username": "{{username}}",
+      "password": "{{password}}",
+      "returnto": "/",
+      "login": "Log in!"
+    },
+    "failurePatterns": [
+      "takelogin.php",
+      "name=\"password\"",
+      "Not logged in!"
+    ]
+  },
+  "fetch": {
+    "url": "/",
+    "responseType": "html",
+    "fields": {
+      "downloadedBytes": {
+        "regex": ">DL:\\s*</span>\\s*(?<value>[\\d.,]+\\s*[KMGTPE]i?B)",
+        "transform": "bytes"
+      },
+      "uploadedBytes": {
+        "regex": ">UL:\\s*</font>\\s*(?<value>[\\d.,]+\\s*[KMGTPE]i?B)",
+        "transform": "bytes"
+      },
+      "ratio": {
+        "regex": ">Ratio:\\s*</font>\\s*(?<value>[\\d.,]+|Inf\\.?|---)",
+        "transform": "number"
+      }
+    },
+    "extraFetch": {
+      "url": "userdetails.php?id={{id}}",
+      "responseType": "html",
+      "idExtract": {
+        "regex": "<b>Welcome,</b>\\s*<a href=\"userdetails\\.php\\?id=(?<value>\\d+)\""
+      },
+      "field": "memberClass",
+      "regex": "class=\"?rowhead\"?>Class</td>\\s*<td[^>]*>\\s*(?<value>[^<]+?)\\s*</td>",
+      "transform": "string"
+    }
+  },
+  "dashboard": {
+    "byteUnit": "binary"
+  }
+}
