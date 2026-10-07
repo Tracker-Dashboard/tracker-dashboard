@@ -44,6 +44,16 @@
         "regex": "st-stat--bp\"[^>]*data-bp=\"(?<value>\\d+)\"",
         "transform": "string"
       }
+    },
+    "extraFetch": {
+      "url": "userdetails.php?id={{id}}",
+      "responseType": "html",
+      "idExtract": {
+        "regex": "userdetails\\.php\\?id=(?<value>\\d+)\"[^>]*>(?:\\s*<i[^>]*></i>)?\\s*My Profile"
+      },
+      "field": "memberClass",
+      "regex": "st-pp-id__class\">\\s*(?<value>[^<]+?)\\s*<",
+      "transform": "string"
     }
   },
   "dashboard": {
