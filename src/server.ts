@@ -62,6 +62,14 @@ import {
   getTrackerCookie,
   setTrackerCookie,
   hasTrackerTotpSecret,
+  hasTrackerApiKey,
+  setTrackerApiKey,
+  hasTrackerApiUser,
+  setTrackerApiUser,
+  getTrackerStatSource,
+  setTrackerStatSource,
+  isApiPreferred,
+  setApiPreferred,
   getTrackerTotpSecret,
   setTrackerTotpSecret,
 } from './db.js';
@@ -358,6 +366,12 @@ function normalizeTrackerConfigs(): TrackerConfig[] {
         tracker.dashboard = definition.dashboard;
         changed = true;
       }
+      // api : bloc technique (endpoint + chemins JSON), fait autorite cote image.
+      if (JSON.stringify(tracker.api) !== JSON.stringify(definition.api)) {
+        if (definition.api) tracker.api = definition.api;
+        else delete tracker.api;
+        changed = true;
+      }
       if (Boolean(tracker.ratioless) !== Boolean(definition.ratioless)) {
         tracker.ratioless = definition.ratioless;
         changed = true;
@@ -637,7 +651,7 @@ function processIncidentStreak(stat: TrackerStats): void {
     incidentOkStreaks.delete(stat.id);
     return;
   }
-  if (stat.status === 'ok') {
+  if (stat.status === 'ok' && !stat.loginError) {
     const streak = (incidentOkStreaks.get(stat.id) ?? 0) + 1;
     if (streak >= INCIDENT_AUTO_CLEAR_AFTER) {
       clearIncident(stat.id);
@@ -657,7 +671,7 @@ function processIncidentStreak(stat: TrackerStats): void {
  * Sur une stat OK, on n'attache rien (la carte verte n'affiche pas de badge incident).
  */
 function attachIncident(stat: TrackerStats): TrackerStats {
-  if (stat.status === 'ok' && !stat.stale) return stat;
+  if (stat.status === 'ok' && !stat.stale && !stat.loginError) return stat;
   const incident = getIncident(stat.id);
   if (!incident) return stat;
   return { ...stat, incident: { acknowledged: incident.acknowledged, note: incident.note } };
@@ -781,9 +795,25 @@ function isUnconfiguredStat(stat: TrackerStats): boolean {
     && stat.error.startsWith('Credentials manquants');
 }
 
+// Tracker a signaler en echec : erreur franche, OU login/scrap en echec alors que
+// l'API a fourni les stats (status 'ok' + loginError). Le login garantit l'activite
+// sur le site : son echec doit toujours remonter (notif, incident, relance).
+function isFailedStat(stat: TrackerStats): boolean {
+  return stat.status === 'error' || Boolean(stat.loginError);
+}
+
+function failureMessage(stat: TrackerStats): string {
+  if (stat.loginError) return `LOGIN EN ECHEC (stats lues via l'API) : ${stat.loginError}`;
+  return stat.error || 'erreur inconnue';
+}
+
 function logStatResult(stat: TrackerStats): void {
   if (stat.stale) {
     console.log(`  [${stat.name}] Stats anciennes conservees - ${stat.stale.error}`);
+    return;
+  }
+  if (stat.loginError) {
+    console.log(`  [${stat.name}] ${failureMessage(stat)}`);
     return;
   }
   if (stat.status === 'ok') {
@@ -1040,13 +1070,13 @@ async function refresh(trackers: TrackerConfig[]): Promise<TrackerStats[]> {
     ];
     lastRefresh = new Date().toISOString();
     saveStatSnapshots(results.filter(stat => !stat.stale && !isUnconfiguredStat(stat)));
-    const ok           = results.filter(s => s.status === 'ok').length;
+    const ok           = results.filter(s => !isFailedStat(s)).length;
     const unconfigured = results.filter(isUnconfiguredStat).length;
-    const err          = results.filter(s => s.status === 'error').length - unconfigured;
+    const err          = results.filter(isFailedStat).length - unconfigured;
     const unconfiguredSuffix = unconfigured ? `  ⚙️  ${unconfigured} non configure(s)` : '';
     console.log(`  ✅ ${ok} ok  ❌ ${err} erreur(s)${unconfiguredSuffix}`);
-    results.filter(s => s.status === 'error' && !isUnconfiguredStat(s))
-      .forEach(s => console.log(`  ⚠️  ${s.name}: ${s.error}`));
+    results.filter(s => isFailedStat(s) && !isUnconfiguredStat(s))
+      .forEach(s => console.log(`  ⚠️  ${s.name}: ${failureMessage(s)}`));
     return results;
   } finally {
     isRefreshing = false;
@@ -1280,8 +1310,8 @@ function buildNotifications(
   const wantStats = manual ? cfg.notifyManualStats : cfg.notifyStats;
   const wantMp = manual ? cfg.notifyManualMp : cfg.notifyMp;
 
-  const errors = wantError ? relevant.filter(r => r.status === 'error') : [];
-  const ok = wantSuccess ? relevant.filter(r => r.status === 'ok') : [];
+  const errors = wantError ? relevant.filter(isFailedStat) : [];
+  const ok = wantSuccess ? relevant.filter(r => !isFailedStat(r)) : [];
   const recovered = ok.filter(r => previousFailures.has(r.id));
   const totalMp = wantMp ? relevant.filter(r => r.status === 'ok').reduce((s, r) => s + unreadMessagesCount(r), 0) : 0;
 
@@ -1296,7 +1326,7 @@ function buildNotifications(
   if (errors.length > 0) {
     notifications.push({
       title: sharedTitle,
-      lines: errors.map(r => `- ${r.name} : ${r.error || 'erreur inconnue'}`),
+      lines: errors.map(r => `- ${r.name} : ${failureMessage(r)}`),
     });
   }
 
@@ -1383,11 +1413,11 @@ async function notifyScheduledResult(
       const wantSuccess = manual ? cfg.notifyManualSuccess : cfg.notifySuccess;
       const wantStats = manual ? cfg.notifyManualStats : cfg.notifyStats;
       const wantMp = manual ? cfg.notifyManualMp : cfg.notifyMp;
-      if (wantError && stat.status === 'error') {
-        errLines.push(`- ${stat.name} : ${stat.error || 'erreur inconnue'}`);
+      if (wantError && isFailedStat(stat)) {
+        errLines.push(`- ${stat.name} : ${failureMessage(stat)}`);
         errCount += 1;
       }
-      if (wantSuccess && stat.status === 'ok') {
+      if (wantSuccess && !isFailedStat(stat)) {
         const mp = wantMp ? unreadMessagesCount(stat) : 0;
         const mpSuffix = mp > 0 ? ` - ${mp} MP non lu${mp > 1 ? 's' : ''}` : '';
         okLines.push(`- ${stat.name}${mpSuffix}`);
@@ -1436,7 +1466,7 @@ async function runBetaScheduledCycle(): Promise<void> {
   try {
     const results = await refresh(trackers);
     await notifyScheduledResult(settings, results, previousFailures);
-    settings.schedule.lastFailedTrackerIds = results.filter(result => result.status === 'error').map(result => result.id);
+    settings.schedule.lastFailedTrackerIds = results.filter(isFailedStat).map(result => result.id);
   } finally {
     const current = loadBetaSettings();
     current.schedule.lastRunAt = new Date().toISOString();
@@ -1452,7 +1482,7 @@ async function runBetaTrackerSchedule(override: BetaTrackerScheduleOverride): Pr
   const settings = loadBetaSettings();
   const tracker = loadTrackerConfigsFromDb().find(item => item.id === override.trackerId && item.enabled !== false);
   if (!tracker || (!loadCredentialsFromDb()[tracker.id] && !storedCookieReady(tracker))) return;
-  const previousFailures = new Set(cachedStats.filter(stat => stat.status === 'error').map(stat => stat.id));
+  const previousFailures = new Set(cachedStats.filter(isFailedStat).map(stat => stat.id));
   pendingScheduledRuns.add(tracker.id);
   try {
     const result = await refreshOneTracker(tracker);
@@ -1573,7 +1603,8 @@ function renderPrometheusMetrics(stats: TrackerStats[]): string {
     { name: 'tracker_points',         help: 'Points (ratioless trackers)', type: 'gauge', pick: s => toNumber(s.fields.points) },
     { name: 'tracker_rate_per_day',   help: 'Points earned per day (ratioless)', type: 'gauge', pick: s => toNumber(s.fields.rate) },
     { name: 'tracker_tokens',         help: 'Freeleech tokens', type: 'gauge', pick: s => toNumber(s.fields.tokens) },
-    { name: 'tracker_up',             help: '1 if last fetch succeeded, 0 if error', type: 'gauge', pick: s => s.status === 'ok' && !s.stale ? 1 : 0 },
+    { name: 'tracker_up',             help: '1 if last fetch (login included) succeeded, 0 if error', type: 'gauge', pick: s => s.status === 'ok' && !s.stale && !s.loginError ? 1 : 0 },
+    { name: 'tracker_api_up',         help: '1 if last API read succeeded, 0 if failed, absent if no API key', type: 'gauge', pick: s => s.apiStatus ? (s.apiStatus === 'ok' ? 1 : 0) : null },
     { name: 'tracker_site_reachable', help: '1 if last ping succeeded, 0 if failed, absent if not measured', type: 'gauge', pick: s => {
         const reachability = s.stale?.siteReachability ?? s.siteReachability;
         return reachability ? (reachability.reachable ? 1 : 0) : null;
@@ -2834,8 +2865,9 @@ export async function start(): Promise<void> {
         name: stat.name,
         status: stat.status,
         stale: Boolean(stat.stale),
+        loginError: stat.loginError ?? null,
         ratioless: Boolean(trackers.find(tracker => tracker.id === stat.id)?.ratioless),
-        mode: stat.status === 'ok'
+        mode: stat.loginError ? 'cassé' : stat.status === 'ok'
           ? (hasTrackerCookie(stat.id) ? 'cookie-only' : 'fonctionne')
           : (stat.error?.toLowerCase().includes('captcha') || stat.error?.toLowerCase().includes('cloudflare') ? 'captcha' : 'cassé'),
         siteReachability: stat.stale?.siteReachability ?? stat.siteReachability ?? null,
@@ -3211,6 +3243,9 @@ export async function start(): Promise<void> {
     deleteTrackerConfig(trackerId);
     setTrackerCookie(trackerId, '');
     setTrackerTotpSecret(trackerId, '');
+    setTrackerApiKey(trackerId, '');
+    setTrackerApiUser(trackerId, '');
+    setTrackerStatSource(trackerId, 'auto');
     trackers = normalizeTrackerConfigs();
     res.json({ ok: true });
   });
@@ -3338,6 +3373,12 @@ export async function start(): Promise<void> {
             hasPassword: credentials.get(definition.id)?.hasPassword ?? false,
             hasCookie: hasTrackerCookie(definition.id),
             hasTotp: hasTrackerTotpSecret(definition.id),
+            hasApiKey: hasTrackerApiKey(definition.id),
+            hasApiUser: hasTrackerApiUser(definition.id),
+            apiNeedsUser: Boolean((tracker?.api ?? loadEffectiveTrackerDefinition(definition.id)?.api)?.requiresApiUser),
+            statSource: getTrackerStatSource(definition.id),
+            apiSupported: Boolean(tracker?.api ?? loadEffectiveTrackerDefinition(definition.id)?.api),
+            apiKeyInstructions: (tracker?.api ?? loadEffectiveTrackerDefinition(definition.id)?.api)?.keyInstructions ?? '',
             cookieOnly: Boolean(tracker?.login?.cookieOnly ?? loadEffectiveTrackerDefinition(definition.id)?.login?.cookieOnly),
             updatedAt: credentials.get(definition.id)?.updatedAt ?? null,
           };
@@ -3582,6 +3623,52 @@ export async function start(): Promise<void> {
     invalidateSession(id);
     console.log(`[TOTP] ${id} : secret 2FA ${secret.trim() ? 'enregistre' : 'efface'}`);
     res.json({ ok: true, hasTotp: hasTrackerTotpSecret(id) });
+  });
+
+  // ── Clé API par tracker (lecture des stats via l'API officielle) ──────────
+  app.post('/api/trackers/:trackerId/apikey', (req, res) => {
+    const id = req.params.trackerId;
+    if (!new Set(listAllTrackerSummaries().map(t => t.id)).has(id)) {
+      return res.status(404).json({ ok: false, error: 'Tracker inconnu' });
+    }
+    const key = typeof req.body?.key === 'string' ? req.body.key.trim() : '';
+    const user = typeof req.body?.user === 'string' ? req.body.user.trim() : '';
+    // Les deux champs vides = effacement. Sinon, un champ vide laisse la valeur en place
+    // (permet de changer la clé sans ressaisir l'identifiant, et inversement).
+    if (!key && !user) {
+      setTrackerApiKey(id, '');
+      setTrackerApiUser(id, '');
+    } else {
+      if (key) setTrackerApiKey(id, key);
+      if (user) setTrackerApiUser(id, user);
+    }
+    console.log(`[API] ${id} : ${!key && !user ? 'identifiants API effaces' : `${key ? 'cle' : ''}${key && user ? ' + ' : ''}${user ? 'identifiant' : ''} API enregistre(s)`}`);
+    res.json({ ok: true, hasApiKey: hasTrackerApiKey(id), hasApiUser: hasTrackerApiUser(id) });
+  });
+
+  // Source des stats par tracker : 'auto' (réglage global), 'api' ou 'scrape'.
+  app.post('/api/trackers/:trackerId/stat-source', (req, res) => {
+    const id = req.params.trackerId;
+    if (!new Set(listAllTrackerSummaries().map(t => t.id)).has(id)) {
+      return res.status(404).json({ ok: false, error: 'Tracker inconnu' });
+    }
+    const raw = req.body?.source;
+    const source = raw === 'api' || raw === 'scrape' ? raw : 'auto';
+    setTrackerStatSource(id, source);
+    console.log(`[API] ${id} : source des stats = ${source}`);
+    res.json({ ok: true, statSource: source });
+  });
+
+  // Réglage global : préférer l'API quand elle est disponible (clé enregistrée).
+  app.get('/api/settings/api-preferred', (_req, res) => {
+    res.json({ enabled: isApiPreferred() });
+  });
+
+  app.post('/api/settings/api-preferred', (req, res) => {
+    const enabled = req.body?.enabled !== false;
+    setApiPreferred(enabled);
+    console.log(`[API] Préférence globale : ${enabled ? 'API quand disponible' : 'scraping'}`);
+    res.json({ ok: true, enabled });
   });
 
   // ── Reset du profil navigateur d'un tracker ───────────────────────────────

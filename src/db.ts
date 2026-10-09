@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { createRequire } from 'module';
-import { type Credentials, type TrackerConfig, type TrackerStats } from './types.js';
+import { type Credentials, type StatSource, type TrackerConfig, type TrackerStats } from './types.js';
 import { applyEnginePreset } from './trackerTemplates.js';
 
 const require = createRequire(import.meta.url);
@@ -177,6 +177,81 @@ export function setTrackerCookie(trackerId: string, cookie: string): void {
   setJsonSetting('tracker_cookies', all);
 }
 
+// ─── Clés API par tracker ─────────────────────────────────────────────────────
+// Clé API personnelle (lecture seule) servant à lire les stats via l'API officielle
+// du tracker, en complément du login. Jamais renvoyée au front (booléen hasApiKey).
+type TrackerApiKeyMap = Record<string, string>;
+
+export function getTrackerApiKey(trackerId: string): string {
+  const all = getJsonSetting('tracker_apikeys', {} as TrackerApiKeyMap);
+  return all && typeof all[trackerId] === 'string' ? all[trackerId] : '';
+}
+
+export function hasTrackerApiKey(trackerId: string): boolean {
+  return getTrackerApiKey(trackerId).trim().length > 0;
+}
+
+export function setTrackerApiKey(trackerId: string, key: string): void {
+  const all = getJsonSetting('tracker_apikeys', {} as TrackerApiKeyMap);
+  const value = (key ?? '').trim();
+  if (value) all[trackerId] = value;
+  else delete all[trackerId];
+  setJsonSetting('tracker_apikeys', all);
+}
+
+// Identifiant API (ex: ApiUser PTP), pour les sites qui l'exigent en plus de la clé.
+export function getTrackerApiUser(trackerId: string): string {
+  const all = getJsonSetting('tracker_apiusers', {} as Record<string, string>);
+  return all && typeof all[trackerId] === 'string' ? all[trackerId] : '';
+}
+
+export function hasTrackerApiUser(trackerId: string): boolean {
+  return getTrackerApiUser(trackerId).trim().length > 0;
+}
+
+export function setTrackerApiUser(trackerId: string, user: string): void {
+  const all = getJsonSetting('tracker_apiusers', {} as Record<string, string>);
+  const value = (user ?? '').trim();
+  if (value) all[trackerId] = value;
+  else delete all[trackerId];
+  setJsonSetting('tracker_apiusers', all);
+}
+
+// Source des stats par tracker ('api' | 'scrape'), absent = 'auto' (réglage global).
+export function getTrackerStatSource(trackerId: string): StatSource {
+  const all = getJsonSetting('tracker_stat_source', {} as Record<string, string>);
+  const value = all?.[trackerId];
+  return value === 'api' || value === 'scrape' ? value : 'auto';
+}
+
+export function setTrackerStatSource(trackerId: string, source: StatSource): void {
+  const all = getJsonSetting('tracker_stat_source', {} as Record<string, string>);
+  if (source === 'api' || source === 'scrape') all[trackerId] = source;
+  else delete all[trackerId];
+  setJsonSetting('tracker_stat_source', all);
+}
+
+/** Réglage global : préférer l'API quand elle est disponible (défaut : oui). */
+export function isApiPreferred(): boolean {
+  return getJsonSetting('api_preferred', true as boolean) !== false;
+}
+
+export function setApiPreferred(enabled: boolean): void {
+  setJsonSetting('api_preferred', enabled !== false);
+}
+
+/**
+ * Source effective : l'API n'est utilisée que si le tracker la gère, qu'une clé est
+ * enregistrée, et que la source choisie (ou le réglage global en 'auto') est l'API.
+ */
+export function effectiveStatSource(tracker: TrackerConfig): 'api' | 'scrape' {
+  if (!tracker.api || !hasTrackerApiKey(tracker.id)) return 'scrape';
+  if (tracker.api.requiresApiUser && !hasTrackerApiUser(tracker.id)) return 'scrape';
+  const chosen = getTrackerStatSource(tracker.id);
+  if (chosen !== 'auto') return chosen;
+  return isApiPreferred() ? 'api' : 'scrape';
+}
+
 // ─── Secrets TOTP (2FA) par tracker ───────────────────────────────────────────
 // On stocke le secret base32 (type Google Authenticator) fourni par l'utilisateur.
 type TrackerTotpMap = Record<string, string>;
@@ -294,6 +369,9 @@ export function removeRetiredBundledTrackers(): void {
     deleteTrackerConfig(config.id);
     setTrackerCookie(config.id, '');
     setTrackerTotpSecret(config.id, '');
+    setTrackerApiKey(config.id, '');
+    setTrackerApiUser(config.id, '');
+    setTrackerStatSource(config.id, 'auto');
   }
 
   const trackerOrder = getJsonSetting<unknown>('trackerOrder', null);
@@ -691,7 +769,7 @@ export function saveStatSnapshots(stats: TrackerStats[]): void {
       stat.id,
       stat.name,
       stat.status,
-      stat.error ?? null,
+      stat.error ?? (stat.loginError ? `Login en echec (stats lues via API) : ${stat.loginError}` : null),
       JSON.stringify(stat.fields),
       stat.lastUpdated,
     );

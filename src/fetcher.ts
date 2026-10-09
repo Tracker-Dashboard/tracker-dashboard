@@ -18,7 +18,7 @@ import { getProxyConfig, ensureProxyReady } from './proxy.js';
 import { closeAllSshTunnels } from './sshTunnel.js';
 import { curlImpersonateGet, CurlSession, fastFetchEnabled } from './curlImpersonate.js';
 import { buildCookieHeader } from './cookies.js';
-import { getTrackerTotpSecret, loadTrackerConfigsFromDb, saveTrackerConfig } from './db.js';
+import { effectiveStatSource, getTrackerApiKey, getTrackerApiUser, getTrackerTotpSecret, loadTrackerConfigsFromDb, saveTrackerConfig } from './db.js';
 import { generateTotp } from './totp.js';
 import { selectUserAgent } from './userAgent.js';
 import { closeBrowserSession, closeBrowserSessions, fetchWithBrowser } from './browserBackend.js';
@@ -145,8 +145,14 @@ function extractJson(
   const out: Record<string, string | number> = {};
   let byteUnit: 'decimal' | 'binary' | null = null;
   for (const [name, ext] of Object.entries(fields)) {
-    if (!ext.path) continue;
-    const raw = getPath(json, ext.path);
+    if (!ext.path && !ext.sumPaths?.length) continue;
+    let raw: unknown;
+    if (ext.sumPaths?.length) {
+      const parts = ext.sumPaths.map(p => Number(getPath(json, p))).filter(n => Number.isFinite(n));
+      raw = parts.length ? parts.reduce((a, b) => a + b, 0) : undefined;
+    } else {
+      raw = getPath(json, ext.path as string);
+    }
     out[name] = applyTransform(raw, ext.transform);
     if (!byteUnit && ext.transform === 'bytes') byteUnit = detectByteUnitFromString(raw);
   }
@@ -1053,7 +1059,157 @@ export async function pingTracker(tracker: TrackerConfig): Promise<SiteReachabil
 
 // ─── Fetch principal ──────────────────────────────────────────────────────────
 
+// ─── Lecture complémentaire via API (clé utilisateur) ─────────────────────────
+// Ne remplace jamais le login : le scrap (login + page) est toujours exécuté, car
+// c'est lui qui maintient l'activité du compte sur le site. L'API sert à fiabiliser
+// les stats.
+
+type ApiReadResult =
+  | { ok: true; fields: Record<string, string | number>; byteUnit: 'decimal' | 'binary' | null }
+  | { ok: false; error: string };
+
+function apiFailure(status: number, body: string): string {
+  if (status === 401 || status === 403) {
+    return isAntiBotPage(body)
+      ? `API bloquee par une protection anti-bot (HTTP ${status})`
+      : `Cle API refusee (HTTP ${status}) - verifier ou regenerer la cle`;
+  }
+  if (status === 404) return 'Endpoint API introuvable (HTTP 404) - version du site sans API utilisateur ?';
+  if (status === 429) return 'Limite de requetes API atteinte (HTTP 429)';
+  return `Reponse API inattendue (HTTP ${status})`;
+}
+
+export async function fetchApiStats(tracker: TrackerConfig, apiKey: string, apiUser = ''): Promise<ApiReadResult> {
+  const api = tracker.api;
+  if (!api) return { ok: false, error: 'Pas de configuration API pour ce tracker' };
+  const url = resolveUrl(tracker.baseUrl, api.url);
+  const isHtml = api.responseType === 'html';
+  const secrets = { apiKey, apiUser };
+  const authHeaders: Record<string, string> = api.headers
+    ? Object.fromEntries(Object.entries(api.headers).map(([k, v]) => [k, interpolate(v, secrets)]))
+    : (api.authHeader ? { [api.authHeader]: interpolate(api.authFormat ?? '{{apiKey}}', secrets) } : {});
+  const headers: Record<string, string> = {
+    ...authHeaders,
+    'Accept': isHtml ? 'text/html,application/xhtml+xml,*/*;q=0.8' : 'application/json',
+  };
+
+  let status = 0;
+  let body = '';
+  try {
+    const res = await axios.get(url, {
+      timeout: 20_000,
+      maxRedirects: 3,
+      validateStatus: () => true,
+      responseType: 'text',
+      transformResponse: [(d: unknown) => d],
+      ...getProxyConfig(tracker.id),
+      headers: { 'User-Agent': selectUserAgent(), ...headers },
+    });
+    status = res.status;
+    body = typeof res.data === 'string' ? res.data : JSON.stringify(res.data);
+  } catch (err) {
+    body = '';
+    status = 0;
+    console.log(`  [${tracker.name}] API (axios) en echec : ${friendlyError(err)}`);
+  }
+
+  // Empreinte TLS Node refusee (Cloudflare) : nouvel essai via curl-impersonate.
+  if (status === 0 || ((status === 403 || status === 503) && isAntiBotPage(body))) {
+    const curl = new CurlSession(tracker.id, tracker.curlBinary);
+    try {
+      const res = await curl.request(url, { headers, timeoutMs: 20_000 });
+      if (res) { status = res.status; body = res.body; }
+    } finally {
+      curl.dispose();
+    }
+  }
+
+  if (status === 0) return { ok: false, error: 'API injoignable (reseau / timeout)' };
+  if (status < 200 || status >= 300) return { ok: false, error: apiFailure(status, body) };
+
+  // Page HTML authentifiée par la clé (ex: PTP index.php) : extraction par regex.
+  if (isHtml) {
+    if (isAntiBotPage(body)) return { ok: false, error: 'API bloquee par une protection anti-bot' };
+    const { values, byteUnit } = extractHtml(body, api.fields);
+    const fields = Object.fromEntries(Object.entries(values).filter(([, v]) => v !== ''));
+    if (!hasExtractedValues(fields)) {
+      return { ok: false, error: 'Page API sans statistiques (cle ou identifiant API refuse ?)' };
+    }
+    return { ok: true, fields, byteUnit };
+  }
+
+  let json: unknown;
+  try {
+    json = JSON.parse(body);
+  } catch {
+    return { ok: false, error: 'Reponse API non JSON (redirection vers le login ?)' };
+  }
+  // Enveloppe Gazelle : {"status":"failure","error":"..."}
+  const env = json as { status?: unknown; error?: unknown };
+  if (env && env.status === 'failure') {
+    return { ok: false, error: `API en erreur : ${String(env.error ?? 'reponse failure')}` };
+  }
+
+  const { values, byteUnit } = extractJson(json, api.fields);
+  // Champs non fournis par l'API : on les retire pour ne pas écraser le scrap.
+  const fields = Object.fromEntries(Object.entries(values).filter(([, v]) => v !== ''));
+  // Pas de dump disque ici : certaines réponses (Gazelle) contiennent passkey/authkey.
+  if (!hasExtractedValues(fields)) {
+    return { ok: false, error: `Aucune donnee extraite de la reponse API (chemins attendus : ${Object.values(api.fields).map(f => f.path).join(', ')})` };
+  }
+  return { ok: true, fields, byteUnit };
+}
+
+/** Fusionne le résultat du scrap et celui de l'API (voir TrackerStats.loginError). */
+function mergeApiStats(tracker: TrackerConfig, scraped: TrackerStats, api: ApiReadResult): TrackerStats {
+  if (!api.ok) {
+    console.log(`  [${tracker.name}] API : ${api.error} - stats du scrap conservees`);
+    return { ...scraped, apiStatus: 'error', apiError: api.error };
+  }
+  if (scraped.status === 'ok') {
+    console.log(`  [${tracker.name}] API OK (${Object.keys(api.fields).join(', ')})`);
+    return { ...scraped, fields: { ...scraped.fields, ...api.fields }, apiStatus: 'ok' };
+  }
+  // Scrap/login en échec mais API OK : stats affichées, login signalé en erreur.
+  console.log(`  [${tracker.name}] Login en echec mais API OK : stats remontees via l'API - ${scraped.error ?? 'erreur inconnue'}`);
+  const byteUnit = api.byteUnit ?? tracker.dashboard?.byteUnit ?? scraped.byteUnit;
+  return {
+    id:               scraped.id,
+    name:             scraped.name,
+    trackerUrl:       scraped.trackerUrl,
+    status:           'ok',
+    loginError:       scraped.error ?? 'Erreur inconnue',
+    siteReachability: scraped.siteReachability,
+    lastUpdated:      scraped.lastUpdated,
+    lastLoginAt:      scraped.lastLoginAt,
+    byteUnit,
+    fields:           api.fields,
+    apiStatus:        'ok',
+  };
+}
+
 export async function fetchTracker(
+  tracker: TrackerConfig,
+  creds: { username: string; password: string },
+): Promise<TrackerStats> {
+  // Source effective : API seulement si le tracker la gère, qu'une clé existe et que
+  // le choix du tracker (ou le réglage global en 'auto') est l'API. Sinon scrap seul.
+  if (effectiveStatSource(tracker) !== 'api') return fetchTrackerScrape(tracker, creds);
+  const apiKey = getTrackerApiKey(tracker.id).trim();
+  const apiUser = getTrackerApiUser(tracker.id).trim();
+  // Tunnel SSH établi une seule fois avant les deux requêtes : ensureSshSocks n'est pas
+  // sûr en appels concurrents (le second démonterait le tunnel en cours d'ouverture).
+  await ensureProxyReady(tracker.id);
+  // Scrap (login = activité) et API en parallèle : le temps total reste celui du scrap.
+  const [scraped, api] = await Promise.all([
+    fetchTrackerScrape(tracker, creds),
+    fetchApiStats(tracker, apiKey, apiUser)
+      .catch((err): ApiReadResult => ({ ok: false, error: friendlyError(err) })),
+  ]);
+  return mergeApiStats(tracker, scraped, api);
+}
+
+async function fetchTrackerScrape(
   tracker: TrackerConfig,
   creds: { username: string; password: string },
 ): Promise<TrackerStats> {

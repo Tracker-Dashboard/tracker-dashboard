@@ -58,6 +58,38 @@
       }
     }
   },
+  "api": {
+    "url": "api.php?endpoint=self",
+    "authHeader": "X-Api-Key",
+    "authFormat": "{{apiKey}}",
+    "fields": {
+      "uploadedBytes": {
+        "path": "response.uploaded",
+        "transform": "bytes"
+      },
+      "downloadedBytes": {
+        "path": "response.downloaded",
+        "transform": "bytes"
+      },
+      "ratio": {
+        "path": "response.ratio",
+        "transform": "number"
+      },
+      "seedBonus": {
+        "path": "response.bonus_points",
+        "transform": "string"
+      },
+      "tokens": {
+        "path": "response.fl_tokens",
+        "transform": "integer"
+      },
+      "memberClass": {
+        "path": "response.class",
+        "transform": "string"
+      }
+    },
+    "keyInstructions": "Sur HD-Forever : Intégrations → API. Limite du site : 60 appels / 10 min par compte, sans risque au rythme du dashboard."
+  },
   "dashboard": {
     "byteUnit": "decimal"
   }

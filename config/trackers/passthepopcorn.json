@@ -64,6 +64,46 @@
       }
     }
   },
+  "api": {
+    "url": "index.php",
+    "responseType": "html",
+    "requiresApiUser": true,
+    "headers": {
+      "ApiUser": "{{apiUser}}",
+      "ApiKey": "{{apiKey}}"
+    },
+    "fields": {
+      "uploadedBytes": {
+        "regex": "id=\"stats_seeding\"[\\s\\S]{0,250}?title=\"(?<value>[\\d.,]+\\s*(?:[KMGTPE]i?B|B))\"",
+        "transform": "bytes"
+      },
+      "downloadedBytes": {
+        "regex": "id=\"stats_leeching\"[\\s\\S]{0,250}?title=\"(?<value>[\\d.,]+\\s*(?:[KMGTPE]i?B|B))\"",
+        "transform": "bytes"
+      },
+      "ratio": {
+        "regex": "id=\"stats_ratio\"[\\s\\S]{0,250}?title=\"Ratio:\\s*(?<value>[\\d.,]+|inf(?:inite|inity)?|∞)",
+        "transform": "number"
+      },
+      "bufferBytes": {
+        "regex": "id=\"stats_ratio\"[\\s\\S]{0,250}?Buffer:\\s*(?<value>-?[\\d.,]+\\s*(?:[KMGTPE]i?B|B))\"",
+        "transform": "bytes"
+      },
+      "seedBonus": {
+        "regex": "id=\"nav_bonus\"[\\s\\S]{0,250}?>Bonus \\((?<value>[\\d.,\\s]+)\\)<",
+        "transform": "string"
+      },
+      "unreadMessages": {
+        "regex": "You have (?<value>\\d+|\\ba) new message",
+        "transform": "string"
+      },
+      "hitAndRuns": {
+        "regex": "id=\"stats_hnrs\"[^>]*>\\s*<a[^>]*>HnRs</a>:\\s*<span[^>]*>\\s*(?<value>\\d+)",
+        "transform": "integer"
+      }
+    },
+    "keyInstructions": "Sur PTP : Edit (profil) → Security → API Keys. Crée une clé, puis renseigne l'ApiUser et l'ApiKey affichés. Seeding et classe restent lus avec le cookie (user.php est interdit à l'API)."
+  },
   "dashboard": {
     "byteUnit": "binary"
   }

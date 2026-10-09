@@ -1263,6 +1263,9 @@
     .badge-ratioless { background: color-mix(in srgb, var(--purple) 16%, transparent); color: var(--purple); }
     .badge-incident { background: color-mix(in srgb, var(--muted) 18%, transparent); color: var(--muted); }
     .badge-mp { background: color-mix(in srgb, var(--blue) 22%, transparent); color: var(--blue); }
+    .badge-api { background: color-mix(in srgb, var(--green) 16%, transparent); color: var(--green); }
+    .badge-api-ko { background: color-mix(in srgb, var(--yellow) 16%, transparent); color: var(--yellow); }
+    .badge-hnr { background: color-mix(in srgb, var(--red) 16%, transparent); color: var(--red); }
     .badge-memberclass { background: color-mix(in srgb, var(--muted) 18%, transparent); color: var(--muted); }
     .incident-box {
       margin: 8px 18px 12px;
@@ -1371,6 +1374,19 @@
       gap: 8px;
     }
     .error-body svg { flex-shrink: 0; margin-top: 1px; }
+    /* Login en échec mais stats lues via l'API : avertissement bien visible */
+    .login-ko-box {
+      margin: 0 14px 10px;
+      padding: 10px 12px;
+      border: 1px solid var(--red);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--red) 10%, transparent);
+      color: var(--red);
+      font-size: 12.5px;
+      line-height: 1.4;
+    }
+    .login-ko-box strong { display: block; margin-bottom: 2px; }
+    .login-ko-box span { color: var(--text); opacity: .85; word-break: break-word; }
     .btn-inline {
       background: none;
       color: var(--text);
@@ -2213,6 +2229,16 @@
     </div>
     <p style="font-size:12px; color:var(--muted); margin:8px 0 0; max-width:760px">
       Utilise <b>curl-impersonate</b> (empreinte TLS de vrai navigateur) pour franchir le filtrage anti-bot passif sans lancer Chromium : le login HTTP complet pour les trackers en mode HTTP, et une requête directe pour les trackers navigateur disposant d'un cookie. En cas d'échec (page JS, session expirée, binaire absent), l'app retombe automatiquement sur la voie normale — aucune lecture cassée.
+    </p>
+    <div class="proxy-form" style="align-items:flex-start; margin-top:14px">
+      <label class="toggle-switch" style="grid-column:span 5" title="Source des stats par défaut">
+        <input type="checkbox" id="api-preferred-enabled" onchange="saveApiPreferred()">
+        <div class="toggle-track"><div class="toggle-knob"></div></div>
+        <span>Stats via l'<b>API</b> du tracker quand elle est disponible</span>
+      </label>
+    </div>
+    <p style="font-size:12px; color:var(--muted); margin:8px 0 0; max-width:760px">
+      Concerne les trackers dont l'API est gérée (UNIT3D, HD-Forever, Redacted, Orpheus) et pour lesquels une clé API est enregistrée (Configuration → tracker → Options avancées). Chaque tracker peut forcer l'API ou le scraping. Le login sur le site est fait dans tous les cas : il est indispensable pour que le compte reste actif. Si le login échoue alors que l'API répond, les stats restent affichées avec un avertissement « Login KO » et une notification d'échec.
     </p>
 
     <!-- ── Overrides par tracker ────────────────────────────────────────── -->
@@ -3059,6 +3085,25 @@
       : '';
   }
 
+  // Source API : vert si la lecture API a réussi, orange si elle a échoué (scrap conservé).
+  function apiBadge(stat) {
+    if (stat.apiStatus === 'ok') return '<span class="badge badge-api" title="Stats lues via l\'API du tracker (clé API)">API</span>';
+    if (stat.apiStatus === 'error') return `<span class="badge badge-api-ko" title="${escapeHtml('API en échec : ' + (stat.apiError || 'erreur inconnue') + ' — stats du scrap conservées')}">API KO</span>`;
+    return '';
+  }
+
+  // Hit & Run en cours (UNIT3D via API) : affiché seulement s'il y en a.
+  function hnrBadge(stat) {
+    const n = Number((stat.fields || {}).hitAndRuns || 0);
+    return n > 0 ? `<span class="badge badge-hnr" title="Hit & Run en cours">H&amp;R : ${n}</span>` : '';
+  }
+
+  // Login en échec mais stats remontées via l'API.
+  function loginKoBox(stat) {
+    if (!stat.loginError) return '';
+    return `<div class="login-ko-box"><strong>⚠ Login en échec — stats lues via l'API</strong><span>Le compte n'est plus visité : risque de désactivation pour inactivité. ${escapeHtml(stat.loginError)}</span></div>`;
+  }
+
   // Classe de membre courante (champ optionnel memberClass, regex par site/preset).
   function memberClassBadge(stat) {
     const cls = (stat.fields || {}).memberClass;
@@ -3452,7 +3497,7 @@
   }
 
   function hasTrackerProblem(stat) {
-    return stat.status === 'error' || Boolean(stat.stale);
+    return stat.status === 'error' || Boolean(stat.stale) || Boolean(stat.loginError);
   }
 
   function betaStats() {
@@ -3481,7 +3526,7 @@
     const summary = document.getElementById('beta-summary');
     if (!summary) return;
     const total = stats.length;
-    const errors = stats.filter(stat => stat.status === 'error').length;
+    const errors = stats.filter(stat => stat.status === 'error' || stat.loginError).length;
     const stale = stats.filter(stat => stat.stale).length;
     const healthy = stats.filter(stat => !hasTrackerProblem(stat)).length;
     summary.innerHTML = `
@@ -4204,14 +4249,14 @@
   }
 
   function betaStatusClass(stat) {
-    if (stat.status === 'error') return 'bad';
+    if (stat.status === 'error' || stat.loginError) return 'bad';
     if (stat.stale) return 'warn';
     return 'ok';
   }
 
   function betaSortValue(stat, key) {
     const fields = stat.fields || {};
-    if (key === 'status') return stat.status === 'error' ? 2 : (stat.stale ? 1 : 0);
+    if (key === 'status') return (stat.status === 'error' || stat.loginError) ? 2 : (stat.stale ? 1 : 0);
     if (key === 'updated') return Date.parse(stat.lastLoginAt || stat.lastUpdated || '') || 0;
     if (key === 'downloaded') return Number(fields.downloadedBytes || 0);
     if (key === 'uploaded') return Number(fields.uploadedBytes || 0);
@@ -4270,7 +4315,7 @@
             const ratio = computedRatio(fields);
             const byteUnit = statByteUnit(stat);
             const url = betaTrackerPageUrl(stat.id);
-            const statusText = stat.status === 'error' ? 'Erreur' : (stat.stale ? 'Données anciennes' : 'OK');
+            const statusText = stat.status === 'error' ? 'Erreur' : (stat.loginError ? 'Login KO (API)' : (stat.stale ? 'Données anciennes' : 'OK'));
             const buffer = bufferText(fields, byteUnit);
             const bonusRaw = hasStatValue(fields.seedBonus) ? fields.seedBonus : fields.points;
             return `
@@ -4297,6 +4342,7 @@
   }
 
   function betaIncidentReason(stat, status) {
+    if (stat.loginError) return `Login en échec (stats lues via l'API) : ${stat.loginError}`;
     if (stat.stale?.error) return stat.stale.error;
     if (stat.error) return stat.error;
     const mode = trackerModeLabel(status);
@@ -4319,7 +4365,7 @@
       rows.map(stat => {
         const status = statuses.get(stat.id);
         const mode = trackerModeLabel(status);
-        const cls = stat.status === 'error' || status?.siteReachability?.reachable === false ? '' : 'warn';
+        const cls = stat.status === 'error' || stat.loginError || status?.siteReachability?.reachable === false ? '' : 'warn';
         return `
           <div class="beta-focus-item ${cls}">
             <div>
@@ -4606,8 +4652,8 @@
       .sort((a, b) => String(b.capturedAt || '').localeCompare(String(a.capturedAt || '')));
     const sevenDaysAgo = Date.now() - 7 * 24 * 3600 * 1000;
     const recentErrors = allErrors.filter(row => (Date.parse(row.capturedAt) || 0) >= sevenDaysAgo);
-    const currentlyInError = stat.status === 'error' || Boolean(stat.stale);
-    const currentErrorMsg = stat.stale?.error || stat.error || '';
+    const currentlyInError = stat.status === 'error' || Boolean(stat.stale) || Boolean(stat.loginError);
+    const currentErrorMsg = stat.loginError ? `Login en échec (stats lues via l'API) : ${stat.loginError}` : (stat.stale?.error || stat.error || '');
     const trackerAlert = (betaSettings.trackerAlerts || {})[stat.id];
 
     container.innerHTML = `
@@ -4620,7 +4666,7 @@
         ${trackerStatusBadge(stat)}
       </div>
       <div class="beta-detail-grid">
-        <div class="beta-detail-stat"><span>Statut</span><strong>${escapeHtml(stat.stale ? 'données anciennes' : stat.status)}</strong></div>
+        <div class="beta-detail-stat"><span>Statut</span><strong>${escapeHtml(stat.loginError ? 'login KO (stats API)' : (stat.stale ? 'données anciennes' : stat.status))}</strong></div>
         <div class="beta-detail-stat"><span>Ratio</span><strong>${hasStatValue(ratio) ? formatRatio(ratio) : '-'}</strong></div>
         <div class="beta-detail-stat"><span>Buffer</span><strong>${Array.isArray(buffer) ? buffer.join(' ') : buffer}</strong></div>
         <div class="beta-detail-stat"><span>Seed</span><strong>${formatCount(stat.fields.seeding ?? stat.fields.seedTimeDays ?? stat.fields.seedTime)}</strong></div>
@@ -4772,6 +4818,7 @@
   // Badge d'état clair pour CE tracker : OK (vert) / NOK (rouge).
   function trackerStatusBadge(stat) {
     if (stat.status === 'error') return '<span class="fiche-badge bad">Cassé</span>';
+    if (stat.loginError) return '<span class="fiche-badge bad">Login KO (stats via API)</span>';
     if (stat.stale) return '<span class="fiche-badge bad">Données anciennes</span>';
     return '<span class="fiche-badge ok">Fonctionne</span>';
   }
@@ -4796,7 +4843,8 @@
     const lastOkRow = historyForSelectedTracker().filter(row => row.status === 'ok')
       .sort((a, b) => String(b.capturedAt || '').localeCompare(String(a.capturedAt || '')))[0];
     const lastOk = lastOkRow ? formatDateTime(lastOkRow.capturedAt) : (stat.status === 'ok' ? formatDateTime(stat.lastUpdated) : '—');
-    const etat = stat.status === 'error' ? 'En erreur' : (stat.stale ? 'Données anciennes' : 'OK');
+    const etat = stat.status === 'error' ? 'En erreur'
+      : (stat.loginError ? `Login en échec, stats lues via l'API — ${stat.loginError}` : (stat.stale ? 'Données anciennes' : 'OK'));
     const row = (label, value, dot) => `
       <div class="beta-card-row">
         <div><strong>${escapeHtml(label)}</strong><span>${escapeHtml(value)}</span></div>
@@ -4808,6 +4856,8 @@
       ${row('Dernière lecture réussie', lastOk)}
       ${row('Cookie de session', cred.hasCookie ? 'défini' : 'non défini')}
       ${row('Secret 2FA (TOTP)', cred.hasTotp ? 'défini' : 'non défini')}
+      ${cred.apiSupported ? row('Source des stats', ({ api: 'API (forcée)', scrape: 'Scraping (forcé)' })[cred.statSource] || 'Par défaut (réglage global)') : ''}
+      ${cred.apiSupported ? row('Clé API', !cred.hasApiKey ? 'non définie' : (cred.apiNeedsUser && !cred.hasApiUser) ? 'définie — identifiant API manquant' : (stat.apiStatus === 'ok' ? 'définie — dernière lecture OK' : (stat.apiStatus === 'error' ? `définie — en échec : ${stat.apiError || 'erreur inconnue'}` : 'définie')), cred.hasApiKey ? (stat.apiStatus === 'error' ? 'bad' : 'ok') : '') : ''}
       <p class="beta-note" style="margin-top:8px">Mode déduit des définitions, des erreurs connues, de l'accessibilité et du cookie collé.</p>`;
   }
 
@@ -6245,7 +6295,7 @@
       }
       case 'seeding':  return toNum(hasStatValue(f.seeding) ? f.seeding : stat.qbitSeeding);
       case 'bonus':    return parseLocalizedPoints(hasStatValue(f.seedBonus) ? f.seedBonus : f.points)?.number ?? -1;
-      case 'status':   return stat.status === 'error' ? 1 : 0; // erreurs regroupees
+      case 'status':   return (stat.status === 'error' || stat.loginError) ? 1 : 0; // erreurs regroupees
       default:         return 0;
     }
   }
@@ -6461,7 +6511,7 @@
           ${(ratioless || hasStatValue(f.seedTimeDays)) ? seedingStatCellFull(stat) : ''}`;
 
     return `
-      <div class="card card--ok"${cardDragAttrs(stat)}>
+      <div class="card ${stat.loginError ? 'card--err' : 'card--ok'}"${cardDragAttrs(stat)}>
         <div class="card-header card-header--2l">
           ${trackerName(stat, { split: true })}
           <div class="card-header-actions">
@@ -6470,11 +6520,11 @@
             ${cardRefreshButton(stat)}
           </div>
         </div>
-        <div class="card-badges">${memberClassBadge(stat)}${mpBadge(stat)}${staleBadge(stat)}${ratiolessBadge(stat)}</div>
-
+        <div class="card-badges">${stat.loginError ? '<span class="badge badge-error">Login KO</span>' : ''}${memberClassBadge(stat)}${mpBadge(stat)}${hnrBadge(stat)}${apiBadge(stat)}${staleBadge(stat)}${ratiolessBadge(stat)}</div>
+        ${loginKoBox(stat)}
         <div class="stats">${hasXpFields ? xpGrid : standardGrid}
         </div>
-        ${stat.stale ? renderIncidentBox(stat) : ''}
+        ${stat.stale || stat.loginError ? renderIncidentBox(stat) : ''}
         <div class="card-footer">Derniere connexion : ${lastLoginText(stat)}</div>
       </div>`;
   }
@@ -6500,6 +6550,7 @@
   function rowStatusBadges(stat) {
     const ratioless = ratiolessBadge(stat);
     if (stat.stale) return staleBadge(stat) + ' ' + ratioless;
+    if (stat.loginError) return '<span class="badge badge-error" title="Login en échec, stats lues via l\'API">Login KO</span> ' + apiBadge(stat) + ' ' + ratioless;
     if (stat.status === 'error') {
       const reach = stat.siteReachability;
       const offline = (reach && reach.reachable === false)
@@ -6511,14 +6562,14 @@
         : '<span class="badge badge-error">Erreur</span>';
       return errBadge + ' ' + offline + ' ' + ratioless;
     }
-    return ratioless;
+    return apiBadge(stat) + ' ' + ratioless;
   }
 
   function renderRow(stat) {
     const f = stat.fields;
     const id = escapeHtml(stat.id);
     const isError = stat.status === 'error';
-    const hasProblem = isError || Boolean(stat.stale);
+    const hasProblem = isError || Boolean(stat.stale) || Boolean(stat.loginError);
     const isOpen = expandedIncidents.has(stat.id);
     const ratio = computedRatio(f);
     const hasRatio = hasStatValue(ratio);
@@ -6575,7 +6626,7 @@
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px">
                 <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
               </svg>
-              <span>${escapeHtml(stat.stale?.error ?? stat.error ?? 'Erreur inconnue')}</span>
+              <span>${escapeHtml(stat.loginError ? `Login en échec (stats lues via l'API) : ${stat.loginError}` : (stat.stale?.error ?? stat.error ?? 'Erreur inconnue'))}</span>
             </div>
             ${reachLine}
             ${renderIncidentBox(stat)}
@@ -6768,8 +6819,31 @@
                   ${definition.baseId ? `<button class="btn-test definition-delete" style="padding:6px 10px" title="Supprimer ce compte dupliqué et ses données (identifiants, historique)" onclick="deleteDuplicateTracker('${safeId}')">Supprimer</button>` : ''}
                 </div>
                 <details class="definition-advanced" style="grid-column:1/-1">
-                  <summary>Options avancées${credential.hasCookie ? ' · <b style="color:var(--green)">cookie défini</b>' : ''}${credential.hasTotp ? ' · <b style="color:var(--green)">2FA défini</b>' : ''}</summary>
+                  <summary>Options avancées${credential.hasCookie ? ' · <b style="color:var(--green)">cookie défini</b>' : ''}${credential.hasTotp ? ' · <b style="color:var(--green)">2FA défini</b>' : ''}${credential.hasApiKey ? ' · <b style="color:var(--green)">clé API définie</b>' : ''}</summary>
                   <div class="definition-advanced-body">
+                    ${credential.apiSupported ? `
+                    <div class="advanced-field advanced-cookie-field">
+                      <label>Clé API <span style="color:var(--muted)">— optionnelle, fiabilise les stats${credential.hasApiKey ? ' · <b style="color:var(--green)">définie</b>' : ''}</span></label>
+                      ${credential.apiNeedsUser ? `
+                      <div class="advanced-cookie-row" style="margin-bottom:6px">
+                        <input class="tracker-input" id="credential-apiuser-${safeId}" type="password" autocomplete="off" spellcheck="false" style="flex:1; font-family:monospace; font-size:12px"
+                          placeholder="${credential.hasApiUser ? '•••••••• identifiant API enregistré (saisis pour remplacer)' : 'Identifiant API (ApiUser)'}">
+                      </div>` : ''}
+                      <div class="advanced-cookie-row">
+                        <input class="tracker-input" id="credential-apikey-${safeId}" type="password" autocomplete="off" spellcheck="false" style="flex:1; font-family:monospace; font-size:12px"
+                          placeholder="${credential.hasApiKey ? '•••••••• (enregistrée — saisis pour remplacer, vide pour effacer)' : 'Clé API personnelle du site'}">
+                        <button class="btn-save" style="padding:6px 10px" onclick="saveTrackerApiKey('${safeId}', this)">Enregistrer la clé</button>
+                      </div>
+                      <div class="advanced-cookie-row" style="margin-top:8px; align-items:center">
+                        <label for="credential-statsource-${safeId}" style="margin:0; white-space:nowrap">Source des stats</label>
+                        <select class="tracker-input" id="credential-statsource-${safeId}" style="flex:1" onchange="saveTrackerStatSource('${safeId}', this)">
+                          <option value="auto"${(credential.statSource || 'auto') === 'auto' ? ' selected' : ''}>Par défaut (réglage global)</option>
+                          <option value="api"${credential.statSource === 'api' ? ' selected' : ''}>API (si clé enregistrée)</option>
+                          <option value="scrape"${credential.statSource === 'scrape' ? ' selected' : ''}>Scraping uniquement</option>
+                        </select>
+                      </div>
+                      <p class="beta-note" style="margin-top:6px">${escapeHtml(credential.apiKeyInstructions || '')} La clé ne remplace pas le login : il reste indispensable pour que le compte soit visité. Si le login échoue mais que l'API répond, les stats restent affichées avec un avertissement « Login KO ».</p>
+                    </div>` : ''}
                     ${cookieOnly || cookieInstructions ? `
                     <div class="advanced-field advanced-cookie-field">
                       <p class="beta-note" style="margin-top:0"><b>Important :</b> exporte tous les cookies avec la même IP de sortie que celle utilisée par ce tracker dans Tracker Dashboard (même proxy, ou même connexion directe). Vérifie notamment que <code>cf_clearance</code> est présent pour les sites protégés par Cloudflare ; les sessions liées à l’IP et les cookies anti-bot seront sinon refusés.</p>
@@ -6866,6 +6940,55 @@
       btn.textContent = 'Erreur';
       setTimeout(() => { btn.disabled = false; btn.textContent = previous; }, 2000);
       console.warn('saveTrackerTotp:', e.message);
+    }
+  }
+
+  async function saveTrackerStatSource(trackerId, select) {
+    const previous = select.dataset.previous || select.value;
+    select.disabled = true;
+    try {
+      const r = await fetch(`/api/trackers/${encodeURIComponent(trackerId)}/stat-source`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ source: select.value }),
+      });
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.error || 'Erreur');
+      select.dataset.previous = d.statSource;
+      const cred = cachedTrackerCredentials.get(trackerId);
+      if (cred) cred.statSource = d.statSource;
+    } catch (e) {
+      select.value = previous;
+      console.warn('saveTrackerStatSource:', e.message);
+    } finally {
+      select.disabled = false;
+    }
+  }
+
+  async function saveTrackerApiKey(trackerId, btn) {
+    const input = document.getElementById(`credential-apikey-${trackerId}`);
+    const userInput = document.getElementById(`credential-apiuser-${trackerId}`);
+    const key = input ? input.value : '';
+    const user = userInput ? userInput.value : '';
+    const previous = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '...';
+    try {
+      const r = await fetch(`/api/trackers/${encodeURIComponent(trackerId)}/apikey`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key, user }),
+      });
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.error || 'Erreur');
+      btn.textContent = d.hasApiKey ? 'Clé enregistrée' : 'Clé effacée';
+      if (input) input.value = '';
+      if (userInput) userInput.value = '';
+      setTimeout(() => { btn.disabled = false; btn.textContent = previous; loadTrackerDefinitionsPanel(); }, 1800);
+    } catch (e) {
+      btn.textContent = 'Erreur';
+      setTimeout(() => { btn.disabled = false; btn.textContent = previous; }, 2000);
+      console.warn('saveTrackerApiKey:', e.message);
     }
   }
 
@@ -7443,6 +7566,26 @@
     } catch (e) { console.warn('Fast-fetch unavailable', e); }
   }
 
+  async function loadApiPreferred() {
+    try {
+      const r = await fetch('/api/settings/api-preferred');
+      const d = await r.json();
+      const box = document.getElementById('api-preferred-enabled');
+      if (box) box.checked = d.enabled !== false;
+    } catch (e) { console.warn('api-preferred unavailable', e); }
+  }
+
+  async function saveApiPreferred() {
+    const enabled = document.getElementById('api-preferred-enabled').checked;
+    try {
+      await fetch('/api/settings/api-preferred', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled }),
+      });
+    } catch (e) { console.warn('saveApiPreferred:', e.message); }
+  }
+
   async function saveFastFetch() {
     const enabled = document.getElementById('fast-fetch-enabled').checked;
     try {
@@ -7715,6 +7858,7 @@
     loadBrowserRuntimeStatus();
     loadFlareSolverrStatus();
     await loadFastFetch();
+    await loadApiPreferred();
     await loadTrackerDefinitionsPanel();
     getActiveGrid().innerHTML = renderSkeleton(trackerCount);
     await loadConfig();
