@@ -42,5 +42,41 @@
       "regex": "(?<value>\\d+)\\s+torrents? found",
       "transform": "integer"
     }
+  },
+  "api": {
+    "url": "ajax.php?action=index",
+    "authHeader": "Authorization",
+    "authFormat": "token {{apiKey}}",
+    "fields": {
+      "uploadedBytes": {
+        "path": "response.userstats.uploaded",
+        "transform": "bytes"
+      },
+      "downloadedBytes": {
+        "path": "response.userstats.downloaded",
+        "transform": "bytes"
+      },
+      "ratio": {
+        "path": "response.userstats.ratio",
+        "transform": "number"
+      },
+      "seedBonus": {
+        "path": "response.userstats.bonusPoints",
+        "transform": "string"
+      },
+      "tokens": {
+        "path": "response.userstats.tokens",
+        "transform": "integer"
+      },
+      "memberClass": {
+        "path": "response.userstats.class",
+        "transform": "string"
+      },
+      "unreadMessages": {
+        "path": "response.notifications.messages",
+        "transform": "integer"
+      }
+    },
+    "keyInstructions": "Sur OPS : Paramètres du profil → section Accès → clés API. Génère une clé et colle-la ici."
   }
 }

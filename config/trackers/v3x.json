@@ -54,6 +54,35 @@
         "regex": "[Ss]eeds?\\s+en\\s+cours(?:[^<]|<!--[\\s\\S]*?-->){0,80}?<span[^>]*>\\s*(?<value>\\d+)\\s*</span>",
         "transform": "integer"
       }
+    },
+    "extraFetch": {
+      "url": "https://api.v3x.club/auth/me",
+      "responseType": "json",
+      "field": "uploadedBytes",
+      "path": "uploaded",
+      "transform": "bytes",
+      "extraFields": {
+        "downloadedBytes": {
+          "path": "downloaded",
+          "transform": "bytes"
+        },
+        "ratio": {
+          "path": "ratio",
+          "transform": "number"
+        },
+        "seedBonus": {
+          "path": "bonusPoints",
+          "transform": "string"
+        },
+        "tokens": {
+          "path": "freeleechTokens",
+          "transform": "integer"
+        },
+        "hitAndRuns": {
+          "path": "hnr.active",
+          "transform": "integer"
+        }
+      }
     }
   },
   "dashboard": {

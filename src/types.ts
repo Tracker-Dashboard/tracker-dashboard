@@ -107,9 +107,53 @@ export interface LoginConfig {
 export interface FieldExtractor {
   // JSON : chemin dot-notation  ex: "response.stats.uploaded"
   path?: string;
+  /**
+   * JSON : somme de plusieurs chemins numériques (remplace path). Ex TR4KER, dont
+   * l'upload affiché = uploaded + bonus_upload. Vide si aucun chemin n'est numérique.
+   */
+  sumPaths?: string[];
   // HTML : regex avec groupe nommé (?<value>...)
   regex?: string;
   transform?: 'bytes' | 'number' | 'integer' | 'string';
+}
+
+/**
+ * Lecture complémentaire des stats via l'API officielle du tracker, avec une clé
+ * API propre à l'utilisateur. Ne remplace JAMAIS le login + scrap (seul garant de
+ * l'activité sur le site) : les valeurs de l'API écrasent celles du scrap pour les
+ * champs qu'elle fournit, le scrap complète le reste. Si le scrap échoue mais que
+ * l'API répond, les stats sont affichées avec un avertissement « login en échec ».
+ */
+/**
+ * Source des stats choisie pour un tracker : 'auto' suit le réglage global
+ * (« préférer l'API quand elle est disponible »), 'api' / 'scrape' forcent.
+ * Le login est fait dans tous les cas.
+ */
+export type StatSource = 'auto' | 'api' | 'scrape';
+
+export interface ApiFetchConfig {
+  /** URL relative à baseUrl, ou absolue. */
+  url: string;
+  /** Nom de l'en-tête d'authentification (ex: "Authorization", "X-Api-Key"). */
+  authHeader?: string;
+  /** Valeur de l'en-tête, placeholder {{apiKey}} (ex: "Bearer {{apiKey}}", "token {{apiKey}}"). */
+  authFormat?: string;
+  /**
+   * En-têtes d'authentification multiples (remplace authHeader/authFormat), avec
+   * placeholders {{apiKey}} et {{apiUser}}. Ex PTP : { ApiUser: "{{apiUser}}", ApiKey: "{{apiKey}}" }.
+   */
+  headers?: Record<string, string>;
+  /** Le site exige un identifiant API en plus de la clé (ex: ApiUser PTP). */
+  requiresApiUser?: boolean;
+  /**
+   * 'json' (défaut) : extraction par path. 'html' : la clé API authentifie une page
+   * HTML classique (ex: index.php de PTP), extraction par regex comme le scrap.
+   */
+  responseType?: 'json' | 'html';
+  /** Extracteurs (path JSON ou regex HTML selon responseType), mêmes noms que fetch.fields. */
+  fields: Record<string, FieldExtractor>;
+  /** Consigne affichée dans la configuration : où trouver / générer la clé. */
+  keyInstructions?: string;
 }
 
 export interface FetchStep {
@@ -190,6 +234,8 @@ export interface TrackerConfig {
   curlBinary?: 'curl_firefox133' | 'curl_firefox135';
   login: LoginConfig;
   fetch: FetchStep;
+  /** Lecture complémentaire via API + clé utilisateur (voir ApiFetchConfig). */
+  api?: ApiFetchConfig;
   dashboard?: {
     byteUnit?: 'binary' | 'decimal';
   };
@@ -232,6 +278,15 @@ export interface TrackerStats {
   qbitSeedingTypes?: string[];
   /** Incident "connu" manuellement signale par l'utilisateur (auto-clear sur status=ok) */
   incident?: { acknowledged: boolean; note: string };
+  /**
+   * Login/scrap en echec alors que l'API a renvoye les stats : status reste 'ok'
+   * (stats affichees) mais le tracker doit etre signale comme en erreur (notif,
+   * badge, incident) car c'est le login qui garantit l'activite sur le site.
+   */
+  loginError?: string;
+  /** Resultat de la lecture API (absent si pas de bloc api ou pas de cle). */
+  apiStatus?: 'ok' | 'error';
+  apiError?: string;
   /** Dernieres donnees OK conservees apres un timeout ponctuel du refresh courant. */
   stale?: {
     reason: 'timeout';

@@ -21,7 +21,7 @@ export interface EngineTemplate {
   /** Aide spécifique : comment reconnaître ce moteur, où trouver les infos. */
   hint: string;
   /** Fragment de config pré-rempli (login + fetch + options), sans id/name/baseUrl. */
-  preset: Pick<TrackerConfig, 'login' | 'fetch'> & Partial<Pick<TrackerConfig, 'curlBinary' | 'ratioless' | 'dashboard'>>;
+  preset: Pick<TrackerConfig, 'login' | 'fetch'> & Partial<Pick<TrackerConfig, 'curlBinary' | 'ratioless' | 'dashboard' | 'api'>>;
 }
 
 export const ENGINE_TEMPLATES: Record<EngineId, EngineTemplate> = {
@@ -72,6 +72,26 @@ export const ENGINE_TEMPLATES: Record<EngineId, EngineTemplate> = {
           // d'animation comme signal de présence ; toute valeur non vide => 1 MP.
           unreadMessages:  { regex: 'Boîte de réception(?:(?!<\\/a>)[\\s\\S])*?<animate[^>]*?dur="(?<value>[^"]+)"', transform: 'string' },
         },
+      },
+      // API personnelle UNIT3D (GET /api/user, depuis UNIT3D 8.x fin 2024). Les
+      // octets arrivent en chaînes formatées (« 297.27 GiB »), le ratio et le bonus
+      // en chaînes numériques. Un site plus ancien renvoie 404 : repli sur le scrap.
+      api: {
+        url: 'api/user',
+        authHeader: 'Authorization',
+        authFormat: 'Bearer {{apiKey}}',
+        fields: {
+          uploadedBytes:   { path: 'uploaded', transform: 'bytes' },
+          downloadedBytes: { path: 'downloaded', transform: 'bytes' },
+          bufferBytes:     { path: 'buffer', transform: 'bytes' },
+          ratio:           { path: 'ratio', transform: 'number' },
+          seeding:         { path: 'seeding', transform: 'integer' },
+          leeching:        { path: 'leeching', transform: 'integer' },
+          seedBonus:       { path: 'seedbonus', transform: 'string' },
+          hitAndRuns:      { path: 'hit_and_runs', transform: 'integer' },
+          memberClass:     { path: 'group', transform: 'string' },
+        },
+        keyInstructions: "Sur le site : ton profil → Paramètres → API Key (génère-la si besoin). Clé personnelle, ne la partage pas.",
       },
       dashboard: { byteUnit: 'binary' },
     },
@@ -281,8 +301,18 @@ export function applyEnginePreset(config: TrackerConfig): TrackerConfig {
       ? { ...(preset.dashboard ?? {}), ...(config.dashboard ?? {}) }
       : undefined;
 
+  // Bloc api : hérité du preset, surchargeable champ par champ ; fields mergés.
+  const mergedApi = preset.api || config.api
+    ? {
+        ...(preset.api ?? {}),
+        ...(config.api ?? {}),
+        fields: { ...(preset.api?.fields ?? {}), ...(config.api?.fields ?? {}) },
+      } as TrackerConfig['api']
+    : undefined;
+
   return {
     ...config,
+    ...(mergedApi ? { api: mergedApi } : {}),
     curlBinary: config.curlBinary ?? preset.curlBinary,
     ratioless: config.ratioless ?? preset.ratioless,
     login: mergedLogin,

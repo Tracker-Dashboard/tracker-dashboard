@@ -44,5 +44,33 @@
       }
     }
   },
+  "api": {
+    "url": "ajax.php?action=index",
+    "authHeader": "Authorization",
+    "authFormat": "token {{apiKey}}",
+    "fields": {
+      "uploadedBytes": {
+        "path": "response.userstats.uploaded",
+        "transform": "bytes"
+      },
+      "downloadedBytes": {
+        "path": "response.userstats.downloaded",
+        "transform": "bytes"
+      },
+      "seedBonus": {
+        "path": "response.userstats.bonusPoints",
+        "transform": "string"
+      },
+      "memberClass": {
+        "path": "response.userstats.class",
+        "transform": "string"
+      },
+      "unreadMessages": {
+        "path": "response.notifications.messages",
+        "transform": "integer"
+      }
+    },
+    "keyInstructions": "Sur Phoenix Project : Paramètres du profil → section Accès → clés API. Génère une clé et colle-la ici. Le ratio reste lu sur le site (l'API renvoie -1 sans téléchargement)."
+  },
   "curlBinary": "curl_firefox135"
 }

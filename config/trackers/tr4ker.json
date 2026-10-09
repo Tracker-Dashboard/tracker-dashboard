@@ -55,6 +55,32 @@
       "transform": "string"
     }
   },
+  "api": {
+    "url": "api/me",
+    "authHeader": "X-Api-Key",
+    "authFormat": "{{apiKey}}",
+    "fields": {
+      "uploadedBytes": {
+        "sumPaths": [
+          "uploaded",
+          "bonus_upload"
+        ],
+        "transform": "bytes"
+      },
+      "downloadedBytes": {
+        "sumPaths": [
+          "downloaded",
+          "bonus_download"
+        ],
+        "transform": "bytes"
+      },
+      "seedBonus": {
+        "path": "money",
+        "transform": "string"
+      }
+    },
+    "keyInstructions": "Sur TR4KER : Mon compte → Paramètres → section Clé API. L'upload/download affichés par le site incluent le bonus acheté (uploaded + bonus_upload). Seeding et classe restent lus sur le site."
+  },
   "dashboard": {
     "byteUnit": "decimal"
   }

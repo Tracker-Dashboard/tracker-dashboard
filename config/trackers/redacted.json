@@ -22,6 +22,38 @@
       }
     }
   },
+  "api": {
+    "url": "ajax.php?action=index",
+    "authHeader": "Authorization",
+    "authFormat": "{{apiKey}}",
+    "fields": {
+      "uploadedBytes": {
+        "path": "response.userstats.uploaded",
+        "transform": "bytes"
+      },
+      "downloadedBytes": {
+        "path": "response.userstats.downloaded",
+        "transform": "bytes"
+      },
+      "ratio": {
+        "path": "response.userstats.ratio",
+        "transform": "number"
+      },
+      "requiredRatio": {
+        "path": "response.userstats.requiredratio",
+        "transform": "number"
+      },
+      "memberClass": {
+        "path": "response.userstats.class",
+        "transform": "string"
+      },
+      "unreadMessages": {
+        "path": "response.notifications.messages",
+        "transform": "integer"
+      }
+    },
+    "keyInstructions": "Sur RED : Paramètres → Accès → Clés API. Crée une clé avec la permission « User » (sans elle, l'API ne renvoie pas les stats)."
+  },
   "dashboard": {
     "byteUnit": "decimal"
   }
