@@ -12,12 +12,12 @@
   "dependencies": {
     "axios": "^1.20.0",
     "cheerio": "^1.0.0",
-    "express": "^5.2.1",
+    "express": "^5.3.0",
     "https-proxy-agent": "^9.1.0",
-    "playwright": "^1.63.0",
+    "playwright": "^1.64.0",
     "socks-proxy-agent": "^10.1.0",
     "ssh2": "^1.17.0",
-    "top-user-agents": "^2.1.138",
+    "top-user-agents": "^2.1.139",
     "tough-cookie": "^6.0.2"
   },
   "devDependencies": {
