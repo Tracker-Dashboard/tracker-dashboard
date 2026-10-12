@@ -1339,7 +1339,6 @@
     .col-good   { color: var(--green);  }
     .col-warn   { color: var(--yellow); }
     .col-bad    { color: var(--red);    }
-    .col-bonus  { color: var(--yellow); }
     .card-schedule {
       display: flex;
       align-items: center;
@@ -6476,7 +6475,7 @@
           ? statCell('Seed 24h', formatCount(f.seedTime), '', '')
           : statCell('Points', '-', '', ''));
     const ratiolessCell2 = hasStatValue(f.rate)
-      ? statCell('Taux', [formatCount(f.rate), 'pts/jour'], '', 'col-bonus')
+      ? statCell('Taux', [formatCount(f.rate), 'pts/jour'], '', '')
       : (hasStatValue(f.dlQuota)
           ? statCell('DL jour', formatCount(f.dlQuota), '', '')
           : statCell('Taux', '-', '', ''));
