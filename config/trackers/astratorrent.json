@@ -1,7 +1,7 @@
 {
   "id": "astratorrent",
   "name": "AstraTorrent",
-  "baseUrl": "https://astratorrent.la/v2",
+  "baseUrl": "https://astratorrent.la",
   "announceHosts": [
     "astratorrent.cc"
   ],
@@ -26,24 +26,25 @@
     "responseType": "html",
     "fields": {
       "uploadedBytes": {
-        "regex": "\"uploaded_bytes\"\\s*:\\s*(?<value>\\d+)",
+        "regex": "<span>⬆️\\s*(?<value>[\\d\\s.,]+\\s*[KMGTPE]?(?:i?[Bo]|o))\\s*</span>",
         "transform": "bytes"
       },
       "downloadedBytes": {
-        "regex": "\"downloaded_bytes\"\\s*:\\s*(?<value>\\d+)",
+        "regex": "<span>⬇️\\s*(?<value>[\\d\\s.,]+\\s*[KMGTPE]?(?:i?[Bo]|o))\\s*</span>",
         "transform": "bytes"
       },
-      "ratio": {
-        "regex": "\"ratio\"\\s*:\\s*\"(?<value>∞|[\\d.,]+)\"",
+      "points": {
+        "regex": "\\bvar\\s+userKarmaPoints\\s*=\\s*(?<value>\\d+(?:\\.\\d+)?)\\s*;",
         "transform": "number"
       },
-      "seedBonus": {
-        "regex": "\"bonus_points\"\\s*:\\s*(?<value>[\\d.]+)",
-        "transform": "number"
+      "seeding": {
+        "regex": "🌱\\s*(?<value>\\d+)\\s+seeds actifs",
+        "transform": "integer"
       }
     }
   },
   "dashboard": {
     "byteUnit": "decimal"
-  }
+  },
+  "ratioless": true
 }

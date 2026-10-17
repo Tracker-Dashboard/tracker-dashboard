@@ -31,7 +31,7 @@ Au premier accès, l'application demande de créer le compte administrateur de l
 Draupnirr
 
 - **Yggrasil** : changement de domaine pour Draupnirr. Pas de changement d'ID ni de .json pour ne pas casser l'existant.
-- **AstraTorrent** : domaine mis à jour vers `astratorrent.la`, lecture des statistiques du nouveau portail V2 et conservation de l’association avec les annonces historiques en `.cc`.
+- **AstraTorrent** : lecture des volumes, du Karma et des seeds sur le portail V3 de `astratorrent.la`, prise en compte du fonctionnement sans ratio et conservation de l’association avec les annonces historiques en `.cc` (correction #216).
 - **C411** : une session navigateur collée est désormais utilisée avant le login HTTP automatisé, afin de conserver les validations Cloudflare obtenues depuis la même sortie proxy.
 - **TR4KER** : extraction du ratio adaptée au nouvel en-tête et regroupement des rafraîchissements concurrents afin de protéger le profil navigateur partagé.
 - **Yggrasil** : ajout du tracker avec authentification automatique par e-mail/mot de passe et récupération de l’upload, du download, du ratio et du temps de seed.

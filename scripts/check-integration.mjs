@@ -163,20 +163,36 @@ const extractorValue = (tracker, field, fixture) => {
     : undefined;
 };
 
-const astraV2Fixture = `<script>window.__ASTRA_USER__={"uploaded_bytes":33318010683,"downloaded_bytes":0,"ratio":"1.500","bonus_points":1741};</script>`;
+// Synthetic V3 account fragment; never copy private account dumps into fixtures.
+const astraV3Fixture = `<div class="hud-card-footer"><span>⬆️ 12.34 Go</span><span>⬇️ 0.00 Go</span></div>
+<script>var userKarmaPoints = 2345;</script><span>🌱 7 seeds actifs</span>`;
+const { extractExtraFieldResponse } = await import('../dist/fetcher.js');
+const astraValues = Object.fromEntries(Object.entries(astratorrent.fetch.fields).map(([field, extractor]) => [
+  field, extractExtraFieldResponse({ field, ...extractor }, astraV3Fixture)?.value,
+]));
+if (astraValues.uploadedBytes !== 12340000000 || astraValues.downloadedBytes !== 0
+    || astraValues.points !== 2345 || astraValues.seeding !== 7) {
+  errors.push('AstraTorrent V3 fields must pass real extraction and numeric/byte transforms, including zero download');
+}
+if (Object.entries(astratorrent.fetch.fields).some(([field, extractor]) =>
+  extractExtraFieldResponse({ field, ...extractor }, '<form id="formLogin"></form>') !== null)) {
+  errors.push('AstraTorrent login page must not produce account statistics');
+}
 const supportsAstraTorrentLa = (
-  astratorrent.baseUrl === 'https://astratorrent.la/v2'
+  astratorrent.baseUrl === 'https://astratorrent.la'
+  && astratorrent.ratioless === true
   && astratorrent.login?.url === 'login.php'
   && astratorrent.fetch?.url === 'compte.php'
   && astratorrent.announceHosts?.includes('astratorrent.cc')
-  && extractorValue(astratorrent, 'uploadedBytes', astraV2Fixture) === '33318010683'
-  && extractorValue(astratorrent, 'downloadedBytes', astraV2Fixture) === '0'
-  && extractorValue(astratorrent, 'ratio', astraV2Fixture) === '1.500'
-  && extractorValue(astratorrent, 'seedBonus', astraV2Fixture) === '1741'
+  && extractorValue(astratorrent, 'uploadedBytes', astraV3Fixture) === '12.34 Go'
+  && extractorValue(astratorrent, 'downloadedBytes', astraV3Fixture) === '0.00 Go'
+  && extractorValue(astratorrent, 'points', astraV3Fixture) === '2345'
+  && extractorValue(astratorrent, 'seeding', astraV3Fixture) === '7'
+  && !astratorrent.fetch.fields.ratio
   && server.includes('tracker.announceHosts ?? []')
 );
 if (!supportsAstraTorrentLa) {
-  errors.push('AstraTorrent must use the .la V2 site, parse embedded account stats and retain its legacy .cc announce host');
+  errors.push('AstraTorrent must parse V3 account traffic, Karma and seeds without a ratio and retain its legacy announce host');
 }
 
 const lesaloonFixture = `
