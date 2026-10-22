@@ -1384,8 +1384,25 @@
       font-size: 12.5px;
       line-height: 1.4;
     }
-    .login-ko-box strong { display: block; margin-bottom: 2px; }
-    .login-ko-box span { color: var(--text); opacity: .85; word-break: break-word; }
+    .login-ko-box > summary {
+      cursor: pointer;
+      font-weight: 600;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      user-select: none;
+    }
+    .login-ko-box > summary::-webkit-details-marker { display: none; }
+    .login-ko-box > summary::after {
+      content: '▸';
+      margin-left: auto;
+      font-size: 11px;
+      transition: transform .15s;
+    }
+    .login-ko-box[open] > summary::after { transform: rotate(90deg); }
+    .login-ko-box[open] > summary { margin-bottom: 4px; }
+    .login-ko-box span { display: block; color: var(--text); opacity: .85; word-break: break-word; }
     .btn-inline {
       background: none;
       color: var(--text);
@@ -3098,9 +3115,12 @@
   }
 
   // Login en échec mais stats remontées via l'API.
+  // Replié par défaut pour ne pas déformer la carte ; un clic/tap affiche le détail.
+  // L'état ouvert est mémorisé pour survivre au rafraîchissement automatique.
   function loginKoBox(stat) {
     if (!stat.loginError) return '';
-    return `<div class="login-ko-box"><strong>⚠ Login en échec — stats lues via l'API</strong><span>Le compte n'est plus visité : risque de désactivation pour inactivité. ${escapeHtml(stat.loginError)}</span></div>`;
+    const open = expandedLoginErrors.has(stat.id) ? ' open' : '';
+    return `<details class="login-ko-box" data-login-ko="${escapeHtml(stat.id)}"${open}><summary>⚠ Login en échec — stats lues via l'API</summary><span>Le compte n'est plus visité : risque de désactivation pour inactivité. ${escapeHtml(stat.loginError)}</span></details>`;
   }
 
   // Classe de membre courante (champ optionnel memberClass, regex par site/preset).
@@ -3384,6 +3404,14 @@
   let dragReorderEnabled = false;
   let dragSourceTrackerId = null;
   const expandedIncidents = new Set();
+  const expandedLoginErrors = new Set();
+  // L'événement toggle ne remonte pas : écoute en phase de capture.
+  document.addEventListener('toggle', event => {
+    const box = event.target;
+    if (!(box instanceof HTMLDetailsElement) || !box.dataset.loginKo) return;
+    if (box.open) expandedLoginErrors.add(box.dataset.loginKo);
+    else expandedLoginErrors.delete(box.dataset.loginKo);
+  }, true);
   let viewMode = 'cards'; // 'cards' | 'rows'
   // Vue active pilotée par la barre latérale.
   // 'dashboard' | 'trackers' | 'proxies' | 'incidents' | 'graphs' | 'qbit' | 'visual-settings' | 'scraping' | 'notif-canaux' | 'notif-globales' | 'notif-tracker' | 'fiche'
