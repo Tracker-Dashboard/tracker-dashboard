@@ -97,6 +97,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v7
         with:
+          pull: true
           context: .
           file: ./Dockerfile.browser
           platforms: linux/amd64,linux/arm64
