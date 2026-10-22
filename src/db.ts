@@ -752,6 +752,9 @@ export function markTrackerScheduleRun(trackerId: string, nextRunAt: string): vo
     .run(nextRunAt, trackerId);
 }
 
+// Prefixe de la colonne error pour un login en echec dont les stats viennent de l'API.
+const LOGIN_ERROR_SNAPSHOT_PREFIX = 'Login en echec (stats lues via API) : ';
+
 export function saveStatSnapshots(stats: TrackerStats[]): void {
   const stmt = getDb().prepare(`
     INSERT INTO stat_snapshots (
@@ -769,7 +772,7 @@ export function saveStatSnapshots(stats: TrackerStats[]): void {
       stat.id,
       stat.name,
       stat.status,
-      stat.error ?? (stat.loginError ? `Login en echec (stats lues via API) : ${stat.loginError}` : null),
+      stat.error ?? (stat.loginError ? `${LOGIN_ERROR_SNAPSHOT_PREFIX}${stat.loginError}` : null),
       JSON.stringify(stat.fields),
       stat.lastUpdated,
     );
@@ -779,7 +782,7 @@ export function saveStatSnapshots(stats: TrackerStats[]): void {
 export function getLatestOkStatSnapshot(tracker: TrackerConfig): TrackerStats | null {
   const row = getDb()
     .prepare(`
-      SELECT tracker_name, fields_json, captured_at
+      SELECT tracker_name, error, fields_json, captured_at
       FROM stat_snapshots
       WHERE tracker_id = ? AND status = 'ok'
       ORDER BY captured_at DESC, id DESC
@@ -789,6 +792,13 @@ export function getLatestOkStatSnapshot(tracker: TrackerConfig): TrackerStats | 
   if (!row) return null;
   try {
     const fields = JSON.parse(String(row.fields_json)) as Record<string, string | number>;
+    // Un login en echec avec stats lues via l'API est enregistre en status 'ok'
+    // avec ce prefixe dans error (voir saveStatSnapshots) : on le restaure pour
+    // que la carte reste en erreur apres un redemarrage.
+    const storedError = typeof row.error === 'string' ? row.error : '';
+    const loginError = storedError.startsWith(LOGIN_ERROR_SNAPSHOT_PREFIX)
+      ? storedError.slice(LOGIN_ERROR_SNAPSHOT_PREFIX.length)
+      : undefined;
     return {
       id: tracker.id,
       name: String(row.tracker_name || tracker.name),
@@ -797,6 +807,7 @@ export function getLatestOkStatSnapshot(tracker: TrackerConfig): TrackerStats | 
       lastUpdated: dbTimestampToIso(row.captured_at) ?? String(row.captured_at),
       byteUnit: tracker.dashboard?.byteUnit ?? 'binary',
       fields,
+      ...(loginError ? { loginError } : {}),
     };
   } catch {
     return null;
