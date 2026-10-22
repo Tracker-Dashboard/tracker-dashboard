@@ -57,3 +57,54 @@ jobs:
         if: always()
         with:
           sarif_file: trivy-results.sarif
+
+  scan-published:
+    name: Scan published ${{ matrix.image }}:latest
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - tracker-dashboard
+          - tracker-dashboard-browser
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.4.0
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Image reellement distribuee aux utilisateurs (et non un rebuild local).
+      - name: Report Node.js version of published image
+        run: |
+          IMG="ghcr.io/tracker-dashboard/${{ matrix.image }}:latest"
+          docker pull -q "$IMG"
+          NODE_VERSION="$(docker run --rm --entrypoint node "$IMG" -v)"
+          echo "$IMG -> Node $NODE_VERSION" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Generate Trivy SARIF report (published image)
+        uses: aquasecurity/trivy-action@v0.36.0
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          image-ref: ghcr.io/tracker-dashboard/${{ matrix.image }}:latest
+          vuln-type: os,library
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          format: sarif
+          output: trivy-published-${{ matrix.image }}.sarif
+          exit-code: "0"
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: trivy-published-${{ matrix.image }}.sarif
+          category: published-${{ matrix.image }}
