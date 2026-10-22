@@ -1,6 +1,9 @@
 name: Build & Publish Docker Image
 
 on:
+  schedule:
+    # Rebuild hebdo de latest sur la base node:22 a jour (correctifs Node/Debian)
+    - cron: '17 4 * * 1'
   workflow_dispatch:
   push:
     branches:
@@ -32,7 +35,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4.4.0
         with:
-          ref: ${{ (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action == 'closed')) && 'main' || github.ref }}
+          ref: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || (github.event_name == 'pull_request' && github.event.action == 'closed')) && 'main' || github.ref }}
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v4
@@ -50,7 +53,7 @@ jobs:
             # latest sur push main, relance manuelle ou PR fusionnee. Le dernier cas
             # couvre les fusions automatiques au GITHUB_TOKEN qui ne recreent pas
             # toujours un evenement push exploitable par Actions.
-            type=raw,value=latest,enable=${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true) }}
+            type=raw,value=latest,enable=${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true) }}
             # tag semver si push d'un tag v*
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
@@ -69,7 +72,7 @@ jobs:
           pull: true
           context: .
           platforms: linux/amd64,linux/arm64
-          push: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true) }}
+          push: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true) }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
