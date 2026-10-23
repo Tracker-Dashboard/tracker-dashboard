@@ -83,8 +83,6 @@ if (!honorsServerTimeZone) {
 
 const retiresClosedNexumTracker = (
   !fs.existsSync(nexumPath)
-  && readme.includes('Retrait de Nexum')
-  && readme.includes('fermé définitivement')
   && db.includes("RETIRED_BUNDLED_TRACKER_IDS = new Set(['nexum', 'torr9'])")
   && db.includes('removeRetiredBundledTrackers();')
 );
@@ -94,7 +92,6 @@ if (!retiresClosedNexumTracker) {
 
 const retiresTorr9Tracker = (
   !fs.existsSync(torr9Path)
-  && readme.includes('Retrait de Torr9')
   && db.includes("RETIRED_BUNDLED_TRACKER_IDS = new Set(['nexum', 'torr9'])")
   && !browserFetcher.includes("tracker.id === 'torr9'")
 );
