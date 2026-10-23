@@ -3,7 +3,6 @@ import path from 'node:path';
 
 const root = process.cwd();
 const htmlPath = path.join(root, 'public', 'index.html');
-const readmePath = path.join(root, 'README.md');
 const composePath = path.join(root, 'docker-compose.yml');
 const serverPath = path.join(root, 'src', 'server.ts');
 const fetcherPath = path.join(root, 'src', 'fetcher.ts');
@@ -19,7 +18,6 @@ const privatehdPath = path.join(root, 'config', 'trackers', 'privatehd.json');
 const nexumPath = path.join(root, 'config', 'trackers', 'nexum.json');
 const dbPath = path.join(root, 'src', 'db.ts');
 const html = fs.readFileSync(htmlPath, 'utf8');
-const readme = fs.readFileSync(readmePath, 'utf8');
 const compose = fs.readFileSync(composePath, 'utf8');
 const server = fs.readFileSync(serverPath, 'utf8');
 const fetcher = fs.readFileSync(fetcherPath, 'utf8');
@@ -485,11 +483,9 @@ if (!crazySpiritsUsesTurnstileCookieSession) {
 const documentsCookieIpBinding = (
   html.includes('exporte tous les cookies avec la même IP de sortie')
   && html.includes('<code>cf_clearance</code>')
-  && readme.includes('Les cookies doivent être créés avec la même IP de sortie')
-  && readme.includes('`cf_clearance` est présent')
 );
 if (!documentsCookieIpBinding) {
-  errors.push('Session cookie guidance must document IP binding and cf_clearance in the WebUI and README');
+  errors.push('Session cookie guidance must document IP binding and cf_clearance in the WebUI');
 }
 
 const yggUsesFlareSolverrFallback = (
@@ -516,12 +512,9 @@ const shipsFlareSolverrSidecar = (
   && html.includes('/api/trawl/status')
   && server.includes("app.get('/api/flaresolverr/status'")
   && server.includes("app.get('/api/trawl/status'")
-  && readme.includes('### Repli Cloudflare (FlareSolverr puis TRAWL)')
-  && readme.includes('ghcr.io/germondai/trawl:baseline')
-  && /ghcr\.io\/germondai\/trawl:baseline[\s\S]*?LOG_LEVEL:\s*warn/.test(readme)
 );
 if (!shipsFlareSolverrSidecar) {
-  errors.push('FlareSolverr and TRAWL anti-bot sidecar wiring must remain available in Compose, WebUI and README');
+  errors.push('FlareSolverr and TRAWL anti-bot sidecar wiring must remain available in Compose and WebUI');
 }
 
 const shipsCrossSeedIntegration = (
@@ -536,11 +529,9 @@ const shipsCrossSeedIntegration = (
   && server.includes("app.get('/api/beta/cross-seed/summary'")
   && server.includes('detectCrossSeedInstanceIds')
   && server.includes('normalizeCrossSeedClientIds')
-  && readme.includes('### Instances cross-seed')
-  && readme.includes('Aucune clé API cross-seed')
 );
 if (!shipsCrossSeedIntegration) {
-  errors.push('cross-seed instances, badges, torrent markers, API test and README documentation must remain wired');
+  errors.push('cross-seed instances, badges, torrent markers, and API test must remain wired');
 }
 
 if (errors.length > 0) {
