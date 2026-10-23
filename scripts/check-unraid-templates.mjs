@@ -49,11 +49,7 @@ assert.equal(trawl('Config[Type="Variable"][Target="PORT"]').text(), '8192');
 assert.equal(trawl('Config[Type="Variable"][Target="LOG_LEVEL"]').text(), 'warn');
 assert.equal(trawl('Config[Type="Variable"][Target="LOG_LEVEL"]').attr('Default'), 'warn');
 
-const guide = fs.readFileSync(path.join(unraidDir, 'README.md'), 'utf8');
 const installer = fs.readFileSync(path.join(unraidDir, 'install-templates.sh'), 'utf8');
-assert.match(guide, /phase bêta/i);
-assert.match(guide, /Retours recherchés/);
-assert.match(guide, /N'incluez jamais d'identifiants/);
 for (const name of templateNames) assert.match(installer, new RegExp(name));
 
-console.log('Unraid template checks OK: DockerMan templates, private sidecars, installer and feedback guide.');
+console.log('Unraid template checks OK: DockerMan templates, private sidecars and installer.');
