@@ -1373,36 +1373,45 @@
       gap: 8px;
     }
     .error-body svg { flex-shrink: 0; margin-top: 1px; }
-    /* Login en échec mais stats lues via l'API : avertissement bien visible */
-    .login-ko-box {
-      margin: 0 14px 10px;
+    /* Login en échec mais stats lues via l'API : badge cliquable dans la ligne des badges,
+       détail en popover superposé pour ne jamais changer la hauteur de la carte. */
+    .card-badges { position: relative; }
+    .login-ko-box { display: inline-flex; }
+    .login-ko-box > summary {
+      cursor: pointer;
+      list-style: none;
+      user-select: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .login-ko-box > summary::-webkit-details-marker { display: none; }
+    .login-ko-box > summary::after { content: '▸'; font-size: 10px; transition: transform .15s; }
+    .login-ko-box[open] > summary::after { transform: rotate(90deg); }
+    .login-ko-pop {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 12px;
+      right: 12px;
+      z-index: 5;
+      max-height: 210px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
       padding: 10px 12px;
       border: 1px solid var(--red);
       border-radius: 8px;
-      background: color-mix(in srgb, var(--red) 10%, transparent);
+      background: color-mix(in srgb, var(--red) 12%, var(--bg2));
+      box-shadow: 0 6px 18px rgba(0,0,0,.45);
       color: var(--red);
       font-size: 12.5px;
       line-height: 1.4;
+      text-transform: none;
+      letter-spacing: normal;
+      font-weight: 400;
     }
-    .login-ko-box > summary {
-      cursor: pointer;
-      font-weight: 600;
-      list-style: none;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      user-select: none;
-    }
-    .login-ko-box > summary::-webkit-details-marker { display: none; }
-    .login-ko-box > summary::after {
-      content: '▸';
-      margin-left: auto;
-      font-size: 11px;
-      transition: transform .15s;
-    }
-    .login-ko-box[open] > summary::after { transform: rotate(90deg); }
-    .login-ko-box[open] > summary { margin-bottom: 4px; }
-    .login-ko-box span { display: block; color: var(--text); opacity: .85; word-break: break-word; }
+    .login-ko-pop strong { display: block; font-weight: 600; margin-bottom: 4px; }
+    .login-ko-pop > span { display: block; color: var(--text); opacity: .85; word-break: break-word; }
+    .login-ko-pop .incident-line { margin: 0 0 6px; }
     .btn-inline {
       background: none;
       color: var(--text);
@@ -3115,12 +3124,15 @@
   }
 
   // Login en échec mais stats remontées via l'API.
-  // Replié par défaut pour ne pas déformer la carte ; un clic/tap affiche le détail.
+  // Le badge « Login KO » est cliquable ; le détail (et le lien d'incident) s'affiche en
+  // popover superposé : la carte garde la même hauteur que les autres de sa ligne.
   // L'état ouvert est mémorisé pour survivre au rafraîchissement automatique.
   function loginKoBox(stat) {
     if (!stat.loginError) return '';
-    const open = expandedLoginErrors.has(stat.id) ? ' open' : '';
-    return `<details class="login-ko-box" data-login-ko="${escapeHtml(stat.id)}"${open}><summary>⚠ Login en échec — stats lues via l'API</summary><span>Le compte n'est plus visité : risque de désactivation pour inactivité. ${escapeHtml(stat.loginError)}</span></details>`;
+    const editing = expandedIncidents.has(stat.id);
+    const open = expandedLoginErrors.has(stat.id) && !editing ? ' open' : '';
+    const incident = editing ? '' : renderIncidentBox(stat);
+    return `<details class="login-ko-box" data-login-ko="${escapeHtml(stat.id)}"${open}><summary class="badge badge-error" title="Login en échec, stats lues via l'API">Login KO</summary><div class="login-ko-pop"><strong>⚠ Login en échec — stats lues via l'API</strong>${incident}<span>Le compte n'est plus visité : risque de désactivation pour inactivité. ${escapeHtml(stat.loginError)}</span></div></details>`;
   }
 
   // Classe de membre courante (champ optionnel memberClass, regex par site/preset).
@@ -3412,6 +3424,12 @@
     if (box.open) expandedLoginErrors.add(box.dataset.loginKo);
     else expandedLoginErrors.delete(box.dataset.loginKo);
   }, true);
+  // Un clic hors du popover le referme.
+  document.addEventListener('click', event => {
+    document.querySelectorAll('details.login-ko-box[open]').forEach(box => {
+      if (!box.contains(event.target)) box.open = false;
+    });
+  });
   let viewMode = 'cards'; // 'cards' | 'rows'
   // Vue active pilotée par la barre latérale.
   // 'dashboard' | 'trackers' | 'proxies' | 'incidents' | 'graphs' | 'qbit' | 'visual-settings' | 'scraping' | 'notif-canaux' | 'notif-globales' | 'notif-tracker' | 'fiche'
@@ -6510,9 +6528,7 @@
     const bonusOrRequired = hasStatValue(f.requiredRatio)
       ? statCell('Req. ratio', formatRatio(f.requiredRatio), '', '')
       : statCell('Bonus', formatPoints(f.seedBonus), '', '');
-    const bottomCells = ratioless
-      ? `${ratiolessCell1}${ratiolessCell2}`
-      : `${hasStatValue(f.seedTimeDays)
+    const bottomCells = `${hasStatValue(f.seedTimeDays)
           ? statCell('Seed time', [formatCount(f.seedTimeDays), 'j'], '', '')
           : seedingStatCell(stat)}
          ${bonusOrRequired}`;
@@ -6533,9 +6549,9 @@
           ${statCell('Download', formatBytes(f.downloadedBytes, byteUnit), '', '')}
           ${statCell('Upload', formatBytes(f.uploadedBytes, byteUnit), '', '')}
           ${statCell('Ratio', hasRatio ? formatRatio(ratio) : '-', '', ratioClass(ratio))}
-          ${statCell('Buffer', buffer, '', bufferClass(buffer))}
-          ${bottomCells}
-          ${(ratioless || hasStatValue(f.seedTimeDays)) ? seedingStatCellFull(stat) : ''}`;
+          ${ratioless ? ratiolessCell2 : statCell('Buffer', buffer, '', bufferClass(buffer))}
+          ${ratioless ? `${seedingStatCell(stat)}${ratiolessCell1}` : bottomCells}
+          ${(!ratioless && hasStatValue(f.seedTimeDays)) ? seedingStatCellFull(stat) : ''}`;
 
     return `
       <div class="card ${stat.loginError ? 'card--err' : 'card--ok'}"${cardDragAttrs(stat)}>
@@ -6547,11 +6563,10 @@
             ${cardRefreshButton(stat)}
           </div>
         </div>
-        <div class="card-badges">${stat.loginError ? '<span class="badge badge-error">Login KO</span>' : ''}${memberClassBadge(stat)}${mpBadge(stat)}${hnrBadge(stat)}${apiBadge(stat)}${staleBadge(stat)}${ratiolessBadge(stat)}</div>
-        ${loginKoBox(stat)}
+        <div class="card-badges">${loginKoBox(stat)}${memberClassBadge(stat)}${mpBadge(stat)}${hnrBadge(stat)}${apiBadge(stat)}${staleBadge(stat)}${ratiolessBadge(stat)}</div>
         <div class="stats">${hasXpFields ? xpGrid : standardGrid}
         </div>
-        ${stat.stale || stat.loginError ? renderIncidentBox(stat) : ''}
+        ${stat.stale || (stat.loginError && expandedIncidents.has(stat.id)) ? renderIncidentBox(stat) : ''}
         <div class="card-footer">Derniere connexion : ${lastLoginText(stat)}</div>
       </div>`;
   }
