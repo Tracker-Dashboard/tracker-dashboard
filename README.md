@@ -2,56 +2,97 @@
   <img src="public/logo.png" alt="Tracker Dashboard" width="260">
 </p>
 
-> **Tu l'utilises ? Tu l'aimes ? [⭐ Mets une étoile !](https://github.com/Tracker-Dashboard/tracker-dashboard/stargazers)** — ça prend deux secondes.
-
-> [!NOTE]
-> **Toute aide est la bienvenue.** Les pull requests sont ouvertes à toute personne souhaitant corriger un problème, ajouter un tracker ou proposer de nouvelles fonctionnalités.
->
-> En l'état, Aerya ne fera plus évoluer l'outil en dehors de l'ajout de trackers auxquels il a accès et des corrections de sécurité.
-
-> [!IMPORTANT]
-> Le projet est porté par l'organisation GitHub [Tracker-Dashboard](https://github.com/Tracker-Dashboard), en collaboration avec [Zup](https://github.com/Gusdezup) ([Autovisit-Web](https://github.com/Gusdezup/Autovisit-Web)).
-
-> [!WARNING]
-> Lors d'un rafraîchissement général ou du premier lancement, certains trackers peuvent temporairement afficher une erreur ou prendre du temps à se mettre à jour. Lancez si besoin une mise à jour individuelle du tracker concerné.
->
-> Les lectures via navigateur headless sont plus lourdes que les lectures HTTP. L'application limite la concurrence, applique un timeout par tracker, sert le cache au démarrage et utilise curl-impersonate quand c'est possible.
-
 # Tracker Dashboard
 
-Tracker Dashboard est une WebUI pour suivre les statistiques de vos trackers BitTorrent : upload, download, ratio, buffer, points bonus, torrents en seed, MP non lus… selon les capacités de chaque site. Elle gère les identifiants, un proxy (HTTP/HTTPS/SOCKS/SSH), des connexions automatiques planifiées, l'historique en SQLite, et compare vos stats aux torrents réellement présents dans vos clients BitTorrent.
+Tracker Dashboard réunit les statistiques de vos trackers BitTorrent dans une interface web : upload, download, ratio, buffer, points bonus, torrents en seed et messages privés non lus, selon les données disponibles sur chaque site. Il planifie les visites, conserve un historique SQLite et compare les statistiques des trackers aux torrents présents dans vos clients BitTorrent.
 
-Au premier accès, l'application demande de créer le compte administrateur de la WebUI.
+Le projet est porté par l’organisation [Tracker-Dashboard](https://github.com/Tracker-Dashboard), en collaboration avec [Zup](https://github.com/Gusdezup) ([Autovisit-Web](https://github.com/Gusdezup/Autovisit-Web)). **Toute aide est la bienvenue** : corrections, nouveaux trackers, documentation et nouvelles fonctionnalités.
 
-**Export Prometheus + Grafana** : endpoint `/metrics` (protégé par token via `METRICS_TOKEN`) exposant les stats des trackers activés (`tracker_*`) et des clients BitTorrent (`tracker_qbit_*`). Dashboard Grafana JSON dans `grafana/dashboard.json` — voir [grafana/README.md](grafana/README.md).
+<p align="center">
+  <strong>Vous l’utilisez ? Vous l’appréciez ?</strong>
+  <a href="https://github.com/Tracker-Dashboard/tracker-dashboard/stargazers"><strong>⭐ Ajoutez une étoile !</strong></a>
+</p>
 
-## Changements récents
+## Sommaire
 
-- **Actions des cartes** : les boutons « Fiche » et « MàJ » utilisent désormais des icônes avec infobulles et libellés accessibles.
-Draupnirr
+- [Fonctionnalités](#fonctionnalités)
+- [Dernières nouveautés](#dernières-nouveautés)
+- [Installation et premier démarrage](#installation-et-premier-démarrage)
+- [Interface](#interface)
+- [Cookies de session](#cookies-de-session-sites-à-captcha--cloudflare)
+- [Statistiques via les API des trackers](#statistiques-via-les-api-des-trackers)
+- [Double authentification des trackers](#double-authentification-2fa--totp)
+- [Plusieurs comptes par tracker](#plusieurs-comptes-par-tracker)
+- [Captures d’écran](#captures-décran)
+- [Connexions automatiques](#connexions-automatiques)
+- [Clients BitTorrent et cross-seed](#clients-bittorrent)
+- [Notifications](#notifications)
+- [Prometheus et Grafana](#prometheus-et-grafana)
+- [Sécurité proxy](#sécurité-proxy)
+- [Runtime navigateur, FlareSolverr et TRAWL](#runtime-navigateur)
+- [Lecture rapide](#lecture-rapide-curl-impersonate)
+- [User-Agent aléatoire](#user-agent-aléatoire)
+- [Sites intégrés et ajout d’un site](#sites-intégrés--ajout-dun-site)
+- [Remerciements](#remerciements)
 
-- **Yggrasil** : changement de domaine pour Draupnirr. Pas de changement d'ID ni de .json pour ne pas casser l'existant.
-- **AstraTorrent** : lecture des volumes, du Karma et des seeds sur le portail V3 de `astratorrent.la`, prise en compte du fonctionnement sans ratio et conservation de l’association avec les annonces historiques en `.cc` (correction #216).
-- **C411** : une session navigateur collée est désormais utilisée avant le login HTTP automatisé, afin de conserver les validations Cloudflare obtenues depuis la même sortie proxy.
-- **TR4KER** : extraction du ratio adaptée au nouvel en-tête et regroupement des rafraîchissements concurrents afin de protéger le profil navigateur partagé.
-- **Yggrasil** : ajout du tracker avec authentification automatique par e-mail/mot de passe et récupération de l’upload, du download, du ratio et du temps de seed.
-- **V3X** : les statistiques sont désormais relevées depuis la page « Mon activité », y compris le buffer, le temps de seed, les points horaires et le nombre de seeds en cours.
-- **LeSaloon v2 et DigitalCore** : ajout des deux trackers avec lecture navigateur des statistiques et authentification par cookie de session, leurs connexions étant protégées par un défi interactif ou un CAPTCHA.
-- **Points bonus uniformisés** : les séparateurs de milliers et de décimales propres à chaque tracker sont normalisés à l'affichage selon la convention française.
-- **Retrait de Torr9** : sa définition intégrée est supprimée et les anciennes installations la nettoient automatiquement au démarrage.
-- **Retrait de Nexum** : le tracker a fermé définitivement. Sa définition intégrée est supprimée et les anciennes installations la nettoient automatiquement au démarrage.
-- **Image principale allégée** : Playwright, Chromium et CloakBrowser sont regroupés dans le service parallèle `tracker-dashboard-browser`, avec état, versions et alertes de mise à jour dans la WebUI.
-- **Plusieurs comptes par tracker** : duplication d'un tracker, noms d'affichage personnalisables, regroupement sous le site et attribution des torrents par passkey entre comptes.
-- **Clients BitTorrent et cross-seed** : comparaison aux torrents locaux, rafraîchissement automatique par client, plusieurs instances cross-seed et plusieurs clients associés à une même instance.
-- **Seeding comparé** : compteurs annoncés par le site et détectés dans les clients BitTorrent affichés côte à côte.
-- **Protection anti-bot renforcée** : sessions navigateur plus fiables, cookies par tracker, repli automatique via FlareSolverr puis secours TRAWL lorsqu'un challenge bloque la lecture normale.
-- **Ajout de trackers simplifié** : presets UNIT3D, Gazelle, TorrentLeech, MyAnonamouse et API JSON, modes guidé/expert et catalogue enrichi, notamment avec IPTorrents et DarkPeers.
-- **Interface modernisée** : navigation latérale, vues cartes/lignes, taille des cartes partagée entre appareils, thèmes clair/sombre/système et fiches trackers enrichies.
-- **Graphiques et calendrier** : activation facultative, courbes UP/DL/ratio, comparaisons multi-trackers et historique des rafraîchissements OK/KO.
-- **Notifications complètes** : canaux globaux ou par tracker via Discord, Apprise ou e-mail, avec détection des messages privés non lus.
-- **Observabilité** : métriques Prometheus des trackers et clients BitTorrent (`tracker_*`, `tracker_qbit_*`) et dashboard Grafana fourni.
-- **Authentification et réseau** : 2FA TOTP par tracker, proxies HTTP/HTTPS/SOCKS/SSH et cookies de session pour les sites à CAPTCHA ou Cloudflare.
-- **Lectures optimisées** : curl-impersonate lorsque possible, Chromium par défaut et CloakBrowser en moteur furtif optionnel.
+## Fonctionnalités
+
+| Domaine | Ce que propose Tracker Dashboard |
+| --- | --- |
+| **Statistiques** | Cartes ou lignes, ratio, buffer, volumes UP/DL, bonus, classe de membre et MP non lus selon le tracker ; lecture des pages et API compatibles |
+| **Historique** | Stockage SQLite, courbes d’évolution, comparaisons multi-trackers et calendrier des lectures réussies ou en échec |
+| **Visites automatiques** | Planification globale ou individuelle, rafraîchissement manuel, cache et nouvelles tentatives après certains échecs |
+| **Comptes multiples** | Duplication d’un tracker, identifiants et historique indépendants, noms personnalisables et attribution des torrents par passkey |
+| **Clients BitTorrent** | qBittorrent et ruTorrent/rTorrent, rapprochement des annonces, comparaison du seeding et liens vers plusieurs instances cross-seed |
+| **Authentification des trackers** | Identifiants, cookies de session, TOTP et clés API selon les méthodes prises en charge par chaque site |
+| **Réseau et navigateurs** | Proxies HTTP/HTTPS/SOCKS/SSH, curl-impersonate, runtime Chromium séparé, CloakBrowser facultatif et replis FlareSolverr/TRAWL |
+| **Notifications** | Discord, Apprise et e-mail ; réglages globaux ou par tracker, erreurs, rétablissements, statistiques et seuils |
+| **Supervision** | Export Prometheus protégé par jeton et tableau de bord Grafana fourni |
+| **Personnalisation** | Thèmes clair/sombre/système, taille des cartes, notes, incidents connus et assistant d’ajout de trackers |
+
+## Dernières nouveautés
+
+<details>
+<summary>Afficher les dernières nouveautés</summary>
+
+Évolutions intégrées à la branche principale, des plus récentes aux plus anciennes. La disponibilité sur votre instance dépend de l’image installée.
+
+### Octobre 2026
+
+- **22 octobre — Échecs de connexion plus visibles :** encadré « Login en échec » repliable lorsque l’API fournit encore les statistiques, notifications aux erreurs raccourcies et conservation de l’alerte après redémarrage. ([#221](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/221), [#222](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/222))
+- **22 octobre — Images Docker et sécurité :** actualisation de la base Node 22, contrôle hebdomadaire de sa disponibilité et scan des images publiées ; reconstruction hebdomadaire uniquement si la base a changé. ([#219](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/219), [#220](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/220))
+- **17 octobre — AstraTorrent V3 :** correction des volumes, du Karma et des seeds sur le nouveau portail, prise en compte de l’absence de ratio et conservation des associations avec les annonces historiques. ([#217](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/217))
+- **12 octobre — Nostradamus :** download et seeding lus depuis la page Activity ; taux journalier laissé vide lorsqu’il n’est pas disponible. ([#214](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/214))
+- **9 octobre — Statistiques par API :** clés personnelles, choix de la source des statistiques, badges API/API KO, suivi des H&R lorsque disponible et maintien de l’alerte si la connexion au site échoue malgré une API fonctionnelle. Lecture V3X plus précise et corrections des unités sur HD-Forever et TR4KER. ([#213](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/213))
+- **6–7 octobre — SceneTime et TorrentBytes :** ajout des deux trackers et lecture de leur classe de membre ; SceneTime utilise un cookie de session. ([#209](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/209), [#210](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/210), [#211](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/211))
+- **4 octobre — V3X :** seeding et points bonus lus depuis « Mon activité ». ([#206](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/206))
+
+### Septembre 2026
+
+- **26 septembre — TRAWL :** correction du niveau de journalisation fourni dans Compose et les templates Unraid. ([#204](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/204))
+- **23 septembre — Runtime navigateur :** dépendances CloakBrowser isolées de l’application principale, publication indépendante et compatibilité contrôlée par version de protocole. ([#201](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/201), [#202](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/202))
+- **21–22 septembre — TR4KER :** lecture des points bonus, du seeding et de la classe de membre. ([#199](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/199), [#200](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/200))
+- **21 septembre — Planification avec cookie seul :** les trackers sans identifiants mais avec un cookie enregistré participent aux rafraîchissements automatiques. ([#198](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/198))
+- **20 septembre — Sessions et nouveaux trackers :** C411 passe au cookie de session uniquement ; ajout de PassThePopcorn avec authentification par cookie. ([#195](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/195), [#192](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/192))
+- **17–20 septembre — Interface :** actions des cartes sous forme d’icônes accessibles et corrections de la disposition des cartes étroites et des champs de configuration. ([#187](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/187), [#193](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/193), [#194](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/194))
+- **1er septembre — Draupnirr :** nouveau nom et domaine de l’ancien Yggrasil ; l’identifiant technique `yggrasil` est conservé pour préserver la configuration existante.
+
+Les fonctionnalités plus anciennes sont présentées dans les sections ci-dessous. L’[historique des modifications](https://github.com/Tracker-Dashboard/tracker-dashboard/commits/main/) permet de retrouver les autres corrections et mises à jour de dépendances.
+
+</details>
+
+## Installation et premier démarrage
+
+1. Créez une stack dans Dockge-Enhanced ou votre gestionnaire Docker Compose à partir du fichier [docker-compose.yml](docker-compose.yml) fourni. Il contient l’application principale, le runtime navigateur, FlareSolverr et TRAWL.
+2. Choisissez le port publié sur l’hôte (`3000` par défaut) et un dossier persistant pour le montage `./config:/app/config`. Conservez et sauvegardez ce dossier : il contient votre configuration et l’historique.
+3. Démarrez la stack, ouvrez `http://adresse-du-serveur:3000` (ou le port choisi), puis créez le compte administrateur de la WebUI.
+4. Dans **Configuration → Proxies**, configurez un proxy ou autorisez explicitement les connexions directes. Par défaut, les visites des trackers sont bloquées sans proxy actif.
+5. Ajoutez vos trackers, renseignez leurs identifiants ou leur cookie selon le site, puis configurez la fréquence des visites. Vous pouvez ensuite associer vos clients BitTorrent et vos notifications.
+
+**Unraid :** des templates bêta permettent d’installer les services séparément. Consultez le [guide Unraid](unraid/README.md).
+
+> [!NOTE]
+> Le premier rafraîchissement peut prendre du temps, notamment pour les trackers lus via navigateur. Les dernières données valides sont conservées en cache. En cas d’échec ponctuel, relancez la lecture du tracker concerné et consultez sa fiche pour voir l’erreur.
 
 ## Interface
 
@@ -87,6 +128,14 @@ Extensions pratiques : [cookies-txt](https://github.com/hrdl-github/cookies-txt)
 
 Le cookie est optionnel et propre à chaque tracker ; il finit par expirer, il suffit alors d'en recoller un frais.
 
+## Statistiques via les API des trackers
+
+Lorsqu’une définition le permet, Tracker Dashboard peut compléter les données lues sur le site avec son API. Dans **Configuration → Configurer les actifs → (le tracker) → Options avancées**, renseignez votre **clé API personnelle**, et l’identifiant API si le site le demande, puis choisissez la source des statistiques : **Par défaut**, **API** ou **Scraping**. Une préférence globale permet de privilégier l’API quand elle est disponible.
+
+Cette lecture est notamment prévue pour HD-Forever, Redacted, Orpheus, Phoenix Project, PassThePopcorn et TR4KER, ainsi que dans le preset UNIT3D pour les sites compatibles. Les champs disponibles dépendent du tracker. Les clés restent côté serveur et ne sont pas renvoyées en clair à l’interface.
+
+**La clé API ne remplace pas la visite du site.** La connexion et la lecture habituelles restent tentées à chaque rafraîchissement. Si la connexion échoue mais que l’API répond, les statistiques restent visibles avec un avertissement **Login en échec**, car le compte peut ne plus être considéré comme actif par le site. Cet avertissement reste affiché après un redémarrage. Les badges **API** et **API KO** indiquent le résultat de la lecture complémentaire.
+
 ## Double authentification (2FA / TOTP)
 
 Pour les trackers en 2FA basée sur le temps (TOTP), le dashboard génère lui-même le code à 6 chiffres. Renseignez le **secret 2FA** (clé base32 affichée à l'activation, ex. `JBSWY3DPEHPK3PXP`) dans **Options avancées → Secret 2FA (TOTP)** du tracker.
@@ -114,17 +163,42 @@ Quand un site a plusieurs comptes, les torrents de vos clients BitTorrent sont v
 
 ## Captures d'écran
 
-> Les captures ci-dessous illustrent le principe (données factices). L'interface a évolué depuis et ces captures seront mises à jour.
+Captures de l’interface actuelle avec un jeu de démonstration entièrement fictif : statistiques, historique et compte d’exemple. Aucune donnée d’une installation personnelle n’est utilisée.
 
-![Dashboard](screens/1.png)
-![Configuration des trackers](screens/2.png)
-![Proxy et options](screens/3.png)
+### Dashboard
+
+Vue d’ensemble des trackers, badges API, messages non lus et comparaison du seeding entre site et client BitTorrent.
+
+![Dashboard avec des statistiques fictives](screens/dashboard.png)
+
+<details>
+<summary>Voir la fiche tracker, les graphiques et la configuration</summary>
+
+### Fiche d’un tracker
+
+Statistiques, évolution des volumes et du ratio, erreurs et torrents liés.
+
+![Fiche tracker avec un historique fictif](screens/fiche-tracker.png)
+
+### Graphiques
+
+Suivi global et évolution des statistiques à partir d’un historique de démonstration.
+
+![Graphiques avec des données fictives](screens/graphiques.png)
+
+### Configuration
+
+Compte d’exemple, choix de la source des statistiques, clé API, cookie et TOTP.
+
+![Configuration avec un compte de démonstration](screens/configuration.png)
+
+</details>
 
 ## Connexions automatiques
 
 La planification se règle dans **Configuration → Fréquence d'auto visite** :
 
-- **Planification globale** : trois modes — toutes les *X* heures, tous les *X* jours à heure fixe, ou certains jours de la semaine. Chaque cycle visite les trackers actifs disposant d'identifiants.
+- **Planification globale** : trois modes — toutes les *X* heures, tous les *X* jours à heure fixe, ou certains jours de la semaine. Chaque cycle visite les trackers actifs disposant d’identifiants ou d’un cookie de session enregistré.
 - **Fréquences individuelles** : par tracker, on peut suivre la planification globale, la désactiver, ou fixer un intervalle propre (en heures).
 - **Synchroniser les sites** (bas de la barre latérale) lance un rafraîchissement manuel immédiat.
 
@@ -155,6 +229,12 @@ Configurables dans **Configuration → Notifications**, en trois volets :
 - **Canaux** : destinations **Discord**, **Apprise** ou **e-mail**.
 - **Notifications globales** : échecs, succès, rétablissement après échec, statistiques, MP non lus.
 - **Par tracker** : réglages spécifiques (échecs, succès, stats, MP, seuils de ratio / buffer / ancienneté de session) qui priment sur les réglages globaux.
+
+## Prometheus et Grafana
+
+L’endpoint `/metrics` expose les statistiques des trackers activés (`tracker_*`) et des clients BitTorrent (`tracker_qbit_*`). La métrique `tracker_api_up` indique le résultat des lectures API lorsqu’elles sont configurées.
+
+Définissez **`METRICS_TOKEN`** sur le service principal et utilisez ce jeton comme Bearer token dans Prometheus. Sans jeton, l’export est désactivé par défaut et renvoie HTTP 503. Le fichier [grafana/dashboard.json](grafana/dashboard.json) fournit un tableau de bord à importer ; le [guide Prometheus et Grafana](grafana/README.md) détaille la configuration.
 
 ## Sécurité proxy
 
@@ -265,7 +345,7 @@ Rotation automatique de User-Agents (paquet `top-user-agents`) pour les nouvelle
 
 ## Sites intégrés & ajout d'un site
 
-Une trentaine de définitions de sites sont fournies dans `config/trackers/*.json` (un fichier JSON par site : connexion, page à lire, champs à extraire). Les nouvelles définitions sont détectées au démarrage et proposées à l'activation.
+Les définitions de sites intégrées sont fournies dans `config/trackers/*.json` (un fichier JSON par site : connexion, page à lire, champs à extraire). Les nouvelles définitions sont détectées au démarrage et proposées à l'activation.
 
 Pour préparer l'ajout d'un site, fournissez idéalement : nom, URL de base, URL de login (et méthode particulière éventuelle), URL de la page de stats, son HTML une fois connecté, les valeurs à récupérer, et le CMS éventuel (UNIT3D, Gazelle, Luminance…).
 
