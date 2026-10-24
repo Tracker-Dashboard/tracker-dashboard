@@ -13,6 +13,8 @@ import {
   type FieldExtractor,
   type Credentials,
   type LoginConfig,
+  type ExtraFetchConfig,
+  extraFetchList,
 } from './types.js';
 import { getProxyConfig, ensureProxyReady } from './proxy.js';
 import { closeAllSshTunnels } from './sshTunnel.js';
@@ -179,7 +181,6 @@ function extractHtml(
   return { values: out, byteUnit };
 }
 
-type ExtraFetchConfig = NonNullable<TrackerConfig['fetch']['extraFetch']>;
 
 /**
  * Résultat d'une requête secondaire (extraFetch) : le premier couple champ/valeur
@@ -355,8 +356,29 @@ export async function fetchExtraField(
   headers: Record<string, string>,
   creds: { username: string; password: string },
 ): Promise<ExtraFieldResult | null> {
-  const ef = tracker.fetch.extraFetch;
-  if (!ef) return null;
+  // Plusieurs requêtes secondaires possibles (liste) : chacune best-effort, les
+  // champs trouvés sont fusionnés dans un seul résultat.
+  const merged: Record<string, string | number> = {};
+  for (const ef of extraFetchList(tracker)) {
+    const result = await fetchOneExtraField(tracker, ef, primaryBody, request, headers, creds);
+    if (result) applyExtraFieldResult(merged, result);
+  }
+  const entries = Object.entries(merged);
+  if (entries.length === 0) return null;
+  const [[field, value], ...rest] = entries;
+  return rest.length > 0
+    ? { field, value, extras: Object.fromEntries(rest) }
+    : { field, value };
+}
+
+async function fetchOneExtraField(
+  tracker: TrackerConfig,
+  ef: ExtraFetchConfig,
+  primaryBody: string,
+  request: UnreadMessagesRequest,
+  headers: Record<string, string>,
+  creds: { username: string; password: string },
+): Promise<ExtraFieldResult | null> {
   try {
     const vars: Record<string, string> = { username: creds.username };
     if (ef.idExtract) {
@@ -1262,7 +1284,8 @@ async function fetchTrackerScrape(
 
     // Champ secondaire générique capturé via une page navigateur distincte (ex. classe
     // de membre TR4KER, profil hydraté en JS sur une autre route). Best-effort.
-    const ef = tracker.fetch.extraFetch;
+    // (navigateur / FlareSolverr : seule la première requête secondaire est capturée)
+    const ef = extraFetchList(tracker)[0];
     if (ef && extraHtml) {
       const extra = extractExtraFieldResponse(ef, extraHtml);
       if (extra) applyExtraFieldResult(fields, extra);
@@ -1337,8 +1360,7 @@ async function fetchTrackerScrape(
       // extraHtml pré-fourni (navigateur). En fast-path curl léger on la récupère ici,
       // avec le même cookie impersoné, puis on injecte (ex. seeding Gazelle via
       // ajax.php?action=user, ou page torrents.php?type=seeding pour Orpheus).
-      const ef = tracker.fetch.extraFetch;
-      if (ef?.url) {
+      if (extraFetchList(tracker).length > 0) {
         const extra = await fetchExtraFieldViaCurlCookie(tracker, result.body, cookie, creds);
         if (extra) applyExtraFieldResult(stats.fields, extra);
       }

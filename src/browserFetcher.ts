@@ -7,7 +7,7 @@ import { selectUserAgent } from './userAgent.js';
 import { getTrackerCookie, getTrackerTotpSecret, getJsonSetting } from './db.js';
 import { parseCookies } from './cookies.js';
 import { generateTotp } from './totp.js';
-import { type TrackerConfig } from './types.js';
+import { type TrackerConfig, extraFetchList } from './types.js';
 
 // ─── Moteur navigateur : Chromium (defaut) ou CloakBrowser (furtif, opt-in) ─────
 // CloakBrowser est un Chromium patche qui passe mieux les protections anti-bot.
@@ -868,7 +868,8 @@ export async function fetchWithBrowser(
     const primaryUrl = page.url();
 
     let extraHtml: string | undefined;
-    const ef = tracker.fetch.extraFetch;
+    // Navigateur : seule la première requête secondaire est exécutée.
+    const ef = extraFetchList(tracker)[0];
     if (ef) {
       try {
         const vars: Record<string, string> = { username: credentials.username };

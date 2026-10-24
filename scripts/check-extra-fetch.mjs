@@ -143,4 +143,29 @@ if (splitUnitExtra?.field !== 'uploadedBytes' || splitUnitExtra.value !== 1_640_
   throw new Error('An HTML extractor with a (?<unit>) group must combine the value and the unit before conversion');
 }
 
+// extraFetch en liste (ex. C411 : seeding + Zen sur deux endpoints) : chaque requête
+// est indépendante, les champs trouvés sont fusionnés, un échec n'empêche pas les autres.
+const listTracker = {
+  ...gazelleTracker,
+  fetch: {
+    ...gazelleTracker.fetch,
+    extraFetch: [
+      { url: 'api/profile/active-seeds', field: 'seeding', path: 'meta.total', transform: 'integer' },
+      { url: 'api/broken', field: 'memberClass', path: 'x', transform: 'string' },
+      { url: 'api/tokens/balance', field: 'seedBonus', path: 'balance', transform: 'number' },
+    ],
+  },
+};
+const listResponses = {
+  'https://tracker.example/api/profile/active-seeds': { status: 200, body: JSON.stringify({ meta: { total: 286 } }) },
+  'https://tracker.example/api/broken': { status: 500, body: '' },
+  'https://tracker.example/api/tokens/balance': { status: 200, body: JSON.stringify({ success: true, balance: 296 }) },
+};
+const listResult = await fetchExtraField(listTracker, '', async (url) => listResponses[url] ?? null, {}, { username: 'u', password: 'p' });
+const listFields = {};
+if (listResult) { listFields[listResult.field] = listResult.value; Object.assign(listFields, listResult.extras ?? {}); }
+if (listFields.seeding !== 286 || listFields.seedBonus !== 296 || 'memberClass' in listFields) {
+  throw new Error(`extraFetch list must merge independent secondary requests: ${JSON.stringify(listFields)}`);
+}
+
 console.log('extraFetch response extraction OK.');

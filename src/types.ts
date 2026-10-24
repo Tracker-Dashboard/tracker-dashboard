@@ -156,6 +156,29 @@ export interface ApiFetchConfig {
   keyInstructions?: string;
 }
 
+export type ExtraFetchConfig = {
+  url: string;
+  responseType?: 'json' | 'html';
+  /** Regex avec groupe nommé (?<value>...), appliquée sur la page principale. */
+  idExtract?: { regex: string };
+  /** Nom du champ de fields.* alimenté par cette requête (ex: "memberClass"). */
+  field: string;
+  /**
+   * Champs supplémentaires extraits de la MÊME réponse que `field` (une seule requête
+   * secondaire). Clé = nom du champ (ex: "memberClass"), valeur = extracteur (path JSON
+   * ou regex HTML + transform). Chaque champ est indépendant : un échec d'extraction
+   * n'empêche pas les autres.
+   */
+  extraFields?: Record<string, FieldExtractor>;
+} & FieldExtractor;
+
+/** Normalise fetch.extraFetch (objet unique ou liste) en liste. */
+export function extraFetchList(tracker: { fetch: { extraFetch?: ExtraFetchConfig | ExtraFetchConfig[] } }): ExtraFetchConfig[] {
+  const ef = tracker.fetch.extraFetch;
+  if (!ef) return [];
+  return Array.isArray(ef) ? ef : [ef];
+}
+
 export interface FetchStep {
   url: string;
   mode?: 'http' | 'browser';
@@ -184,22 +207,11 @@ export interface FetchStep {
    * la page principale avant la requête secondaire). Le champ extrait (path JSON
    * ou regex HTML + transform) alimente fields.<field>.
    * Best-effort : un échec n'invalide jamais le tracker.
+   * Accepte aussi une liste de requêtes secondaires indépendantes (ex. C411 : seeding
+   * sur api/profile/active-seeds ET Zen sur api/tokens/balance). En mode navigateur /
+   * FlareSolverr, seule la première entrée est exécutée.
    */
-  extraFetch?: {
-    url: string;
-    responseType?: 'json' | 'html';
-    /** Regex avec groupe nommé (?<value>...), appliquée sur la page principale. */
-    idExtract?: { regex: string };
-    /** Nom du champ de fields.* alimenté par cette requête (ex: "memberClass"). */
-    field: string;
-    /**
-     * Champs supplémentaires extraits de la MÊME réponse que `field` (une seule requête
-     * secondaire). Clé = nom du champ (ex: "memberClass"), valeur = extracteur (path JSON
-     * ou regex HTML + transform). Chaque champ est indépendant : un échec d'extraction
-     * n'empêche pas les autres.
-     */
-    extraFields?: Record<string, FieldExtractor>;
-  } & FieldExtractor;
+  extraFetch?: ExtraFetchConfig | ExtraFetchConfig[];
 }
 
 /** Famille de moteur de tracker — voir ENGINE_TEMPLATES dans trackerTemplates.ts. */
@@ -238,6 +250,8 @@ export interface TrackerConfig {
   api?: ApiFetchConfig;
   dashboard?: {
     byteUnit?: 'binary' | 'decimal';
+    /** Unité affichée à côté des points bonus (ex. « Zen » pour C411). */
+    bonusUnit?: string;
   };
 }
 
