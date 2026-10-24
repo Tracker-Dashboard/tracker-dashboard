@@ -1199,10 +1199,14 @@
       flex-wrap: wrap;
       align-items: center;
       gap: 6px;
+      /* content-box : la zone de badges garde la même hauteur (20px + padding),
+         qu'il y ait des badges ou non — tuiles alignées même sans classe de membre. */
+      box-sizing: content-box;
       min-height: 20px;
       padding: 6px 12px 8px;
       border-bottom: 1px solid var(--border);
     }
+    .card-badges .badge { line-height: 14px; }
     .card-refresh {
       min-width: 34px;
       height: 24px;
