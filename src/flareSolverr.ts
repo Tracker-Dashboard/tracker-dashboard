@@ -2,7 +2,7 @@ import { getTrackerCookie } from './db.js';
 import { parseCookies, type ParsedCookie } from './cookies.js';
 import { resolveProxyForTracker, toSshConfig, type ProxySettings } from './proxy.js';
 import { getSshLocalEndpoint } from './sshTunnel.js';
-import { type TrackerConfig } from './types.js';
+import { type TrackerConfig, extraFetchList } from './types.js';
 
 const DEFAULT_FLARESOLVERR_URL = 'http://127.0.0.1:8191';
 const DEFAULT_TRAWL_URL = 'http://127.0.0.1:8192';
@@ -195,7 +195,8 @@ async function fetchWithSolver(
     const primary = await solve(baseUrl, activeSession, primaryUrl, cookies, timeoutMs);
 
     let extraHtml: string | undefined;
-    const extra = tracker.fetch.extraFetch;
+    // Navigateur : seule la première requête secondaire est exécutée.
+    const extra = extraFetchList(tracker)[0];
     if (extra) {
       if (extra.idExtract) {
         const match = new RegExp(extra.idExtract.regex, 's').exec(primary.response ?? '');

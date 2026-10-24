@@ -568,6 +568,10 @@ function sanitizeTrackerConfigInput(
   if (byteUnit === 'binary' || byteUnit === 'decimal') {
     config.dashboard = { byteUnit };
   }
+  const bonusUnit = typeof input.dashboard?.bonusUnit === 'string' ? input.dashboard.bonusUnit.trim() : '';
+  if (bonusUnit && bonusUnit.length <= 12) {
+    config.dashboard = { ...(config.dashboard ?? {}), bonusUnit };
+  }
 
   void opts; // isNew reserve pour de futures regles differenciees creation/edition
   return { config };
@@ -2815,6 +2819,7 @@ export async function start(): Promise<void> {
       baseUrl,
       enabled: enabled !== false,
       byteUnit: dashboard?.byteUnit ?? 'binary',
+      bonusUnit: dashboard?.bonusUnit,
       ratioless: Boolean(ratioless),
       baseId,
     }));

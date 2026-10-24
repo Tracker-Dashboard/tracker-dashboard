@@ -3079,6 +3079,12 @@
     return stat.trackerUrl || configured?.baseUrl || '';
   }
 
+  // Unité des points bonus déclarée par le tracker (dashboard.bonusUnit, ex. « Zen »).
+  function bonusUnit(stat) {
+    const configured = trackerConfig.find(t => t.id === stat.id);
+    return configured?.bonusUnit ? escapeHtml(configured.bonusUnit) : '';
+  }
+
   function isRatiolessTracker(stat) {
     const configured = trackerConfig.find(t => t.id === stat.id);
     return Boolean(configured?.ratioless);
@@ -4373,7 +4379,7 @@
                 <td class="num"><span class="${ratioClass(ratio)}">${hasStatValue(ratio) ? formatRatio(ratio) : '-'}</span></td>
                 <td class="num"><span class="${bufferClass(formatBuffer(fields, byteUnit))}">${buffer}</span></td>
                 <td class="num">${formatCount(fields.seeding ?? fields.seedTimeDays ?? fields.seedTime)}</td>
-                <td class="num">${formatPoints(bonusRaw)}</td>
+                <td class="num">${formatPoints(bonusRaw)}${hasStatValue(fields.seedBonus) && bonusUnit(stat) ? ` <span class="stat-unit">${bonusUnit(stat)}</span>` : ''}</td>
                 <td>
                   <div class="beta-table-actions">
                     <button class="beta-icon-btn" onclick="openTrackerFiche('${escapeHtml(stat.id)}')" type="button">Fiche</button>
@@ -6527,7 +6533,7 @@
           : statCell('Taux', '-', '', ''));
     const bonusOrRequired = hasStatValue(f.requiredRatio)
       ? statCell('Req. ratio', formatRatio(f.requiredRatio), '', '')
-      : statCell('Bonus', formatPoints(f.seedBonus), '', '');
+      : statCell('Bonus', [formatPoints(f.seedBonus), hasStatValue(f.seedBonus) ? bonusUnit(stat) : ''], '', '');
     const bottomCells = `${hasStatValue(f.seedTimeDays)
           ? statCell('Seed time', [formatCount(f.seedTimeDays), 'j'], '', '')
           : seedingStatCell(stat)}
@@ -6632,7 +6638,7 @@
       ? '<span class="cell-muted">—</span>'
       : (hasStatValue(f.requiredRatio)
           ? `${formatRatio(f.requiredRatio)} <span class="stat-source" title="Ratio requis">req.</span>`
-          : formatPoints(bonusRaw));
+          : `${formatPoints(bonusRaw)}${hasStatValue(f.seedBonus) && bonusUnit(stat) ? ` <span class="stat-unit">${bonusUnit(stat)}</span>` : ''}`);
 
     const statusCell = hasProblem
       ? `<td class="cell-status" onclick="toggleIncidentEditor('${id}')">${rowStatusBadges(stat)}<span class="chevron">›</span></td>`
