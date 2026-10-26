@@ -650,7 +650,7 @@ function requestUrl(config: InternalAxiosRequestConfig): string | null {
 // SANS cookie -> page deconnectee. Le mode browser, lui, envoie deja ce cookie via
 // le fast-path curl-impersonate.
 async function injectStoredCookieIntoJar(tracker: TrackerConfig, jar: CookieJar): Promise<void> {
-  const header = buildCookieHeader(tracker.id);
+  const header = buildCookieHeader(tracker);
   if (!header) return;
   for (const pair of header.split(';')) {
     const trimmed = pair.trim();
@@ -1333,7 +1333,7 @@ async function fetchTrackerScrape(
   // Sinon (SPA, session morte, binaire absent) -> on retombe sur le navigateur.
   const tryCurlFastPath = async (): Promise<TrackerStats | null> => {
     if (!fastFetchEnabled()) return null;
-    const cookie = buildCookieHeader(tracker.id);
+    const cookie = buildCookieHeader(tracker);
     if (!cookie) return null;
     const url = resolveUrl(tracker.baseUrl, interpolate(tracker.fetch.url, vars));
     // Pas de userAgent ici : le wrapper curl-impersonate pose deja un UA Chrome
