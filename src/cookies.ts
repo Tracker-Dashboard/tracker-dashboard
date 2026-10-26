@@ -5,6 +5,7 @@
 // a rejouer les cookies pour les trackers HTTP.
 
 import { getTrackerCookie } from './db.js';
+import type { TrackerConfig } from './types.js';
 
 // Cookie minimal : on garde juste name+value (+ flags), et on injecte via `url`
 // (Playwright derive domaine/chemin) -> bien plus robuste que domain/path manuels.
@@ -219,10 +220,16 @@ export function parseCookies(raw: string): ParsedCookie[] {
  * tracker (tous formats supportes). Vide si aucun cookie. Utilise par le fast-path
  * curl-impersonate pour rejouer la session sans lancer de navigateur.
  */
-export function buildCookieHeader(trackerId: string): string {
-  const raw = getTrackerCookie(trackerId);
+export function buildCookieHeader(tracker: Pick<TrackerConfig, 'id' | 'baseId'>): string {
+  const raw = getTrackerCookie(tracker.id);
   if (!raw) return '';
-  return parseCookies(raw)
+  const parsed = parseCookies(raw);
+  // MAM's JSON API returns an empty 200 response when browser-only cookies
+  // (uid/mbsc) are sent alongside its API session cookie.
+  const selected = (tracker.baseId ?? tracker.id) === 'mam'
+    ? parsed.filter(cookie => cookie.name.toLowerCase() === 'mam_id')
+    : parsed;
+  return selected
     .filter(c => c.name && c.value)
     .map(c => `${c.name}=${c.value}`)
     .join('; ');
