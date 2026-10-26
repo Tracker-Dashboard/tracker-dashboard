@@ -17,7 +17,7 @@
     "playwright": "^1.64.1",
     "socks-proxy-agent": "^10.1.0",
     "ssh2": "^1.17.0",
-    "top-user-agents": "^2.1.140",
+    "top-user-agents": "^2.1.142",
     "tough-cookie": "^6.0.2"
   },
   "devDependencies": {
