@@ -25,27 +25,28 @@
       "name='password'",
       "loginIssueBlock"
     ],
-    "cookieOnly": true
+    "cookieOnly": true,
+    "cookieInstructions": "Paste the MAM API session cookie mam_id only; do not include uid or mbsc. Create an API session in MAM Settings → Security."
   },
   "fetch": {
-    "url": "u/",
-    "mode": "browser",
-    "responseType": "html",
+    "url": "jsonLoad.php?snatch_summary",
+    "mode": "http",
+    "responseType": "json",
     "fields": {
       "uploadedBytes": {
-        "regex": "Uploaded[\\s\\S]{0,160}?(?<value>[\\d\\s.,]+\\s*(?:[KMGTPE](?:i?B|io|o)|B|o))",
+        "path": "uploaded_bytes",
         "transform": "bytes"
       },
       "downloadedBytes": {
-        "regex": "Downloaded[\\s\\S]{0,160}?(?<value>[\\d\\s.,]+\\s*(?:[KMGTPE](?:i?B|io|o)|B|o))",
+        "path": "downloaded_bytes",
         "transform": "bytes"
       },
       "ratio": {
-        "regex": "Share ratio[\\s\\S]{0,160}?(?<value>\\d[\\d\\s.,]*)",
+        "path": "ratio",
         "transform": "number"
       },
       "seedBonus": {
-        "regex": "Bonus[\\s\\S]{0,160}?(?<value>[\\d\\s.,]+)",
+        "path": "seedbonus",
         "transform": "string"
       }
     }

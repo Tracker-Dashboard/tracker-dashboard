@@ -222,7 +222,13 @@ export function parseCookies(raw: string): ParsedCookie[] {
 export function buildCookieHeader(trackerId: string): string {
   const raw = getTrackerCookie(trackerId);
   if (!raw) return '';
-  return parseCookies(raw)
+  const parsed = parseCookies(raw);
+  // MAM's JSON API returns an empty 200 response when browser-only cookies
+  // (uid/mbsc) are sent alongside its API session cookie.
+  const selected = trackerId === 'mam'
+    ? parsed.filter(cookie => cookie.name.toLowerCase() === 'mam_id')
+    : parsed;
+  return selected
     .filter(c => c.name && c.value)
     .map(c => `${c.name}=${c.value}`)
     .join('; ');
