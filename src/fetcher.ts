@@ -19,7 +19,7 @@ import {
 import { getProxyConfig, ensureProxyReady } from './proxy.js';
 import { closeAllSshTunnels } from './sshTunnel.js';
 import { curlImpersonateGet, CurlSession, fastFetchEnabled } from './curlImpersonate.js';
-import { buildCookieHeader, expiredCookieHint } from './cookies.js';
+import { buildCookieHeader } from './cookies.js';
 import { effectiveStatSource, getTrackerApiKey, getTrackerApiUser, getTrackerTotpSecret, loadTrackerConfigsFromDb, saveTrackerConfig } from './db.js';
 import { generateTotp } from './totp.js';
 import { selectUserAgent } from './userAgent.js';
@@ -649,13 +649,15 @@ function requestUrl(config: InternalAxiosRequestConfig): string | null {
 // ca, le login etant saute et le jar cree vide, le GET des stats en mode http part
 // SANS cookie -> page deconnectee. Le mode browser, lui, envoie deja ce cookie via
 // le fast-path curl-impersonate.
-async function injectStoredCookieIntoJar(tracker: TrackerConfig, jar: CookieJar): Promise<void> {
+export async function injectStoredCookieIntoJar(tracker: TrackerConfig, jar: CookieJar): Promise<void> {
   const header = buildCookieHeader(tracker);
   if (!header) return;
+  // Sans Secure, tough-cookie rejette en silence les cookies __Host- et __Secure-.
+  const secure = tracker.baseUrl.startsWith('https:') ? '; Secure' : '';
   for (const pair of header.split(';')) {
     const trimmed = pair.trim();
     if (!trimmed.includes('=')) continue;
-    await jar.setCookie(`${trimmed}; Path=/`, tracker.baseUrl).catch(() => {});
+    await jar.setCookie(`${trimmed}; Path=/${secure}`, tracker.baseUrl).catch(() => {});
   }
 }
 
@@ -1213,8 +1215,6 @@ function mergeApiStats(tracker: TrackerConfig, scraped: TrackerStats, api: ApiRe
 // Cause affichee quand la session reste refusee apres re-login : un tracker en
 // cookie seul ne se reconnecte pas avec les credentials, seul un cookie neuf aide.
 function sessionExpiredCause(tracker: TrackerConfig): string {
-  const hint = expiredCookieHint(tracker.id).trim();
-  if (hint) return hint;
   return tracker.login.cookieOnly
     ? 'cookie refuse : le remplacer par un cookie neuf'
     : 'vérifier les credentials';
