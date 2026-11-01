@@ -26,19 +26,19 @@
     "responseType": "html",
     "fields": {
       "uploadedBytes": {
-        "regex": "<span>⬆️\\s*(?<value>[\\d\\s.,]+\\s*[KMGTPE]?(?:i?[Bo]|o))\\s*</span>",
+        "regex": "(?:<span>⬆️|Upload R[ée]el\\s*</span>[\\s\\S]{0,160}?kpi-val[^>]*>)\\s*(?<value>[\\d\\s.,]+\\s*[KMGTPE]?(?:i?[Bo]|o))\\s*</span>",
         "transform": "bytes"
       },
       "downloadedBytes": {
-        "regex": "<span>⬇️\\s*(?<value>[\\d\\s.,]+\\s*[KMGTPE]?(?:i?[Bo]|o))\\s*</span>",
+        "regex": "(?:<span>⬇️|Download R[ée]el\\s*</span>[\\s\\S]{0,160}?kpi-val[^>]*>)\\s*(?<value>[\\d\\s.,]+\\s*[KMGTPE]?(?:i?[Bo]|o))\\s*</span>",
         "transform": "bytes"
       },
       "points": {
-        "regex": "\\bvar\\s+userKarmaPoints\\s*=\\s*(?<value>\\d+(?:\\.\\d+)?)\\s*;",
+        "regex": "\\b(?:var|let|const)\\s+userKarmaPoints\\s*=\\s*(?<value>\\d+(?:\\.\\d+)?)\\s*;",
         "transform": "number"
       },
       "seeding": {
-        "regex": "🌱\\s*(?<value>\\d+)\\s+seeds actifs",
+        "regex": "(?:🌱\\s*|Torrents en Seed Actif\\s*\\()(?<value>\\d+)(?:\\s+seeds actifs|\\))",
         "transform": "integer"
       }
     }

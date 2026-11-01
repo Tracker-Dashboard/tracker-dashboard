@@ -190,6 +190,30 @@ if (!supportsAstraTorrentLa) {
   errors.push('AstraTorrent must parse V3 account traffic, Karma and seeds without a ratio and retain its legacy announce host');
 }
 
+// Synthetic V4 account fragment (cartes KPI « Upload Réel » et `let userKarmaPoints`).
+const astraV4Fixture = `<div class="v4-steam-kpi-card"><div class="v4-steam-kpi-label"><span>Upload Réel</span><span>📤</span></div>
+<span class="v4-steam-kpi-val" style="color:#a4d007;">39.58 Go</span></div>
+<div class="v4-steam-kpi-card"><div class="v4-steam-kpi-label"><span>Download Réel</span><span>📥</span></div>
+<span class="v4-steam-kpi-val" style="color:#66c0f4;">0 Ko</span></div>
+<button id="btnSubSeeds">🌱 Torrents en Seed Actif (9)</button><div>🌱 Seed Actif (+1/h)</div>
+<script>let userKarmaPoints = 8149;</script>`;
+const astraV4Values = Object.fromEntries(Object.entries(astratorrent.fetch.fields).map(([field, extractor]) => [
+  field, extractExtraFieldResponse({ field, ...extractor }, astraV4Fixture)?.value,
+]));
+if (astraV4Values.uploadedBytes !== 39580000000 || astraV4Values.downloadedBytes !== 0
+    || astraV4Values.points !== 8149 || astraV4Values.seeding !== 9) {
+  errors.push('AstraTorrent V4 KPI cards, let userKarmaPoints and active seed count must be extracted');
+}
+
+// Synthetic SpeedApp fragment : profil Vue, stats serialisees dans data-app-user-value.
+const speedappFixture = `<body data-controller="app" data-app-user-value="{&quot;id&quot;:1,&quot;username&quot;:&quot;demo&quot;,&quot;uploaded&quot;:220689089304,&quot;downloaded&quot;:9721129246,&quot;credits&quot;:&quot;4.124&quot;}">`;
+const speedappValues = Object.fromEntries(Object.entries(speedapp.fetch.fields).map(([field, extractor]) => [
+  field, extractExtraFieldResponse({ field, ...extractor }, speedappFixture)?.value,
+]));
+if (speedappValues.uploadedBytes !== 220689089304 || speedappValues.downloadedBytes !== 9721129246) {
+  errors.push('SpeedApp traffic must be read from the data-app-user-value profile JSON');
+}
+
 const lesaloonFixture = `
   <font>Rang</font><font>[</font><span><strong>Membre VIP</strong></span><font>]</font>
   <font>Upload</font><font>[</font><font color="green">82.17 TB</font>
