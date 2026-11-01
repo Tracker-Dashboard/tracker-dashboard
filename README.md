@@ -57,6 +57,10 @@ Le projet est porté par l’organisation [Tracker-Dashboard](https://github.com
 
 Évolutions intégrées à la branche principale, des plus récentes aux plus anciennes. La disponibilité sur votre instance dépend de l’image installée.
 
+### Novembre 2026
+
+- **1er novembre — AstraTorrent V4 et SpeedApp :** statistiques AstraTorrent lues sur le nouveau tableau de bord du compte (Upload/Download réels, Karma, seeds actifs), sans perdre la compatibilité V3 ; trafic SpeedApp lu depuis les données du profil, désormais affiché en Vue. ([#231](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/231))
+
 ### Octobre 2026
 
 - **22 octobre — Échecs de connexion plus visibles :** encadré « Login en échec » repliable lorsque l’API fournit encore les statistiques, notifications aux erreurs raccourcies et conservation de l’alerte après redémarrage. ([#221](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/221), [#222](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/222))

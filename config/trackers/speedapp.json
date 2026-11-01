@@ -29,16 +29,12 @@
     "responseType": "html",
     "fields": {
       "uploadedBytes": {
-        "regex": "Uploaded[\\s\\S]{0,120}?<dd[^>]*>\\s*(?<value>[\\d\\s.,]+\\s*(?:[KMGTPE](?:i?B|io|o)|B|o))\\s*</dd>",
+        "regex": "data-app-user-value=\"[^\"]*?&quot;uploaded&quot;:(?<value>\\d+)[,}]",
         "transform": "bytes"
       },
       "downloadedBytes": {
-        "regex": "Downloaded[\\s\\S]{0,120}?<dd[^>]*>\\s*(?<value>[\\d\\s.,]+\\s*(?:[KMGTPE](?:i?B|io|o)|B|o))\\s*</dd>",
+        "regex": "data-app-user-value=\"[^\"]*?&quot;downloaded&quot;:(?<value>\\d+)[,}]",
         "transform": "bytes"
-      },
-      "seedTimeDays": {
-        "regex": "Seed time[\\s\\S]{0,120}?<dd[^>]*>\\s*(?<value>\\d[\\d\\s.,]*)\\s*days",
-        "transform": "number"
       }
     },
     "extraFetch": {
