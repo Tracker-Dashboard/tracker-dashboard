@@ -101,7 +101,7 @@ const supportsAffectedTrackerLogins = (
   speedapp.login?.body?.email === '{{username}}'
   && speedapp.login?.body?.username === undefined
   && memphis.login?.cookieOnly === true
-  && memphis.login?.failurePatterns?.includes('class="auth-locked"')
+  && memphis.login?.failurePatterns?.includes('auth-locked"')
   && browserFetcher.includes("(tracker.baseId ?? tracker.id) !== 'tr4ker'")
   && browserFetcher.includes('patterns: string[] = []')
   && fetcher.includes('patterns: string[] = []')
@@ -203,6 +203,50 @@ const astraV4Values = Object.fromEntries(Object.entries(astratorrent.fetch.field
 if (astraV4Values.uploadedBytes !== 39580000000 || astraV4Values.downloadedBytes !== 0
     || astraV4Values.points !== 8149 || astraV4Values.seeding !== 9) {
   errors.push('AstraTorrent V4 KPI cards, let userKarmaPoints and active seed count must be extracted');
+}
+
+// Nostradamus : pages compte deplacees sous /user/profile/ (fragment synthetique).
+const nostradamus = JSON.parse(fs.readFileSync(path.join(root, 'config', 'trackers', 'nostradamus.json'), 'utf8'));
+const nostraFixture = `<span class="hero-banknotes size-3"></span> Points </span>
+<strong class="sidebar-account-stat__value">
+  568 pts
+</strong>
+<div class="text-[10px] uppercase">Upload total</div>
+<div class="mt-1 text-sm font-semibold">131.83 Gio</div>
+<div class="text-[10px] uppercase">Total téléchargé</div>
+<div class="mt-1 text-sm font-semibold">143.09 Gio</div>
+<h2 class="text-lg font-semibold">
+  Torrents actifs (0)
+</h2>`;
+const nostraValues = Object.fromEntries(Object.entries(nostradamus.fetch.fields).map(([field, extractor]) => [
+  field, extractExtraFieldResponse({ field, ...extractor }, nostraFixture)?.value,
+]));
+if (nostradamus.fetch.url !== 'user/profile/activity'
+    || nostraValues.uploadedBytes !== Math.round(131.83 * 1024 ** 3)
+    || nostraValues.downloadedBytes !== Math.round(143.09 * 1024 ** 3)
+    || nostraValues.seeding !== 0 || nostraValues.points !== 568) {
+  errors.push('Nostradamus must read /user/profile/activity (upload, download, active torrents, points)');
+}
+
+// Memphis : la page de connexion porte desormais class="dark auth-locked".
+const memphisLoginDetected = (html) => memphis.login.failurePatterns.some(pattern => html.includes(pattern));
+if (!memphisLoginDetected('<html class="dark auth-locked">') || !memphisLoginDetected('<html class="auth-locked">')
+    || memphisLoginDetected('<html class="dark"><main class="login-shell">Mon compte</main>')) {
+  errors.push('Memphis login page must be detected with or without the dark theme class, never on the account page');
+}
+
+// Tigers-DL V3 : login.php, champ identity et jeton CSRF du formulaire de connexion
+// (pas celui des formulaires de theme, qui ajouteraient theme/return_to).
+const tigersdl = JSON.parse(fs.readFileSync(path.join(root, 'config', 'trackers', 'tigersdl.json'), 'utf8'));
+const tigersLoginFixture = `<form method="post" action="/theme-set.php"><input type="hidden" name="csrf_token" value="theme-token">
+<input type="hidden" name="theme" value="tgsd-orange"></form>
+<form class="form-card" method="post"><input type="hidden" name="csrf_token" value="login-token">
+<input id="identity" name="identity" required autocomplete="username"></form>`;
+const tigersCsrf = new RegExp(tigersdl.login.preStep.extract.csrf_token.regex, 's').exec(tigersLoginFixture)?.groups?.value;
+if (tigersdl.login.url !== 'login.php' || tigersdl.login.body.identity !== '{{username}}'
+    || tigersdl.login.body.csrf_token !== '{{csrf_token}}' || tigersCsrf !== 'login-token'
+    || tigersdl.login.preStep.includeHiddenInputs) {
+  errors.push('Tigers-DL V3 login must post identity/password with the login form CSRF token only');
 }
 
 // Synthetic SpeedApp fragment : profil Vue, stats serialisees dans data-app-user-value.

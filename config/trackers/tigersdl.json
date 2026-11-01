@@ -4,19 +4,26 @@
   "baseUrl": "https://www.tigers-dl.net",
   "enabled": false,
   "login": {
-    "url": "account-login.php",
+    "url": "login.php",
     "method": "POST",
     "contentType": "form",
+    "preStep": {
+      "url": "login.php",
+      "extract": {
+        "csrf_token": {
+          "regex": "class=\"form-card\"[\\s\\S]*?name=\"csrf_token\" value=\"(?<value>[^\"]+)\""
+        }
+      }
+    },
     "body": {
-      "username": "{{username}}",
+      "csrf_token": "{{csrf_token}}",
+      "identity": "{{username}}",
       "password": "{{password}}"
     },
     "failurePatterns": [
-      "account-login.php",
-      "type=\"password\"",
-      "type='password'",
-      "name=\"password\"",
-      "name='password'"
+      "name=\"identity\"",
+      "autocomplete=\"current-password\"",
+      "type=\"password\""
     ]
   },
   "fetch": {

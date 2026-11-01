@@ -6,7 +6,7 @@
   "login": {
     "cookieOnly": true,
     "failurePatterns": [
-      "class=\"auth-locked\""
+      "auth-locked\""
     ]
   },
   "fetch": {
