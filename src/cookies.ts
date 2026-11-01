@@ -234,3 +234,20 @@ export function buildCookieHeader(tracker: Pick<TrackerConfig, 'id' | 'baseId'>)
     .map(c => `${c.name}=${c.value}`)
     .join('; ');
 }
+
+/**
+ * Indication ajoutee aux erreurs « session non authentifiee » quand le cookie
+ * colle par l'utilisateur porte une date d'expiration depassee (Netscape, JSON,
+ * Set-Cookie). Sans elle, un simple cookie perime ressemble a un probleme d'IP,
+ * d'anti-bot ou de regex. Vide si aucun cookie date n'a expire.
+ */
+export function expiredCookieHint(trackerId: string, now = Date.now()): string {
+  const raw = getTrackerCookie(trackerId);
+  if (!raw) return '';
+  const expired = parseCookies(raw).filter(c => c.expires !== undefined && c.expires * 1000 < now);
+  if (expired.length === 0) return '';
+  const latest = Math.max(...expired.map(c => c.expires as number));
+  const date = new Date(latest * 1000).toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' });
+  const names = [...new Set(expired.map(c => c.name))].join(', ');
+  return ` Cookie expire depuis le ${date} (${names}) : le remplacer par un cookie neuf.`;
+}

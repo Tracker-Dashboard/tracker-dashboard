@@ -19,7 +19,7 @@ import {
 import { getProxyConfig, ensureProxyReady } from './proxy.js';
 import { closeAllSshTunnels } from './sshTunnel.js';
 import { curlImpersonateGet, CurlSession, fastFetchEnabled } from './curlImpersonate.js';
-import { buildCookieHeader } from './cookies.js';
+import { buildCookieHeader, expiredCookieHint } from './cookies.js';
 import { effectiveStatSource, getTrackerApiKey, getTrackerApiUser, getTrackerTotpSecret, loadTrackerConfigsFromDb, saveTrackerConfig } from './db.js';
 import { generateTotp } from './totp.js';
 import { selectUserAgent } from './userAgent.js';
@@ -1210,6 +1210,16 @@ function mergeApiStats(tracker: TrackerConfig, scraped: TrackerStats, api: ApiRe
   };
 }
 
+// Cause affichee quand la session reste refusee apres re-login : un tracker en
+// cookie seul ne se reconnecte pas avec les credentials, seul un cookie neuf aide.
+function sessionExpiredCause(tracker: TrackerConfig): string {
+  const hint = expiredCookieHint(tracker.id).trim();
+  if (hint) return hint;
+  return tracker.login.cookieOnly
+    ? 'cookie refuse : le remplacer par un cookie neuf'
+    : 'vérifier les credentials';
+}
+
 export async function fetchTracker(
   tracker: TrackerConfig,
   creds: { username: string; password: string },
@@ -1696,7 +1706,7 @@ async function fetchTrackerScrape(
         if (isRetry) {
           const dumpPath = writeDebugDump(tracker, url, res.data, {}, 'fetch-not-authenticated');
           const suffix = dumpPath ? ` - dump: ${dumpPath}` : '';
-          throw new Error(`Session expirée même après re-login — vérifier les credentials${suffix}`);
+          throw new Error(`Session expirée même après re-login — ${sessionExpiredCause(tracker)}${suffix}`);
         }
         console.log(`  [${tracker.name}] Session expirée, re-login...`);
         invalidateSession(tracker.id);
@@ -1711,7 +1721,7 @@ async function fetchTrackerScrape(
       if (isRetry) {
         const dumpPath = writeDebugDump(tracker, url, res.data, {}, 'fetch-still-expired');
         const suffix = dumpPath ? ` - dump: ${dumpPath}` : '';
-        throw new Error(`Session expirée même après re-login — vérifier les credentials${suffix}`);
+        throw new Error(`Session expirée même après re-login — ${sessionExpiredCause(tracker)}${suffix}`);
       }
       console.log(`  [${tracker.name}] Session expirée, re-login...`);
       invalidateSession(tracker.id);

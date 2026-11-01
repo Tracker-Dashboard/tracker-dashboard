@@ -5,7 +5,7 @@ import { resolveProxyForTracker, toSshConfig } from './proxy.js';
 import { getSshLocalEndpoint } from './sshTunnel.js';
 import { selectUserAgent } from './userAgent.js';
 import { getTrackerCookie, getTrackerTotpSecret, getJsonSetting } from './db.js';
-import { parseCookies } from './cookies.js';
+import { expiredCookieHint, parseCookies } from './cookies.js';
 import { generateTotp } from './totp.js';
 import { type TrackerConfig, extraFetchList } from './types.js';
 
@@ -597,6 +597,11 @@ async function ensureLoggedIn(
     const currentUrl = page.url();
     const dump = writeBrowserDump(tracker, currentUrl, html, 'cookieonly');
     const suffix = dump ? ` - dump: ${dump}` : '';
+    // Un cookie perime explique a lui seul l'echec : on le dit avant les hypotheses.
+    const expiredHint = overrides ? '' : expiredCookieHint(tracker.id);
+    if (expiredHint) {
+      throw new Error(`Session non authentifiee :${expiredHint}${suffix}`);
+    }
     if (looksAntiBot(html)) {
       throw new Error(`Session non authentifiee : challenge anti-bot/Cloudflare affiche malgre le cookie (il manque sans doute un cookie cf_clearance, ou l'IP de sortie differe de celle qui a cree la session)${suffix}`);
     }
@@ -611,7 +616,7 @@ async function ensureLoggedIn(
     const currentUrl = page.url();
     const dump = writeBrowserDump(tracker, currentUrl, html, 'cookie-session');
     const suffix = dump ? ` - dump: ${dump}` : '';
-    throw new Error(`Cookie de session refuse ou expire ; renseigner username/password ou remplacer le cookie${suffix}`);
+    throw new Error(`Cookie de session refuse ou expire ; renseigner username/password ou remplacer le cookie.${expiredCookieHint(tracker.id)}${suffix}`);
   }
 
   const loginUrl = resolveUrl(tracker.baseUrl, tracker.login.url);

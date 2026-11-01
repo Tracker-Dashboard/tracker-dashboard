@@ -28,6 +28,7 @@ import {
 } from './proxy.js';
 import { ensureSshSocks } from './sshTunnel.js';
 import crypto from 'crypto';
+import { expiredCookieHint } from './cookies.js';
 import {
   loadIncidents, setIncident, getIncident, clearIncident,
 } from './incidents.js';
@@ -929,12 +930,15 @@ async function fetchTrackerBoundedOnce(
       // Tuer le Chromium reste bloque pour liberer CPU/RAM immediatement
       closeBrowserSession(tracker.id).catch(() => {});
       invalidateSession(tracker.id);
+      const cookieHint = expiredCookieHint(tracker.id);
       resolve({
         id:          tracker.id,
         name:        tracker.name,
         trackerUrl:  tracker.baseUrl,
         status:      'error',
-        error:       `Delai depasse (${Math.round(TRACKER_FETCH_TIMEOUT_MS / 1000)}s) - fetch interrompu`,
+        // Une SPA dont le cookie a expire attend ses stats jusqu'au timeout sans
+        // jamais afficher la page de login : on signale le cookie perime s'il l'est.
+        error:       `Delai depasse (${Math.round(TRACKER_FETCH_TIMEOUT_MS / 1000)}s) - fetch interrompu${cookieHint ? `.${cookieHint}` : ''}`,
         lastUpdated: new Date().toISOString(),
         byteUnit:    tracker.dashboard?.byteUnit ?? 'binary',
         fields:      {},

@@ -20,7 +20,7 @@
     ]
   },
   "fetch": {
-    "url": "activity",
+    "url": "user/profile/activity",
     "mode": "browser",
     "responseType": "html",
     "fields": {
