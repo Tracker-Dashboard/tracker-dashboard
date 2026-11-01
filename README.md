@@ -59,7 +59,7 @@ Le projet est porté par l’organisation [Tracker-Dashboard](https://github.com
 
 ### Novembre 2026
 
-- **1er novembre — AstraTorrent V4 et SpeedApp :** statistiques AstraTorrent lues sur le nouveau tableau de bord du compte (Upload/Download réels, Karma, seeds actifs), sans perdre la compatibilité V3 ; trafic SpeedApp lu depuis les données du profil, désormais affiché en Vue.
+- **1er novembre — AstraTorrent V4 et SpeedApp :** statistiques AstraTorrent lues sur le nouveau tableau de bord du compte (Upload/Download réels, Karma, seeds actifs), sans perdre la compatibilité V3 ; trafic SpeedApp lu depuis les données du profil, désormais affiché en Vue. ([#231](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/231))
 
 ### Octobre 2026
 
