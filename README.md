@@ -59,7 +59,8 @@ Le projet est porté par l’organisation [Tracker-Dashboard](https://github.com
 
 ### Novembre 2026
 
-- **1er novembre — Nostradamus, Memphis, Tigers-DL et cookies expirés :** Nostradamus lu sur ses nouvelles pages `/user/profile/` ; page de connexion Memphis de nouveau reconnue (thème sombre) ; connexion Tigers-DL adaptée à la plateforme V3 ; les erreurs de session et de délai dépassé indiquent désormais la date d’expiration du cookie collé lorsqu’il est périmé. ([#232](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/232))
+- **1er novembre — cookies `__Host-` :** les cookies `__Host-` et `__Secure-` collés sont de nouveau transmis lors du repli HTTP. L’indication de date d’expiration ajoutée par la #232 est retirée : la date inscrite dans un cookie exporté ne dit pas si le tracker l’accepte encore.
+- **1er novembre — Nostradamus, Memphis et Tigers-DL :** Nostradamus lu sur ses nouvelles pages `/user/profile/` ; page de connexion Memphis de nouveau reconnue (thème sombre) ; connexion Tigers-DL adaptée à la plateforme V3. ([#232](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/232))
 - **1er novembre — AstraTorrent V4 et SpeedApp :** statistiques AstraTorrent lues sur le nouveau tableau de bord du compte (Upload/Download réels, Karma, seeds actifs), sans perdre la compatibilité V3 ; trafic SpeedApp lu depuis les données du profil, désormais affiché en Vue. ([#231](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/231))
 
 ### Octobre 2026
