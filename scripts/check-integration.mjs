@@ -602,6 +602,18 @@ if (!shipsCrossSeedIntegration) {
   errors.push('cross-seed instances, badges, torrent markers, and API test must remain wired');
 }
 
+const draupnirr = JSON.parse(fs.readFileSync(path.join(root, 'config', 'trackers', 'yggrasil.json'), 'utf8'));
+const draupnirrLoginDetected = (body) => draupnirr.login.failurePatterns
+  .some(pattern => body.toLowerCase().includes(pattern.toLowerCase()));
+const draupnirrLoginFixture = '<title>Connexion — Draupnirr</title><form action="/login"><input name="email"><input type="password" name="password"></form>';
+const yggrasilLoginFixture = draupnirrLoginFixture.replace('Draupnirr', 'Yggrasil');
+const draupnirrProfileFixture = '<title>Profil — Draupnirr</title><span class="lbl">Uploadé</span><div class="val">12.34 GB</div>';
+if (!draupnirrLoginDetected(draupnirrLoginFixture)
+    || !draupnirrLoginDetected(yggrasilLoginFixture)
+    || draupnirrLoginDetected(draupnirrProfileFixture)) {
+  errors.push('Draupnirr must reject both current and legacy login pages without rejecting an authenticated profile');
+}
+
 if (errors.length > 0) {
   console.error(errors.map(error => `- ${error}`).join('\n'));
   process.exit(1);

@@ -23,6 +23,7 @@
       "password": "{{password}}"
     },
     "failurePatterns": [
+      "<title>Connexion — Draupnirr</title>",
       "<title>Connexion — Yggrasil</title>"
     ]
   },
