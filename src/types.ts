@@ -114,7 +114,8 @@ export interface FieldExtractor {
   sumPaths?: string[];
   // HTML : regex avec groupe nommé (?<value>...)
   regex?: string;
-  transform?: 'bytes' | 'number' | 'integer' | 'string';
+  /** bytesBinary : les unités affichées KB/GB/Ko utilisent 1024 (ex. NexusPHP). */
+  transform?: 'bytes' | 'bytesBinary' | 'number' | 'integer' | 'string';
 }
 
 /**

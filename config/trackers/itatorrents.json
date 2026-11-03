@@ -1,0 +1,7 @@
+{
+  "id": "itatorrents",
+  "name": "ItaTorrents",
+  "baseUrl": "https://itatorrents.xyz",
+  "enabled": false,
+  "engine": "unit3d"
+}

@@ -1,0 +1,7 @@
+{
+  "id": "torrenteros",
+  "name": "Torrenteros",
+  "baseUrl": "https://torrenteros.org",
+  "enabled": false,
+  "engine": "unit3d"
+}

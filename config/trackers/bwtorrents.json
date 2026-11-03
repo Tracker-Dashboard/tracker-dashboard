@@ -1,0 +1,58 @@
+{
+  "id": "bwtorrents",
+  "name": "BwTorrents",
+  "baseUrl": "https://bwtorrents.tv",
+  "enabled": false,
+  "engine": "other",
+  "login": {
+    "url": "login.php",
+    "postUrl": "takelogin.php",
+    "method": "POST",
+    "contentType": "form",
+    "body": {
+      "username": "{{username}}",
+      "password": "{{password}}"
+    },
+    "failurePatterns": [
+      "name=\"password\"",
+      "name='password'",
+      "action=\"takelogin.php\"",
+      "action='takelogin.php'",
+      "Login failed!"
+    ]
+  },
+  "fetch": {
+    "url": "index.php",
+    "mode": "http",
+    "responseType": "html",
+    "fields": {
+      "uploadedBytes": {
+        "regex": "<div\\b[^>]*\\bid=[\"']left-sts-aeon[\"'][^>]*>(?:(?!</div>)[\\s\\S])*?<a\\b[^>]*\\btitle=[\"']Uploaded[\"'][^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*<font\\b[^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d(?:[\\d\\s.,]*\\d)?(?:\\s|&nbsp;|&#160;|&#xa0;)*(?:[KMGTPE]i?B|B))(?:\\s|&nbsp;|&#160;|&#xa0;)*</font>",
+        "transform": "bytes"
+      },
+      "downloadedBytes": {
+        "regex": "<div\\b[^>]*\\bid=[\"']left-sts-aeon[\"'][^>]*>(?:(?!</div>)[\\s\\S])*?<a\\b[^>]*\\btitle=[\"']Downloaded[\"'][^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*<font\\b[^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d(?:[\\d\\s.,]*\\d)?(?:\\s|&nbsp;|&#160;|&#xa0;)*(?:[KMGTPE]i?B|B))(?:\\s|&nbsp;|&#160;|&#xa0;)*</font>",
+        "transform": "bytes"
+      },
+      "ratio": {
+        "regex": "<div\\b[^>]*\\bid=[\"']left-sts-aeon[\"'][^>]*>(?:(?!</div>)[\\s\\S])*?<a\\b[^>]*\\btitle=[\"']Ratio[\"'][^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*<font\\b[^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d(?:[\\d\\s.,]*\\d)?)(?:\\s|&nbsp;|&#160;|&#xa0;)*</font>",
+        "transform": "number"
+      },
+      "seeding": {
+        "regex": "<div\\b[^>]*\\bid=[\"']left-sts-aeon[\"'][^>]*>(?:(?!</div>)[\\s\\S])*?<img\\b[^>]*\\btitle=[\"']Torrents seeding[\"'][^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*<font\\b[^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*<span\\b[^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d+)(?:\\s|&nbsp;|&#160;|&#xa0;)*</span>",
+        "transform": "integer"
+      },
+      "leeching": {
+        "regex": "<div\\b[^>]*\\bid=[\"']left-sts-aeon[\"'][^>]*>(?:(?!</div>)[\\s\\S])*?<img\\b[^>]*\\btitle=[\"']Torrents leeching[\"'][^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*<font\\b[^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*<span\\b[^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d+)(?:\\s|&nbsp;|&#160;|&#xa0;)*</span>",
+        "transform": "integer"
+      },
+      "seedBonus": {
+        "regex": "<div\\b[^>]*\\bid=[\"']left-sts-aeon[\"'][^>]*>(?:(?!</div>)[\\s\\S])*?<a\\b[^>]*\\btitle=[\"']Bonus Points[\"'][^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*<font\\b[^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d(?:[\\d\\s.,]*\\d)?)(?:\\s|&nbsp;|&#160;|&#xa0;)*</font>",
+        "transform": "string"
+      }
+    }
+  },
+  "dashboard": {
+    "byteUnit": "decimal"
+  }
+}

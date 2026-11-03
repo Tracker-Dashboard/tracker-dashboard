@@ -1,0 +1,76 @@
+{
+  "id": "ptitzmx",
+  "name": "PT分享站 (itzmx)",
+  "baseUrl": "https://pt.itzmx.com",
+  "enabled": false,
+  "login": {
+    "url": "login.php",
+    "postUrl": "takelogin.php",
+    "method": "POST",
+    "contentType": "form",
+    "body": {
+      "username": "{{username}}",
+      "password": "{{password}}",
+      "logout": "",
+      "securelogin": "",
+      "ssl": "yes",
+      "trackerssl": "yes"
+    },
+    "failurePatterns": [
+      "name=\"password\"",
+      "name='password'",
+      "name=password",
+      "action=\"takelogin.php\"",
+      "action='takelogin.php'",
+      "action=takelogin.php"
+    ],
+    "cookieOnly": true,
+    "cookieInstructions": "Connectez-vous à PT分享站 (itzmx) dans votre navigateur et validez le CAPTCHA. Exportez les cookies de cette session, puis importez-les ou collez-les dans le champ Cookie du tracker dans l’application. Utilisez la même IP de sortie que le dashboard (même proxy/VPN, le cas échéant). Renouvelez le cookie lorsque la session expire."
+  },
+  "fetch": {
+    "url": "index.php",
+    "mode": "http",
+    "responseType": "html",
+    "fields": {
+      "uploadedBytes": {
+        "regex": "<table\\b(?=[^>]*\\bid\\s*=\\s*[\"']info_block[\"'])[^>]*>(?:(?!</table\\s*>)[\\s\\S])*?<font\\b[^>]*\\bclass\\s*=\\s*[\"']color_uploaded[\"'][^>]*>[^<]*</font>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d(?:[\\d\\s.,]*\\d)?(?:\\s|&nbsp;|&#160;|&#xa0;)*(?:[KMGTPE]B|B))(?=\\s*<)",
+        "transform": "bytesBinary"
+      },
+      "downloadedBytes": {
+        "regex": "<table\\b(?=[^>]*\\bid\\s*=\\s*[\"']info_block[\"'])[^>]*>(?:(?!</table\\s*>)[\\s\\S])*?<font\\b[^>]*\\bclass\\s*=\\s*[\"']color_downloaded[\"'][^>]*>[^<]*</font>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d(?:[\\d\\s.,]*\\d)?(?:\\s|&nbsp;|&#160;|&#xa0;)*(?:[KMGTPE]B|B))(?=\\s*<)",
+        "transform": "bytesBinary"
+      },
+      "ratio": {
+        "regex": "<table\\b(?=[^>]*\\bid\\s*=\\s*[\"']info_block[\"'])[^>]*>(?:(?!</table\\s*>)[\\s\\S])*?<font\\b[^>]*\\bclass\\s*=\\s*[\"']color_ratio[\"'][^>]*>[^<]*</font>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?:<font\\b[^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*)?(?<value>\\d(?:[\\d\\s.,]*\\d)?|∞|[Ii][Nn][Ff](?:[Ii][Nn][Ii][Tt][Yy]|[Ii][Nn][Ii][Tt][Ee])?)\\.?(?:\\s|&nbsp;|&#160;|&#xa0;)*(?=<)",
+        "transform": "number"
+      },
+      "seedBonus": {
+        "regex": "<table\\b(?=[^>]*\\bid\\s*=\\s*[\"']info_block[\"'])[^>]*>(?:(?!</table\\s*>)[\\s\\S])*?<font\\b[^>]*\\bclass\\s*=\\s*[\"']color_bonus[\"'][^>]*>[^<]*</font>(?:\\s|&nbsp;|&#160;|&#xa0;)*\\[(?:\\s|&nbsp;|&#160;|&#xa0;)*<a\\b[^>]*\\bhref\\s*=\\s*[\"']/?mybonus\\.php[\"'][^>]*>[^<]*</a>(?:\\s|&nbsp;|&#160;|&#xa0;)*\\](?:\\s|&nbsp;|&#160;|&#xa0;)*[:：](?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d(?:[\\d\\s.,]*\\d)?)(?=\\s*<)",
+        "transform": "string"
+      },
+      "seeding": {
+        "regex": "<table\\b(?=[^>]*\\bid\\s*=\\s*[\"']info_block[\"'])[^>]*>(?:(?!</table\\s*>)[\\s\\S])*?<img\\b(?=[^>]*\\bclass\\s*=\\s*[\"']arrowup[\"'])(?=[^>]*\\balt\\s*=\\s*[\"']Torrents seeding[\"'])[^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d+)(?=\\s*<)",
+        "transform": "integer"
+      },
+      "leeching": {
+        "regex": "<table\\b(?=[^>]*\\bid\\s*=\\s*[\"']info_block[\"'])[^>]*>(?:(?!</table\\s*>)[\\s\\S])*?<img\\b(?=[^>]*\\bclass\\s*=\\s*[\"']arrowdown[\"'])(?=[^>]*\\balt\\s*=\\s*[\"']Torrents leeching[\"'])[^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d+)(?=(?:\\s|&nbsp;|&#160;|&#xa0;)*<)",
+        "transform": "integer"
+      },
+      "memberClass": {
+        "regex": "<table\\b(?=[^>]*\\bid\\s*=\\s*[\"']info_block[\"'])[^>]*>(?:(?!</table\\s*>)[\\s\\S])*?<a\\b(?=[^>]*\\bhref\\s*=\\s*[\"']/?userdetails\\.php\\?id=\\d+(?:&amp;[^\"']*|&[^\"']*)?[\"'])[^>]*\\bclass\\s*=\\s*[\"'](?<value>[A-Za-z][A-Za-z0-9]*)_Name[\"']",
+        "transform": "string"
+      },
+      "unreadMessages": {
+        "regex": "<table\\b(?=[^>]*\\bid\\s*=\\s*[\"']info_block[\"'])[^>]*>(?:(?!</table\\s*>)[\\s\\S])*?<a\\b[^>]*\\bhref\\s*=\\s*[\"']/?messages\\.php[\"'][^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*<img\\b[^>]*\\bclass\\s*=\\s*[\"']inbox(?:new)?[\"'][^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*</a>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?:\\d+\\s*\\(\\s*|(?=0(?:\\s|<|$)))(?<value>\\d+)(?=\\s*(?:[^<()]*\\)|<|$))",
+        "transform": "integer"
+      },
+      "hitAndRuns": {
+        "regex": "<table\\b(?=[^>]*\\bid\\s*=\\s*[\"']info_block[\"'])[^>]*>(?:(?!</table\\s*>)[\\s\\S])*?<a\\b[^>]*\\bhref\\s*=\\s*[\"']/?myhr\\.php[\"'][^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*\\d+\\s*/\\s*<font\\b[^>]*\\bcolor\\s*=\\s*[\"']red[\"'][^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d+)(?:\\s|&nbsp;|&#160;|&#xa0;)*</font>\\s*/\\s*\\d+(?:\\s|&nbsp;|&#160;|&#xa0;)*</a>",
+        "transform": "integer"
+      }
+    }
+  },
+  "dashboard": {
+    "byteUnit": "binary"
+  }
+}

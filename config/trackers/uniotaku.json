@@ -1,0 +1,50 @@
+{
+  "id": "uniotaku",
+  "name": "UniOtaku",
+  "baseUrl": "https://tracker.uniotaku.com",
+  "enabled": false,
+  "engine": "other",
+  "login": {
+    "url": "/",
+    "postUrl": "account-login.php",
+    "method": "POST",
+    "contentType": "form",
+    "body": {
+      "username": "{{username}}",
+      "password": "{{password}}",
+      "manter": "1"
+    },
+    "failurePatterns": [
+      "name=\"password\"",
+      "name='password'",
+      "action=\"account-login.php\"",
+      "action='account-login.php'"
+    ]
+  },
+  "fetch": {
+    "url": "/",
+    "mode": "http",
+    "responseType": "html",
+    "fields": {
+      "uploadedBytes": {
+        "regex": "<div\\b[^>]*\\bclass=[\"'][^\"']*\\bdownupsidebar\\b[^\"']*[\"'][^>]*>(?:(?!</div>)[\\s\\S])*?<span\\b[^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*Upload:(?:\\s|&nbsp;|&#160;|&#xa0;)*</span>(?:\\s|&nbsp;|&#160;|&#xa0;)*<span\\b[^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d(?:[\\d\\s.,]*\\d)?(?:\\s|&nbsp;|&#160;|&#xa0;)*(?:[KMGTPE]i?B|B))(?:\\s|&nbsp;|&#160;|&#xa0;)*</span>",
+        "transform": "bytes"
+      },
+      "downloadedBytes": {
+        "regex": "<div\\b[^>]*\\bclass=[\"'][^\"']*\\bdownupsidebar\\b[^\"']*[\"'][^>]*>(?:(?!</div>)[\\s\\S])*?<span\\b[^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*Download:(?:\\s|&nbsp;|&#160;|&#xa0;)*</span>(?:\\s|&nbsp;|&#160;|&#xa0;)*<span\\b[^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d(?:[\\d\\s.,]*\\d)?(?:\\s|&nbsp;|&#160;|&#xa0;)*(?:[KMGTPE]i?B|B))(?:\\s|&nbsp;|&#160;|&#xa0;)*</span>",
+        "transform": "bytes"
+      },
+      "ratio": {
+        "regex": "<div\\b[^>]*\\bclass=[\"'][^\"']*\\binfotracker\\b[^\"']*[\"'][^>]*>(?:(?!</div>)[\\s\\S])*?<small\\b[^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*Ratio:(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d(?:[\\d\\s.,]*\\d)?)(?:\\s|&nbsp;|&#160;|&#xa0;)*<br\\b[^>]*>",
+        "transform": "number"
+      },
+      "seedBonus": {
+        "regex": "<div\\b[^>]*\\bclass=[\"'][^\"']*\\binfotracker\\b[^\"']*[\"'][^>]*>(?:(?!</div>)[\\s\\S])*?<small\\b[^>]*>(?:(?!</small>)[\\s\\S])*?Otabills:(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d(?:[\\d\\s.,]*\\d)?)(?:\\s|&nbsp;|&#160;|&#xa0;)*</small>",
+        "transform": "string"
+      }
+    }
+  },
+  "dashboard": {
+    "byteUnit": "decimal"
+  }
+}

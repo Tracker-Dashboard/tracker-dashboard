@@ -1,0 +1,80 @@
+{
+  "id": "musebootlegs",
+  "name": "MuseBootlegs",
+  "baseUrl": "https://musebootlegs.com",
+  "enabled": false,
+  "login": {
+    "url": "/?p=home&pid=1",
+    "postUrl": "/ajax/login.php",
+    "method": "POST",
+    "contentType": "form",
+    "preStep": {
+      "url": "/?p=home&pid=1",
+      "extract": {
+        "securitytoken": {
+          "regex": "\\bstKey\\s*:\\s*[\"'](?<value>[^\"']+)[\"']"
+        }
+      }
+    },
+    "body": {
+      "action": "login",
+      "loginbox_membername": "{{username}}",
+      "loginbox_password": "{{password}}",
+      "loginbox_remember": "1",
+      "securitytoken": "{{securitytoken}}"
+    },
+    "failurePatterns": [
+      "id=\"loginbox_form\"",
+      "id='loginbox_form'",
+      "name=\"loginbox_password\"",
+      "name='loginbox_password'",
+      "-ERROR-"
+    ],
+    "cookieOnly": true,
+    "cookieInstructions": "Connectez-vous à MuseBootlegs dans votre navigateur et terminez la vérification Cloudflare si elle apparaît. Exportez les cookies de cette session, puis importez-les ou collez-les dans le champ Cookie du tracker dans l’application. Utilisez la même IP de sortie que le dashboard (même proxy/VPN, le cas échéant). Renouvelez le cookie lorsque la session expire."
+  },
+  "fetch": {
+    "url": "/?p=home&pid=1",
+    "mode": "browser",
+    "responseType": "html",
+    "fields": {
+      "uploadedBytes": {
+        "regex": "<div\\b(?=[^>]*\\bid=[\"']ul_dl_stats[\"'])[^>]*>(?:(?!</div\\s*>)[\\s\\S])*?<b>\\s*Uploaded:\\s*</b>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d(?:[\\d\\s.,]*\\d)?(?:\\s|&nbsp;|&#160;|&#xa0;)*(?:[KMGTPE]i?B|B)|0(?:[.,]0+)?)(?=(?:\\s|&nbsp;|&#160;|&#xa0;)*<br\\b)",
+        "transform": "bytes"
+      },
+      "downloadedBytes": {
+        "regex": "<div\\b(?=[^>]*\\bid=[\"']ul_dl_stats[\"'])[^>]*>(?:(?!</div\\s*>)[\\s\\S])*?<b>\\s*Downloaded:\\s*</b>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d(?:[\\d\\s.,]*\\d)?(?:\\s|&nbsp;|&#160;|&#xa0;)*(?:[KMGTPE]i?B|B)|0(?:[.,]0+)?)(?=(?:\\s|&nbsp;|&#160;|&#xa0;)*<br\\b)",
+        "transform": "bytes"
+      },
+      "bufferBytes": {
+        "regex": "<div\\b(?=[^>]*\\bid=[\"']ul_dl_stats[\"'])[^>]*>(?:(?!</div\\s*>)[\\s\\S])*?<b>\\s*Buffer:\\s*</b>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d(?:[\\d\\s.,]*\\d)?(?:\\s|&nbsp;|&#160;|&#xa0;)*(?:[KMGTPE]i?B|B)|0(?:[.,]0+)?)(?=(?:\\s|&nbsp;|&#160;|&#xa0;)*<br\\b)",
+        "transform": "bytes"
+      },
+      "ratio": {
+        "regex": "<div\\b(?=[^>]*\\bid=[\"']ul_dl_stats[\"'])[^>]*>(?:(?!</div\\s*>)[\\s\\S])*?<b>\\s*Ratio:\\s*</b>(?:\\s|&nbsp;|&#160;|&#xa0;)*<span\\b[^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d(?:[\\d\\s.,]*\\d)?|∞|[Ii][Nn][Ff](?:[Ii][Nn][Ii][Tt][Yy]|[Ii][Nn][Ii][Tt][Ee])?)(?:\\s|&nbsp;|&#160;|&#xa0;)*</span>",
+        "transform": "number"
+      },
+      "seedBonus": {
+        "regex": "<div\\b(?=[^>]*\\bid=[\"']ul_dl_stats[\"'])[^>]*>(?:(?!</div\\s*>)[\\s\\S])*?<b>\\s*Points:\\s*</b>(?:\\s|&nbsp;|&#160;|&#xa0;)*<a\\b[^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d(?:[\\d\\s.,]*\\d)?)(?:\\s|&nbsp;|&#160;|&#xa0;)*</a>",
+        "transform": "string"
+      },
+      "hitAndRuns": {
+        "regex": "<div\\b(?=[^>]*\\bid=[\"']ul_dl_stats[\"'])[^>]*>(?:(?!</div\\s*>)[\\s\\S])*?<b>\\s*Hit (?:&amp;|&) Run Warns:\\s*</b>(?:\\s|&nbsp;|&#160;|&#xa0;)*<span\\b[^>]*\\bid=[\"']hitrun_warns[\"'][^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d+)(?:\\s|&nbsp;|&#160;|&#xa0;)*</span>",
+        "transform": "integer"
+      }
+    },
+    "extraFetch": {
+      "url": "/?p=profile&pid=18&memberid={{id}}",
+      "field": "memberClass",
+      "responseType": "html",
+      "idExtract": {
+        "regex": "<a\\b[^>]*\\bhref=[\"'](?:https?://[^/\"']+)?/\\?p=profile(?:&amp;|&)pid=18(?:&amp;|&)memberid=(?<value>\\d+)[\"'][^>]*>\\s*Profile\\s*</a>"
+      },
+      "regex": "<div\\b(?=[^>]*\\bid=[\"']memberCard[\"'])[^>]*>\\s*(?:<div\\b[^>]*\\bclass=[\"'](?:[^\"']*\\s)?memberCardAvatar(?:\\s[^\"']*)?[\"'][^>]*>(?:(?!</div\\s*>)[\\s\\S])*?</div>\\s*)?<div\\b[^>]*\\bclass=[\"'](?:[^\"']*\\s)?memberCardDetails(?:\\s[^\"']*)?[\"'][^>]*>(?:(?!</div\\s*>)[\\s\\S])*?<br\\s*/?>\\s*<span\\b[^>]*>\\s*(?<value>[^<\\s](?:[^<]*?[^<\\s])?)\\s*</span>\\s*<br\\s*/?>\\s*<b>Member Since:</b>",
+      "transform": "string"
+    }
+  },
+  "dashboard": {
+    "bonusUnit": "Points"
+  }
+}

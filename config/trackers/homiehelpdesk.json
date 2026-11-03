@@ -1,0 +1,7 @@
+{
+  "id": "homiehelpdesk",
+  "name": "HomieHelpDesk (HHD)",
+  "baseUrl": "https://homiehelpdesk.net",
+  "enabled": false,
+  "engine": "unit3d"
+}

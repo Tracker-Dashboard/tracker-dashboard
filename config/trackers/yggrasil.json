@@ -42,10 +42,6 @@
       "ratio": {
         "regex": "<span class=\"lbl\">Ratio</span>\\s*<div class=\"val(?: [^\"]*)?\">\\s*(?<value>[^<]+?)\\s*</div>",
         "transform": "number"
-      },
-      "seeding": {
-        "regex": "<span class=\"lbl\">Temps de seed</span>\\s*<div class=\"val\"[^>]*>\\s*(?<value>[\\d.,]+\\s*h)\\s*</div>",
-        "transform": "string"
       }
     }
   },

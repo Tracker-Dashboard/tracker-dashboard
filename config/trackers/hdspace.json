@@ -1,0 +1,55 @@
+{
+  "id": "hdspace",
+  "name": "HD-Space",
+  "baseUrl": "https://hd-space.org",
+  "enabled": false,
+  "login": {
+    "url": "index.php?page=login",
+    "method": "POST",
+    "contentType": "form",
+    "body": {
+      "uid": "{{username}}",
+      "pwd": "{{password}}"
+    },
+    "failurePatterns": [
+      "name=\"pwd\"",
+      "name='pwd'",
+      "Password Incorrect",
+      "Username Incorrect"
+    ]
+  },
+  "fetch": {
+    "url": "index.php",
+    "mode": "browser",
+    "responseType": "html",
+    "fields": {
+      "uploadedBytes": {
+        "regex": "<td\\b[^>]*\\bclass=[\"']green[\"'][^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*UP:(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d[\\d\\s.,]*(?:\\s|&nbsp;|&#160;|&#xa0;)*(?:[KMGTPE]i?B|B))(?:\\s|&nbsp;|&#160;|&#xa0;)*</td>",
+        "transform": "bytesBinary"
+      },
+      "downloadedBytes": {
+        "regex": "<td\\b[^>]*\\bclass=[\"']red[\"'][^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*DL:(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d[\\d\\s.,]*(?:\\s|&nbsp;|&#160;|&#xa0;)*(?:[KMGTPE]i?B|B))(?:\\s|&nbsp;|&#160;|&#xa0;)*</td>",
+        "transform": "bytesBinary"
+      },
+      "ratio": {
+        "regex": "<td\\b[^>]*\\bclass=[\"']yellow[\"'][^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*Ratio:(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d[\\d.,]*|∞|[Ii]nf(?:inity|inite)?)(?:\\s|&nbsp;|&#160;|&#xa0;)*</td>",
+        "transform": "number"
+      },
+      "seedBonus": {
+        "regex": "<a\\b[^>]*\\bhref=[\"']index\\.php\\?page=modules(?:&amp;|&)module=seedbonus[\"'][^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*Bonus:(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d[\\d\\s.,]*\\d|\\d)(?:\\s|&nbsp;|&#160;|&#xa0;)*</a>",
+        "transform": "string"
+      },
+      "memberClass": {
+        "regex": "<td\\b[^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*Rank:(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>[^<\\s][^<]*?)(?:\\s|&nbsp;|&#160;|&#xa0;)*</td>",
+        "transform": "string"
+      },
+      "unreadMessages": {
+        "regex": "<a\\b[^>]*\\bhref=[\"']index\\.php\\?page=usercp(?:&amp;|&)uid=\\d+(?:&amp;|&)do=pm(?:&amp;|&)action=list[\"'][^>]*>[^<]*</a>\\s*\\(\\s*<font\\b[^>]*\\bcolor=[\"']#[Ff]{2}0000[\"'][^>]*>\\s*<b\\b[^>]*>\\s*(?<value>\\d+)\\s*</b>\\s*</font>\\s*\\)",
+        "transform": "integer"
+      }
+    }
+  },
+  "dashboard": {
+    "byteUnit": "binary"
+  }
+}

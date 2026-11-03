@@ -274,6 +274,35 @@ for (const loginFixture of ['<html class="auth-locked"><form id="login-form"></f
     errors.push('Memphis login pages must not produce account statistics');
   }
 }
+// Optional fields follow the public profile renderer, with synthetic account values.
+const memphisOptionalFixture = (points, memberClass) => `
+  <section id="profile"><div class="profile-banner">
+    <div class="profile-avatar"></div><div><span class="eyebrow">${memberClass}</span></div>
+  </div><div id="member-reward-summary" class="impact-overview">
+    <div class="impact-balance"><span>Points disponibles</span><strong>${points}</strong><small>points Impact</small></div>
+    <div class="impact-next"><strong>Prochain palier de seed</strong><p>10 h restantes pour <b>500 points</b></p></div>
+  </div></section>`;
+for (const [points, memberClass] of [['12\u202f345,5', 'Uploader'], ['0', 'Membre']]) {
+  for (const fixture of [memphisOptionalFixture(points, memberClass), memphisOptionalFixture(points, memberClass).replaceAll('"', "'")]) {
+    const actual = extractMemphis(fixture);
+    if (actual.seedBonus !== points || actual.memberClass !== memberClass) {
+      errors.push('Memphis must preserve Impact points as a string, including zero, and extract the profile member class');
+    }
+  }
+}
+for (const placeholder of ['', ' ', '—']) {
+  const fixture = memphisOptionalFixture(placeholder, placeholder).replace('</section>', '<div class="eyebrow">Unrelated panel</div></section>');
+  const actual = extractMemphis(fixture);
+  if (actual.seedBonus !== undefined || actual.memberClass !== undefined) {
+    errors.push('Missing Memphis optional values must stay absent, never use a reward threshold or loading placeholder');
+  }
+}
+const unrelatedMemphisPanels = '<div class="eyebrow">Administrator</div><div><span>Points disponibles</span><strong>999</strong><small>points Impact</small></div>';
+const unrelatedMemphisValues = extractMemphis(unrelatedMemphisPanels);
+if (unrelatedMemphisValues.seedBonus !== undefined || unrelatedMemphisValues.memberClass !== undefined
+    || memphis.dashboard.bonusUnit !== 'Impact') {
+  errors.push('Memphis optional statistics must be scoped to its profile panels and use the Impact bonus unit');
+}
 
 // Tigers-DL V3 : login.php, champ identity et jeton CSRF du formulaire de connexion
 // (pas celui des formulaires de theme, qui ajouteraient theme/return_to).

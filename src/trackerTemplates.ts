@@ -24,6 +24,16 @@ export interface EngineTemplate {
   preset: Pick<TrackerConfig, 'login' | 'fetch'> & Partial<Pick<TrackerConfig, 'curlBinary' | 'ratioless' | 'dashboard' | 'api'>>;
 }
 
+const unit3dSpace = String.raw`(?:\s|&nbsp;|&#160;|&#xa0;)*`;
+const unit3dNumber = String.raw`\d(?:[\d\s.,]*\d)?`;
+const unit3dBytes = String.raw`${unit3dNumber}${unit3dSpace}(?:[KMGTPE]i?B|B)`;
+
+// UNIT3D top-nav.blade.php : une valeur par <li>, après l'icône de son lien.
+// Le bloc suivant ne doit jamais fournir la valeur d'un champ vide.
+function unit3dStatRegex(name: string, value: string): string {
+  return String.raw`<li\b[^>]*\bclass=["'](?:[^"']*\s)?ratio-bar__${name}(?:\s[^"']*)?["'][^>]*>(?:(?!</li\s*>)[\s\S])*?<i\b[^>]*>[^<]*</i>${unit3dSpace}(?<value>${value})${unit3dSpace}</a>`;
+}
+
 export const ENGINE_TEMPLATES: Record<EngineId, EngineTemplate> = {
   unit3d: {
     id: 'unit3d',
@@ -59,18 +69,18 @@ export const ENGINE_TEMPLATES: Record<EngineId, EngineTemplate> = {
         url: '/',
         responseType: 'html',
         fields: {
-          uploadedBytes:   { regex: 'ratio-bar__uploaded[\\s\\S]*?<i[^>]*>[\\s\\S]*?</i>\\s*(?<value>[\\d\\s.,]+\\s*[KMGTPE]?i?B)', transform: 'bytes' },
-          downloadedBytes: { regex: 'ratio-bar__downloaded[\\s\\S]*?<i[^>]*>[\\s\\S]*?</i>\\s*(?<value>[\\d\\s.,]+\\s*[KMGTPE]?i?B)', transform: 'bytes' },
-          ratio:           { regex: 'ratio-bar__ratio[\\s\\S]*?<i[^>]*>[\\s\\S]*?</i>\\s*(?<value>[\\d\\s.,]+)', transform: 'number' },
-          seeding:         { regex: 'ratio-bar__seeding[\\s\\S]*?<i[^>]*>[\\s\\S]*?</i>\\s*(?<value>\\d+)', transform: 'integer' },
-          leeching:        { regex: 'ratio-bar__leeching[\\s\\S]*?<i[^>]*>[\\s\\S]*?</i>\\s*(?<value>\\d+)', transform: 'integer' },
-          seedBonus:       { regex: 'ratio-bar__points[\\s\\S]*?<i[^>]*>[\\s\\S]*?</i>\\s*(?<value>[\\d\\s.,\\u202f]+)', transform: 'string' },
-          bufferBytes:     { regex: 'ratio-bar__buffer[\\s\\S]*?<i[^>]*>[\\s\\S]*?</i>\\s*(?<value>[\\d\\s.,]+\\s*[KMGTPE]?i?B)', transform: 'bytes' },
-          tokens:          { regex: 'ratio-bar__tokens[\\s\\S]*?<i[^>]*>[\\s\\S]*?</i>\\s*(?<value>\\d+)', transform: 'integer' },
-          // MP non lus : UNIT3D affiche une sphère animée (<animate>) près de l'icône
-          // envelope quand il y a des MP non lus. Pas de compteur : on capture la durée
-          // d'animation comme signal de présence ; toute valeur non vide => 1 MP.
-          unreadMessages:  { regex: 'Boîte de réception(?:(?!<\\/a>)[\\s\\S])*?<animate[^>]*?dur="(?<value>[^"]+)"', transform: 'string' },
+          uploadedBytes:   { regex: unit3dStatRegex('uploaded', unit3dBytes), transform: 'bytes' },
+          downloadedBytes: { regex: unit3dStatRegex('downloaded', unit3dBytes), transform: 'bytes' },
+          ratio:           { regex: unit3dStatRegex('ratio', `${unit3dNumber}|∞`), transform: 'number' },
+          seeding:         { regex: unit3dStatRegex('seeding', String.raw`\d+`), transform: 'integer' },
+          leeching:        { regex: unit3dStatRegex('leeching', String.raw`\d+`), transform: 'integer' },
+          seedBonus:       { regex: unit3dStatRegex('points', unit3dNumber), transform: 'string' },
+          bufferBytes:     { regex: unit3dStatRegex('buffer', unit3dBytes), transform: 'bytes' },
+          tokens:          { regex: unit3dStatRegex('tokens', String.raw`\d+`), transform: 'integer' },
+          // top-nav.blade.php affiche animation.notification uniquement si $hasUnreadPm.
+          // Classe du lien + icône envelope : aucun libellé traduit, aucune autre alerte.
+          // La durée reste un signal de présence (« au moins un MP »), pas un compteur.
+          unreadMessages:  { regex: String.raw`<a\b[^>]*\bclass=["'](?:[^"']*\s)?top-nav--right__icon-link(?:\s[^"']*)?["'][^>]*>(?:(?!</a\s*>)[\s\S])*?<i\b[^>]*\bclass=["'](?:[^"']*\s)?fa-envelope(?:\s[^"']*)?["'][^>]*>\s*</i>(?:(?!</a\s*>)[\s\S])*?<animate\b(?=[^>]*\battributeName=["']r["'])[^>]*\bdur=["'](?<value>\d+(?:\.\d+)?(?:ms|s))["']`, transform: 'string' },
         },
       },
       // API personnelle UNIT3D (GET /api/user, depuis UNIT3D 8.x fin 2024). Les

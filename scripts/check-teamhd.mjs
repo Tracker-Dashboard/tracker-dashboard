@@ -27,7 +27,8 @@ try {
 
   // Verified account-header markup; every username, ID, rank and counter below is synthetic.
   const header = ({ uploaded = '1.25 TiB', downloaded = '512.00 GiB', ratio = '2.50',
-    bonus = '12 345,67', seeding = '24', leeching = '3', rank = '1080p' } = {}) => `
+    bonus = '12 345,67', seeding = '24', leeching = '3', rank = '1080p',
+    inboxTotal = '27', unread = '4', tokens = '8' } = {}) => `
     <div class="col-8 mb-4"><a href="/user/id42"><span style="color:#000000" title="${rank}">fixture-user</span></a>
     <a href="/logout.php">Logout</a><br>
     <font color="#1900D1">Рейтинг:</font> ${ratio}&nbsp;&nbsp;
@@ -35,10 +36,16 @@ try {
     <font color="darkred">Скачал:</font> ${downloaded}&nbsp;&nbsp;
     <font color="darkblue">Бонус:</font> <a href="/mybonus.php" class="online" title="Потратить">${bonus}</a>&nbsp;&nbsp;
     <font color="#1900D1">Торренты:</font><img alt="Раздаёт" title="Раздаёт" src="/themes/teamhd_web/images/arrowup.gif">&nbsp;${seeding}&nbsp;&nbsp;
-    <img alt="Качает" title="Качает" src="/themes/teamhd_web/images/arrowdown.gif">&nbsp;${leeching}</div>`;
+    <img alt="Качает" title="Качает" src="/themes/teamhd_web/images/arrowdown.gif">&nbsp;${leeching}</div>
+    <div class="col-4 text-right mb-4">Текущее время: <span id="hour_min">09:12</span>&nbsp;&nbsp;
+      <a href="/message.php"><img alt="inbox" title="Есть новые сообщения" src="/pic/pn_inboxnew.gif"></a> ${inboxTotal} (${unread} новых)&nbsp;
+      <a href="/message.php?action=viewmailbox&amp;box=-1"><img alt="Отправленые" title="Отправленые" src="/pic/pn_sentbox.gif"></a> 19&nbsp;
+      <a href="/friends.php"><img alt="Друзья" title="Друзья" src="/pic/buddylist.gif"></a></div>
+    <div id="sb65"><font color="#c26458">Токенов:</font>&nbsp;&nbsp;&nbsp;
+      <font color="#000000"><a href="/mytokens.php">${tokens}</a></font><br></div>`;
   const expected = {
     uploadedBytes: 1.25 * 1024 ** 4, downloadedBytes: 512 * 1024 ** 3, ratio: 2.5,
-    seedBonus: '12 345,67', seeding: 24, leeching: 3, memberClass: '1080p',
+    seedBonus: '12 345,67', seeding: 24, leeching: 3, memberClass: '1080p', unreadMessages: 4, tokens: 8,
   };
   const unquoted = html => html.replace(/="([^"\s]+)"/g, '=$1');
   for (const page of [header(), header().replaceAll('"', "'"), unquoted(header())]) {
@@ -50,7 +57,7 @@ try {
   assert.deepEqual(extract(header({ uploaded: '0.00 KiB', downloaded: '0.00 KiB', ratio: '---',
     bonus: '0', seeding: '0', leeching: '0' })), {
     uploadedBytes: 0, downloadedBytes: 0, ratio: undefined,
-    seedBonus: '0', seeding: 0, leeching: 0, memberClass: '1080p',
+    seedBonus: '0', seeding: 0, leeching: 0, memberClass: '1080p', unreadMessages: 4, tokens: 8,
   });
   assert.equal(extract(header({ ratio: '0.00' })).ratio, 0);
   assert.equal(extract(header({ uploaded: '1.5&nbsp;GiB' })).uploadedBytes, 1.5 * 1024 ** 3);
@@ -63,13 +70,42 @@ try {
     assert.equal(extract(header({ bonus })).seedBonus, bonus, 'Preserve the site’s bonus formatting');
   }
 
+  assert.deepEqual(extract(header({ inboxTotal: '93', unread: '7', tokens: '12' })), {
+    ...expected, unreadMessages: 7, tokens: 12,
+  }, 'Unread messages must use the parenthesized count, not the inbox total');
+  assert.deepEqual(extract(header({ unread: '0', tokens: '0' })), {
+    ...expected, unreadMessages: 0, tokens: 0,
+  }, 'Explicit zero optional counters must remain zero');
+  assert.deepEqual(extract(header({ unread: '', tokens: '' })), {
+    ...expected, unreadMessages: undefined, tokens: undefined,
+  }, 'Missing optional counters must remain absent');
+  for (const inboxTotal of ['27', '0']) {
+    assert.equal(extract(header({ inboxTotal }).replace(' (4 новых)', '')).unreadMessages, undefined,
+      'An inbox total without an explicit unread count is not an unread value');
+  }
+  assert.equal(extract(header().replace('href="/message.php"', 'href="/message.php?action=viewmailbox&amp;box=-1"')).unreadMessages, undefined,
+    'A sent mailbox link must not be counted as the inbox');
+  assert.equal(extract(header().replace('src="/pic/pn_inboxnew.gif"', 'src="/pic/pn_sentbox.gif"')).unreadMessages, undefined);
+  assert.equal(extract(header().replace('alt="inbox"', 'alt="sent"')).unreadMessages, undefined);
+  assert.equal(extract(header().replace('Токенов:', 'Всего:')).tokens, undefined);
+  assert.equal(extract(header().replace('href="/mytokens.php"', 'href="/globaltokens.php"')).tokens, undefined);
+
+  const unrelatedOptional = `<section><a href="/message.php"><img alt="inbox" src="/pic/pn_inboxnew.gif"></a> 83 (16 новых)
+    <font>Токенов:</font><font><a href="/mytokens.php">37</a></font></section>`;
+  assert.equal(extract(header({ unread: '' }) + unrelatedOptional).unreadMessages, undefined,
+    'An empty header count must not capture another account block');
+  assert.equal(extract(header({ tokens: '' }) + unrelatedOptional).tokens, undefined,
+    'An empty token balance must not capture another block');
+  assert.equal(extract(header().replace('class="col-4 text-right mb-4"', 'class="other-account"') + unrelatedOptional).unreadMessages, undefined);
+  assert.equal(extract(header().replace('id="sb65"', 'id="global-tokens"') + unrelatedOptional).tokens, undefined);
+
   const emptyStats = Object.fromEntries(Object.keys(expected).map(field => [field, undefined]));
   const globalStats = `<section><a href="/user/id99"><span title="Administrator">fixture-other-user</span></a>
     <font color="green">Раздал:</font> 999 TiB<font color="darkred">Скачал:</font> 500 TiB
     <font color="#1900D1">Рейтинг:</font> 100.00<a href="/mybonus.php" class="online">99999</a>
-    <img src="/themes/teamhd_web/images/arrowup.gif">9999<img src="/themes/teamhd_web/images/arrowdown.gif">999</section>`;
+    <img src="/themes/teamhd_web/images/arrowup.gif">9999<img src="/themes/teamhd_web/images/arrowdown.gif">999</section>` + unrelatedOptional;
   assert.deepEqual(extract(globalStats), emptyStats, 'Global counters and other users are not account stats');
-  assert.deepEqual(extract(header({ uploaded: '', downloaded: '', ratio: '', bonus: '', seeding: '', leeching: '', rank: '' }) + globalStats),
+  assert.deepEqual(extract(header({ uploaded: '', downloaded: '', ratio: '', bonus: '', seeding: '', leeching: '', rank: '', unread: '', tokens: '' }) + globalStats),
     emptyStats, 'Missing values must not cross the end of the account header');
   assert.deepEqual(extract(header({ uploaded: '25', downloaded: '12', ratio: '---' })), {
     ...expected, uploadedBytes: undefined, downloadedBytes: undefined, ratio: undefined,
@@ -129,7 +165,7 @@ try {
   assert.ok(requests.every(request => ['GET', 'HEAD'].includes(request.method)), 'Cookie-only must never POST credentials');
   assert.ok(requests.every(request => !request.url.includes('login.php')), 'Cookie-only must never request either login endpoint');
 
-  console.log('TeamHD extraction OK: account header, binary units, absent ratio, formatted bonus, isolated rank and cookie-only sessions.');
+  console.log('TeamHD extraction OK: account header, binary units, absent ratio, bonus, rank, explicit unread messages/tokens and cookie-only sessions.');
 } finally {
   if (server?.listening) await new Promise(resolve => server.close(resolve));
   sqlite?.close();
