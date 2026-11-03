@@ -131,9 +131,9 @@ if (!httpModePrefersStoredCookie) {
 const memphisRuntimeWaitsForSpaStats = (
   memphis.fetch?.url === '/?view=profile'
   && memphis.fetch?.mode === 'browser'
-  && browserFetcher.includes("tracker.id === 'memphis'")
+  && browserFetcher.includes("(tracker.baseId ?? tracker.id) === 'memphis'")
   && browserFetcher.includes("document.querySelector('#account-health-panel')")
-  && browserFetcher.includes('/Ratio\\s+indicatif/i.test(text)')
+  && browserFetcher.includes("['ratio', 'uploadedBytes', 'downloadedBytes'].map(field => tracker.fetch.fields[field]?.regex)")
   && memphis.fetch?.fields?.uploadedBytes
   && memphis.fetch?.fields?.downloadedBytes
   && memphis.fetch?.fields?.ratio
@@ -233,6 +233,46 @@ const memphisLoginDetected = (html) => memphis.login.failurePatterns.some(patter
 if (!memphisLoginDetected('<html class="dark auth-locked">') || !memphisLoginDetected('<html class="auth-locked">')
     || memphisLoginDetected('<html class="dark"><main class="login-shell">Mon compte</main>')) {
   errors.push('Memphis login page must be detected with or without the dark theme class, never on the account page');
+}
+
+// Synthetic Memphis account panels: both generations must use the production transforms.
+const memphisFixture = (label, uploaded, downloaded, ratio, seeding) => `
+  <section id="account-health-panel"><div class="account-health-grid">
+    <article><strong>${ratio}</strong><span>Ratio ${label}</span></article>
+    <article><strong>${uploaded}</strong><span>Envoyé</span></article>
+    <article><strong>${downloaded}</strong><span>Reçu</span></article>
+  </div></section>
+  ${seeding === undefined ? '' : label === 'historique'
+    ? `<section id="profile-signal-panel"><h2>Mon empreinte de disponibilité</h2>
+        <div class="signal-profile-metrics"><span><strong>${seeding}</strong> actifs</span>
+        <span><strong>9</strong> maintenus</span></div></section>`
+    : `<strong>En seed actuellement</strong><span>${seeding}</span>`}`;
+const extractMemphis = fixture => Object.fromEntries(Object.entries(memphis.fetch.fields).map(([field, extractor]) => [
+  field, extractExtraFieldResponse({ field, ...extractor }, fixture)?.value,
+]));
+for (const label of ['indicatif', 'historique']) {
+  const cases = [
+    { values: ['1,75 Gio', '0,5 Gio', '3,50', 7], expected: { uploadedBytes: 1.75 * 1024 ** 3, downloadedBytes: 0.5 * 1024 ** 3, ratio: 3.5, seeding: 7 } },
+    { values: ['0 Gio', '0 Gio', '0.00', 0], expected: { uploadedBytes: 0, downloadedBytes: 0, ratio: 0, seeding: 0 } },
+    { values: ['1 Gio', '0 Gio', label === 'historique' ? '∞' : 'Infinity', 2], expected: { uploadedBytes: 1024 ** 3, downloadedBytes: 0, ratio: '∞', seeding: 2 } },
+  ];
+  for (const { values, expected } of cases) {
+    const actual = extractMemphis(memphisFixture(label, ...values));
+    if (Object.entries(expected).some(([field, value]) => actual[field] !== value)) {
+      errors.push(`Memphis ${label} fields must parse nonzero, zero and infinite statistics with production transforms`);
+    }
+  }
+  for (const placeholder of ['', ' ', '—']) {
+    const skeleton = memphisFixture(label, placeholder, placeholder, placeholder);
+    if (Object.values(extractMemphis(skeleton)).some(value => value !== undefined)) {
+      errors.push(`Memphis ${label} loading placeholders must not produce account statistics`);
+    }
+  }
+}
+for (const loginFixture of ['<html class="auth-locked"><form id="login-form"></form></html>', '<html class="dark auth-locked"><main class="login-shell">Connexion</main></html>']) {
+  if (Object.values(extractMemphis(loginFixture)).some(value => value !== undefined)) {
+    errors.push('Memphis login pages must not produce account statistics');
+  }
 }
 
 // Tigers-DL V3 : login.php, champ identity et jeton CSRF du formulaire de connexion
