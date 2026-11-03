@@ -1,0 +1,24 @@
+{
+  "id": "nirvana",
+  "name": "Nirvana",
+  "baseUrl": "https://nirvana.li",
+  "enabled": false,
+  "engine": "unit3d",
+  "fetch": {
+    "extraFetch": {
+      "url": "users/{{id}}",
+      "idExtract": {
+        "regex": "<a\\b(?=[^>]*\\sclass=[\"'](?:[^\"']*\\s)?top-nav__username(?:--highresolution)?(?:\\s[^\"']*)?[\"'])[^>]*\\shref=[\"'](?:https://nirvana\\.li)?/?users/(?<value>[^/\"'?#\\s<>]+)[\"'][^>]*>"
+      },
+      "field": "memberClass",
+      "regex": "<span\\b[^>]*\\sclass=[\"'](?:[^\"']*\\s)?profile__username(?:\\s[^\"']*)?[\"'][^>]*>\\s*<a\\b(?=[^>]*\\sclass=[\"'](?:[^\"']*\\s)?user-tag__link(?:\\s[^\"']*)?[\"'])[^>]*\\stitle=[\"'](?<value>[^\"']+)[\"'][^>]*>",
+      "transform": "string",
+      "extraFields": {
+        "hitAndRuns": {
+          "regex": "<section\\b[^>]*\\sclass=[\"'](?:[^\"']*\\s)?panelV2(?:\\s[^\"']*)?[\"'][^>]*>\\s*<h2\\b[^>]*\\sclass=[\"'](?:[^\"']*\\s)?panel__heading(?:\\s[^\"']*)?[\"'][^>]*>\\s*(?:Предупреждения|Warnings)\\s*</h2>\\s*<dl\\b[^>]*\\sclass=[\"'](?:[^\"']*\\s)?key-value(?:\\s[^\"']*)?[\"'][^>]*>(?:(?!</dl\\s*>)[\\s\\S])*?<div\\b[^>]*\\sclass=[\"'](?:[^\"']*\\s)?key-value__group(?:\\s[^\"']*)?[\"'][^>]*>\\s*<dt\\b[^>]*>\\s*(?:H(?:&amp;|&)R\\s*\\(за всё время\\)|Hit and run count\\s*\\(all time\\))\\s*</dt>\\s*<dd\\b[^>]*>\\s*(?<value>\\d+)\\s*</dd>",
+          "transform": "integer"
+        }
+      }
+    }
+  }
+}
