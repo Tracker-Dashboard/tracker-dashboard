@@ -1,0 +1,7 @@
+{
+  "id": "yuscene",
+  "name": "YUSCENE",
+  "baseUrl": "https://yu-scene.net",
+  "enabled": false,
+  "engine": "unit3d"
+}

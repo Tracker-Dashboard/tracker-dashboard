@@ -50,7 +50,7 @@ export function normalizeNumberString(input: unknown): string {
   return s;
 }
 
-function parseBytes(raw: unknown): number {
+function parseBytes(raw: unknown, binary = false): number {
   if (typeof raw === 'number') return raw;
   // Normaliser les espaces insecables encodes en entites HTML (&nbsp; &#160; &#xa0;)
   // et le caractere   -> espace, sinon le nombre et l'unite restent colles.
@@ -70,7 +70,9 @@ function parseBytes(raw: unknown): number {
     KO: 1e3,   MO: 1e6,   GO: 1e9,   TO: 1e12,
     KIO: 1024, MIO: 1024 ** 2, GIO: 1024 ** 3, TIO: 1024 ** 4,
   };
-  return Math.round(n * (map[u] ?? 1));
+  const exponent = 'KMGTPE'.indexOf(u[0]) + 1;
+  const multiplier = binary && exponent > 0 ? 1024 ** exponent : (map[u] ?? 1);
+  return Math.round(n * multiplier);
 }
 
 /**
@@ -85,6 +87,17 @@ function detectByteUnitFromString(raw: unknown): 'decimal' | 'binary' | null {
   const m = s.match(/[\d][\s.,\u202f]*\s*([KMGTPE])(i)?(?:B|o)/i);
   if (!m) return null;
   return m[2] ? 'binary' : 'decimal'; // présence du "i" (KiB/Gio) = binaire
+}
+
+function detectExtractorByteUnit(raw: unknown, transform?: FieldExtractor['transform']): 'decimal' | 'binary' | null {
+  if (raw === undefined || raw === null || raw === '') return null;
+  if (transform === 'bytesBinary') return 'binary';
+  return transform === 'bytes' ? detectByteUnitFromString(raw) : null;
+}
+
+function hasBinaryByteValue(values: Record<string, string | number>, fields: Record<string, FieldExtractor>): boolean {
+  return Object.entries(fields).some(([field, extractor]) => extractor.transform === 'bytesBinary'
+    && values[field] !== undefined && values[field] !== '');
 }
 
 /**
@@ -121,6 +134,7 @@ function applyTransform(raw: unknown, tf?: string): string | number {
   if (raw === undefined || raw === null || raw === '') return '';
   switch (tf) {
     case 'bytes':   return parseBytes(raw);
+    case 'bytesBinary': return parseBytes(raw, true);
     case 'number': {
       const s = String(raw).trim();
       if (/^(infinite|infinity|inf|∞)$/i.test(s)) return '∞';
@@ -156,7 +170,7 @@ function extractJson(
       raw = getPath(json, ext.path as string);
     }
     out[name] = applyTransform(raw, ext.transform);
-    if (!byteUnit && ext.transform === 'bytes') byteUnit = detectByteUnitFromString(raw);
+    if (!byteUnit || ext.transform === 'bytesBinary') byteUnit = detectExtractorByteUnit(raw, ext.transform) ?? byteUnit;
   }
   return { values: out, byteUnit };
 }
@@ -176,7 +190,7 @@ function extractHtml(
     const rawUnit = match?.groups?.['unit'];
     const val   = rawValue && rawUnit ? `${rawValue} ${rawUnit}` : rawValue;
     out[name]   = applyTransform(val, ext.transform);
-    if (!byteUnit && ext.transform === 'bytes') byteUnit = detectByteUnitFromString(val);
+    if (!byteUnit || ext.transform === 'bytesBinary') byteUnit = detectExtractorByteUnit(val, ext.transform) ?? byteUnit;
   }
   return { values: out, byteUnit };
 }
@@ -191,6 +205,8 @@ export interface ExtraFieldResult {
   field: string;
   value: string | number;
   extras?: Record<string, string | number>;
+  /** Unité imposée par un extracteur bytesBinary effectivement renseigné. */
+  byteUnit?: 'binary';
 }
 
 /** Écrit dans `target` le champ principal et les champs supplémentaires d'un extraFetch. */
@@ -224,9 +240,19 @@ export function extractExtraFieldResponse(
     .filter(([, value]) => value !== undefined && value !== '');
   if (found.length === 0) return null;
   const [[field, value], ...rest] = found;
+  const unit = hasBinaryByteValue(out.values, extractors) ? { byteUnit: 'binary' as const } : {};
   return rest.length > 0
-    ? { field, value, extras: Object.fromEntries(rest) }
-    : { field, value };
+    ? { field, value, extras: Object.fromEntries(rest), ...unit }
+    : { field, value, ...unit };
+}
+
+function extractAuthenticatedExtraFieldResponse(
+  tracker: TrackerConfig,
+  ef: ExtraFetchConfig,
+  body: string,
+): ExtraFieldResult | null {
+  if (hasFailurePattern(body, tracker.login?.failurePatterns) || isAntiBotPage(body) || isAnubisChallenge(body)) return null;
+  return extractExtraFieldResponse(ef, body);
 }
 
 function hasExtractedValues(fields: Record<string, string | number>): boolean {
@@ -359,16 +385,21 @@ export async function fetchExtraField(
   // Plusieurs requêtes secondaires possibles (liste) : chacune best-effort, les
   // champs trouvés sont fusionnés dans un seul résultat.
   const merged: Record<string, string | number> = {};
+  let byteUnit: ExtraFieldResult['byteUnit'];
   for (const ef of extraFetchList(tracker)) {
     const result = await fetchOneExtraField(tracker, ef, primaryBody, request, headers, creds);
-    if (result) applyExtraFieldResult(merged, result);
+    if (result) {
+      applyExtraFieldResult(merged, result);
+      byteUnit = result.byteUnit ?? byteUnit;
+    }
   }
   const entries = Object.entries(merged);
   if (entries.length === 0) return null;
   const [[field, value], ...rest] = entries;
+  const unit = byteUnit ? { byteUnit } : {};
   return rest.length > 0
-    ? { field, value, extras: Object.fromEntries(rest) }
-    : { field, value };
+    ? { field, value, extras: Object.fromEntries(rest), ...unit }
+    : { field, value, ...unit };
 }
 
 async function fetchOneExtraField(
@@ -390,7 +421,7 @@ async function fetchOneExtraField(
     const url = resolveUrl(tracker.baseUrl, interpolate(ef.url, vars));
     const res = await request(url, headers);
     if (!res || res.status >= 400) return null;
-    return extractExtraFieldResponse(ef, res.body);
+    return extractAuthenticatedExtraFieldResponse(tracker, ef, res.body);
   } catch {
     return null;
   }
@@ -1190,9 +1221,11 @@ function mergeApiStats(tracker: TrackerConfig, scraped: TrackerStats, api: ApiRe
     console.log(`  [${tracker.name}] API : ${api.error} - stats du scrap conservees`);
     return { ...scraped, apiStatus: 'error', apiError: api.error };
   }
+  const binary = hasBinaryByteValue(api.fields, tracker.api?.fields ?? {});
+  if (binary) maybePersistByteUnit(tracker, 'binary');
   if (scraped.status === 'ok') {
     console.log(`  [${tracker.name}] API OK (${Object.keys(api.fields).join(', ')})`);
-    return { ...scraped, fields: { ...scraped.fields, ...api.fields }, apiStatus: 'ok' };
+    return { ...scraped, ...(binary ? { byteUnit: 'binary' as const } : {}), fields: { ...scraped.fields, ...api.fields }, apiStatus: 'ok' };
   }
   // Scrap/login en échec mais API OK : stats affichées, login signalé en erreur.
   console.log(`  [${tracker.name}] Login en echec mais API OK : stats remontees via l'API - ${scraped.error ?? 'erreur inconnue'}`);
@@ -1253,7 +1286,11 @@ async function fetchTrackerScrape(
     password: creds.password,
   };
 
-  const buildStatsFromHtml = (url: string, html: string, extraHtml?: string): TrackerStats => {
+  const buildStatsFromHtml = async (
+    url: string,
+    html: string,
+    loadExtra?: () => Promise<ExtraFieldResult | null>,
+  ): Promise<TrackerStats> => {
     if (isAntiBotPage(html)) {
       const dumpPath = writeDebugDump(tracker, url, html, {}, 'antibot');
       const suffix = dumpPath ? ` - dump: ${dumpPath}` : '';
@@ -1280,6 +1317,14 @@ async function fetchTrackerScrape(
       ({ values: fields, byteUnit: detectedByteUnit } = extractHtml(html, tracker.fetch.fields));
     }
 
+    // Certains trackers n'affichent que le lien du profil sur la page d'accueil.
+    // Le profil peut fournir les premières stats ; on valide après sa lecture.
+    const extra = await loadExtra?.();
+    if (extra) {
+      applyExtraFieldResult(fields, extra);
+      detectedByteUnit = extra.byteUnit ?? detectedByteUnit;
+    }
+
     if (!hasExtractedValues(fields)) {
       const dumpPath = writeDebugDump(tracker, url, html, fields);
       const suffix = dumpPath ? ` - dump: ${dumpPath}` : '';
@@ -1292,17 +1337,8 @@ async function fetchTrackerScrape(
       console.log(`  [${tracker.name}] Champs manquants: ${missingFields.join(', ')}${dumpPath ? ` - dump: ${dumpPath}` : ''}`);
     }
 
-    // Champ secondaire générique capturé via une page navigateur distincte (ex. classe
-    // de membre TR4KER, profil hydraté en JS sur une autre route). Best-effort.
-    // (navigateur / FlareSolverr : seule la première requête secondaire est capturée)
-    const ef = extraFetchList(tracker)[0];
-    if (ef && extraHtml) {
-      const extra = extractExtraFieldResponse(ef, extraHtml);
-      if (extra) applyExtraFieldResult(fields, extra);
-    }
-
-    // L'unité d'affichage suit ce que le site écrit réellement (« GB » -> décimal,
-    // « GiB » -> binaire), détectée au scraping. Repli sur le réglage du tracker
+    // bytesBinary impose le binaire ; sinon l'unité suit le texte (« GB » -> décimal,
+    // « GiB » -> binaire). Repli sur le réglage du tracker
     // puis 'binary' si la chaîne ne portait pas d'unité reconnaissable.
     const resolvedByteUnit = detectedByteUnit ?? tracker.dashboard?.byteUnit ?? 'binary';
     maybePersistByteUnit(tracker, resolvedByteUnit);
@@ -1319,6 +1355,12 @@ async function fetchTrackerScrape(
     };
   };
 
+  // Le navigateur et FlareSolverr capturent uniquement la première page secondaire.
+  const browserExtra = async (extraHtml?: string): Promise<ExtraFieldResult | null> => {
+    const ef = extraFetchList(tracker)[0];
+    return ef && extraHtml ? extractAuthenticatedExtraFieldResponse(tracker, ef, extraHtml) : null;
+  };
+
   const attemptFlareSolverr = async (): Promise<TrackerStats | null> => {
     try {
       const solved = await fetchWithFlareSolverr(tracker, creds);
@@ -1328,7 +1370,7 @@ async function fetchTrackerScrape(
         console.log(`  [${tracker.name}] ${provider}: page non authentifiee (${failed}), repli navigateur`);
         return null;
       }
-      const stats = buildStatsFromHtml(solved.url, solved.html, solved.extraHtml);
+      const stats = await buildStatsFromHtml(solved.url, solved.html, () => browserExtra(solved.extraHtml));
       console.log(`  [${tracker.name}] Lecture via ${provider} OK`);
       return stats;
     } catch (error) {
@@ -1356,7 +1398,8 @@ async function fetchTrackerScrape(
     if (hasFailurePattern(result.body, tracker.login.failurePatterns)) return null;
     if (isAnubisChallenge(result.body)) return null;
     try {
-      const stats = buildStatsFromHtml(url, result.body); // throw si aucune valeur extraite
+      const stats = await buildStatsFromHtml(url, result.body,
+        () => fetchExtraFieldViaCurlCookie(tracker, result.body, cookie, creds));
       if (tracker.fetch.unreadFetch) {
         stats.fields.unreadMessages = await fetchUnreadMessages(tracker, async (unreadUrl) => {
           const unread = await curlImpersonateGet(tracker.id, unreadUrl, {
@@ -1365,14 +1408,6 @@ async function fetchTrackerScrape(
           }).catch(() => null);
           return unread ? { status: unread.status, body: unread.body } : null;
         }, {});
-      }
-      // Requête secondaire (extraFetch) : buildStatsFromHtml ne la gère que via un
-      // extraHtml pré-fourni (navigateur). En fast-path curl léger on la récupère ici,
-      // avec le même cookie impersoné, puis on injecte (ex. seeding Gazelle via
-      // ajax.php?action=user, ou page torrents.php?type=seeding pour Orpheus).
-      if (extraFetchList(tracker).length > 0) {
-        const extra = await fetchExtraFieldViaCurlCookie(tracker, result.body, cookie, creds);
-        if (extra) applyExtraFieldResult(stats.fields, extra);
       }
       console.log(`  [${tracker.name}] Fast-path curl-impersonate OK (navigateur evite)`);
       return stats;
@@ -1536,13 +1571,10 @@ async function fetchTrackerScrape(
         }
 
         try {
-          const stats = buildStatsFromHtml(url, fetchRes.body);
+          const stats = await buildStatsFromHtml(url, fetchRes.body,
+            () => fetchExtraFieldViaCurl(sess, tracker, fetchRes.body, fetchHeaders, creds));
           if (tracker.fetch.unreadFetch) {
             stats.fields.unreadMessages = await fetchUnreadMessagesViaCurl(sess, tracker, fetchHeaders);
-          }
-          if (tracker.fetch.extraFetch) {
-            const extra = await fetchExtraFieldViaCurl(sess, tracker, fetchRes.body, fetchHeaders, creds);
-            if (extra) applyExtraFieldResult(stats.fields, extra);
           }
           console.log(`  [${tracker.name}] Login+fetch via curl-impersonate OK (JSON/MFA)`);
           return stats;
@@ -1583,17 +1615,14 @@ async function fetchTrackerScrape(
       if (isAnubisChallenge(fetchRes.body)) return null;
 
       try {
-        const stats = buildStatsFromHtml(url, fetchRes.body);
+        const stats = await buildStatsFromHtml(url, fetchRes.body,
+          () => fetchExtraFieldViaCurl(sess, tracker, fetchRes.body, { Referer: loginUrl }, creds));
         if (tracker.fetch.unreadFetch) {
           stats.fields.unreadMessages = await fetchUnreadMessagesViaCurl(
             sess,
             tracker,
             { Referer: loginUrl },
           );
-        }
-        if (tracker.fetch.extraFetch) {
-          const extra = await fetchExtraFieldViaCurl(sess, tracker, fetchRes.body, { Referer: loginUrl }, creds);
-          if (extra) applyExtraFieldResult(stats.fields, extra);
         }
         console.log(`  [${tracker.name}] Login+fetch via curl-impersonate OK (axios evite)`);
         return stats;
@@ -1643,7 +1672,7 @@ async function fetchTrackerScrape(
           const suffix = dumpPath ? ` - dump: ${dumpPath}` : '';
           throw new Error(`Session navigateur non authentifiee - verifier les credentials ou valider le challenge dans le profil navigateur${suffix}`);
         }
-        return buildStatsFromHtml(browserResult.url, browserResult.html, browserResult.extraHtml);
+        return await buildStatsFromHtml(browserResult.url, browserResult.html, () => browserExtra(browserResult.extraHtml));
       } catch (error) {
         // Repli generique, uniquement pour une signature anti-bot explicite. Les
         // erreurs de credentials, reseau ou extraction ne lancent pas un second navigateur.
@@ -1735,57 +1764,15 @@ async function fetchTrackerScrape(
       throw new Error(`Challenge Anubis recu depuis ${url} - validation JavaScript navigateur requise${suffix}`);
     }
 
-    // Extraction des champs
-    let fields: Record<string, string | number>;
-    let detectedByteUnit: 'decimal' | 'binary' | null = null;
-    if (tracker.fetch.responseType === 'json') {
-      let json: unknown;
-      try {
-        json = JSON.parse(res.data);
-      } catch {
-        throw new Error('Réponse attendue en JSON, reçu du HTML (mauvais endpoint ?)');
-      }
-      ({ values: fields, byteUnit: detectedByteUnit } = extractJson(json, tracker.fetch.fields));
-    } else {
-      ({ values: fields, byteUnit: detectedByteUnit } = extractHtml(res.data, tracker.fetch.fields));
-    }
-
-    if (!hasExtractedValues(fields)) {
-      const dumpPath = writeDebugDump(tracker, url, res.data, fields);
-      const suffix = dumpPath ? ` - dump: ${dumpPath}` : '';
-      throw new Error(`Aucune donnee extraite depuis ${url} - selecteurs/regex a ajuster${suffix}`);
-    }
-
-    const missingFields = missingExtractedFields(tracker.fetch.fields, fields);
-    if (missingFields.length > 0) {
-      const dumpPath = writeDebugDump(tracker, url, res.data, fields, 'partial');
-      console.log(`  [${tracker.name}] Champs manquants: ${missingFields.join(', ')}${dumpPath ? ` - dump: ${dumpPath}` : ''}`);
-    }
+    const stats = await buildStatsFromHtml(url, res.data,
+      () => fetchExtraFieldViaAxios(session.client, tracker, res.data, fetchHeaders, creds));
 
     // MP non lus via requête secondaire (ex. C411) — best-effort, n'invalide pas le tracker.
     if (tracker.fetch.unreadFetch) {
-      fields.unreadMessages = await fetchUnreadMessagesViaAxios(session.client, tracker, fetchHeaders);
+      stats.fields.unreadMessages = await fetchUnreadMessagesViaAxios(session.client, tracker, fetchHeaders);
     }
 
-    // Champ secondaire générique (ex. classe de membre IPTorrents, page /u/<id>).
-    if (tracker.fetch.extraFetch) {
-      const extra = await fetchExtraFieldViaAxios(session.client, tracker, res.data, fetchHeaders, creds);
-      if (extra) applyExtraFieldResult(fields, extra);
-    }
-
-    const resolvedByteUnit = detectedByteUnit ?? tracker.dashboard?.byteUnit ?? 'binary';
-    maybePersistByteUnit(tracker, resolvedByteUnit);
-
-    return {
-      id:          tracker.id,
-      name:        tracker.name,
-      trackerUrl:  tracker.baseUrl,
-      status:      'ok',
-      lastUpdated: new Date().toISOString(),
-      lastLoginAt: session.loggedInAt ? new Date(session.loggedInAt).toISOString() : undefined,
-      byteUnit:    resolvedByteUnit,
-      fields,
-    };
+    return stats;
   };
 
   try {

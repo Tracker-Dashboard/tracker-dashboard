@@ -1,0 +1,40 @@
+{
+  "id": "tribalmixes",
+  "name": "TribalMixes",
+  "baseUrl": "https://www.tribalmixes.com",
+  "enabled": false,
+  "login": {
+    "url": "login.php",
+    "postUrl": "takelogin.php",
+    "method": "POST",
+    "contentType": "form",
+    "body": {
+      "username": "{{username}}",
+      "password": "{{password}}"
+    },
+    "failurePatterns": [
+      "name=\"password\"",
+      "name='password'",
+      "Please, sign into your Tribalmixes.com account"
+    ]
+  },
+  "fetch": {
+    "url": "/",
+    "mode": "http",
+    "responseType": "html",
+    "fields": {
+      "ratio": {
+        "regex": "<a\\b[^>]*\\bid=[\"']dropdownRatio[\"'][^>]*>(?:(?!</li>)[\\s\\S])*?My Share Ratio:\\s*<strong\\b[^>]*>\\s*(?<value>\\d[\\d.,]*|∞|[Ii]nf(?:inity|inite)?)\\s*</strong>",
+        "transform": "number"
+      },
+      "seeding": {
+        "regex": "<a\\b[^>]*\\bid=[\"']dropdownRatio[\"'][^>]*>(?:(?!</li>)[\\s\\S])*?<a\\b[^>]*>\\s*seeding\\s*<strong\\b[^>]*>\\s*(?<value>\\d+)\\s*</strong>\\s*torrents\\s*</a>",
+        "transform": "integer"
+      },
+      "leeching": {
+        "regex": "<a\\b[^>]*\\bid=[\"']dropdownRatio[\"'][^>]*>(?:(?!</li>)[\\s\\S])*?<a\\b[^>]*>\\s*<strong\\b[^>]*>\\s*(?<value>\\d+)\\s*</strong>\\s*downloading now\\s*</a>",
+        "transform": "integer"
+      }
+    }
+  }
+}

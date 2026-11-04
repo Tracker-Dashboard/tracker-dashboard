@@ -1,0 +1,73 @@
+{
+  "id": "teamhd",
+  "name": "TeamHD",
+  "baseUrl": "https://teamhd.org",
+  "enabled": false,
+  "login": {
+    "url": "login.php",
+    "postUrl": "takelogin.php",
+    "method": "POST",
+    "contentType": "form",
+    "body": {
+      "username": "{{username}}",
+      "password": "{{password}}",
+      "returnto": "index.php"
+    },
+    "failurePatterns": [
+      "name=\"password\"",
+      "name='password'",
+      "action=\"takelogin.php\"",
+      "action='takelogin.php'",
+      "name=password",
+      "action=takelogin.php"
+    ],
+    "cookieOnly": true,
+    "cookieInstructions": "Connectez-vous à TeamHD dans votre navigateur et validez le CAPTCHA. Exportez les cookies de cette session, puis importez-les ou collez-les dans le champ Cookie du tracker dans l’application. Utilisez la même IP de sortie que le dashboard (même proxy/VPN, le cas échéant). Renouvelez le cookie lorsque la session expire."
+  },
+  "fetch": {
+    "url": "index.php",
+    "mode": "http",
+    "responseType": "html",
+    "fields": {
+      "uploadedBytes": {
+        "regex": "<div\\b(?=[^>]*\\bclass=[\"'][^\"']*\\bcol-8\\b)(?=[^>]*\\bclass=[\"'][^\"']*\\bmb-4\\b)[^>]*>\\s*<a\\b[^>]*\\bhref=(?:[\"']/user/id\\d+[\"']|/user/id\\d+(?=[\\s>]))[^>]*>(?:(?!</div>)[\\s\\S])*?<font\\b[^>]*\\bcolor=(?:[\"']green[\"']|green(?=[\\s>]))[^>]*>\\s*Раздал:\\s*</font>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d(?:[\\d\\s.,]*\\d)?(?:\\s|&nbsp;|&#160;|&#xa0;)*(?:[KMGTPE]i?B|B))(?=\\s|&nbsp;|&#160;|&#xa0;|<|$)",
+        "transform": "bytes"
+      },
+      "downloadedBytes": {
+        "regex": "<div\\b(?=[^>]*\\bclass=[\"'][^\"']*\\bcol-8\\b)(?=[^>]*\\bclass=[\"'][^\"']*\\bmb-4\\b)[^>]*>\\s*<a\\b[^>]*\\bhref=(?:[\"']/user/id\\d+[\"']|/user/id\\d+(?=[\\s>]))[^>]*>(?:(?!</div>)[\\s\\S])*?<font\\b[^>]*\\bcolor=(?:[\"']darkred[\"']|darkred(?=[\\s>]))[^>]*>\\s*Скачал:\\s*</font>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d(?:[\\d\\s.,]*\\d)?(?:\\s|&nbsp;|&#160;|&#xa0;)*(?:[KMGTPE]i?B|B))(?=\\s|&nbsp;|&#160;|&#xa0;|<|$)",
+        "transform": "bytes"
+      },
+      "ratio": {
+        "regex": "<div\\b(?=[^>]*\\bclass=[\"'][^\"']*\\bcol-8\\b)(?=[^>]*\\bclass=[\"'][^\"']*\\bmb-4\\b)[^>]*>\\s*<a\\b[^>]*\\bhref=(?:[\"']/user/id\\d+[\"']|/user/id\\d+(?=[\\s>]))[^>]*>(?:(?!</div>)[\\s\\S])*?<font\\b[^>]*\\bcolor=(?:[\"']#1900D1[\"']|#1900D1(?=[\\s>]))[^>]*>\\s*Рейтинг:\\s*</font>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d(?:[\\d\\s.,]*\\d)?|∞|[Ii][Nn][Ff](?:[Ii][Nn][Ii][Tt][Yy]|[Ii][Nn][Ii][Tt][Ee])?)(?=\\s|&nbsp;|&#160;|&#xa0;|<|$)",
+        "transform": "number"
+      },
+      "seedBonus": {
+        "regex": "<div\\b(?=[^>]*\\bclass=[\"'][^\"']*\\bcol-8\\b)(?=[^>]*\\bclass=[\"'][^\"']*\\bmb-4\\b)[^>]*>\\s*<a\\b[^>]*\\bhref=(?:[\"']/user/id\\d+[\"']|/user/id\\d+(?=[\\s>]))[^>]*>(?:(?!</div>)[\\s\\S])*?<a\\b(?=[^>]*\\bclass=(?:[\"'][^\"']*\\bonline\\b[^\"']*[\"']|online(?=[\\s>])))(?=[^>]*\\bhref=(?:[\"']/mybonus\\.php[\"']|/mybonus\\.php(?=[\\s>])))[^>]*>\\s*(?<value>\\d(?:[\\d\\s.,]*\\d)?)\\s*</a>",
+        "transform": "string"
+      },
+      "seeding": {
+        "regex": "<div\\b(?=[^>]*\\bclass=[\"'][^\"']*\\bcol-8\\b)(?=[^>]*\\bclass=[\"'][^\"']*\\bmb-4\\b)[^>]*>\\s*<a\\b[^>]*\\bhref=(?:[\"']/user/id\\d+[\"']|/user/id\\d+(?=[\\s>]))[^>]*>(?:(?!</div>)[\\s\\S])*?<img\\b(?=[^>]*\\bsrc=(?:[\"'][^\"']*/arrowup\\.gif[\"']|[^\\s\"'<>]*/arrowup\\.gif(?=[\\s>])))[^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d+)(?=\\s|&nbsp;|&#160;|&#xa0;|<|$)",
+        "transform": "integer"
+      },
+      "leeching": {
+        "regex": "<div\\b(?=[^>]*\\bclass=[\"'][^\"']*\\bcol-8\\b)(?=[^>]*\\bclass=[\"'][^\"']*\\bmb-4\\b)[^>]*>\\s*<a\\b[^>]*\\bhref=(?:[\"']/user/id\\d+[\"']|/user/id\\d+(?=[\\s>]))[^>]*>(?:(?!</div>)[\\s\\S])*?<img\\b(?=[^>]*\\bsrc=(?:[\"'][^\"']*/arrowdown\\.gif[\"']|[^\\s\"'<>]*/arrowdown\\.gif(?=[\\s>])))[^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d+)(?=\\s|&nbsp;|&#160;|&#xa0;|<|$)",
+        "transform": "integer"
+      },
+      "memberClass": {
+        "regex": "<div\\b(?=[^>]*\\bclass=[\"'][^\"']*\\bcol-8\\b)(?=[^>]*\\bclass=[\"'][^\"']*\\bmb-4\\b)[^>]*>\\s*<a\\b[^>]*\\bhref=(?:[\"']/user/id\\d+[\"']|/user/id\\d+(?=[\\s>]))[^>]*>\\s*<span\\b[^>]*\\btitle=([\"']?)(?<value>[^\"'<>\\s](?:[^\"'<>]*?[^\"'<>\\s])?)\\1(?=\\s|>)",
+        "transform": "string"
+      },
+      "unreadMessages": {
+        "regex": "<div\\b(?=[^>]*\\bclass=[\"'][^\"']*\\bcol-4\\b)(?=[^>]*\\bclass=[\"'][^\"']*\\btext-right\\b)(?=[^>]*\\bclass=[\"'][^\"']*\\bmb-4\\b)[^>]*>(?:(?!</div>)[\\s\\S])*?<a\\b[^>]*\\bhref=(?:[\"']/message\\.php[\"']|/message\\.php(?=[\\s>]))[^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*<img\\b(?=[^>]*\\balt=(?:[\"']inbox[\"']|inbox(?=[\\s>])))(?=[^>]*\\bsrc=(?:[\"']/pic/pn_inboxnew\\.gif[\"']|/pic/pn_inboxnew\\.gif(?=[\\s>])))[^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*</a>(?:\\s|&nbsp;|&#160;|&#xa0;)*\\d+(?:\\s|&nbsp;|&#160;|&#xa0;)*\\((?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d+)(?:\\s|&nbsp;|&#160;|&#xa0;)*новых(?:\\s|&nbsp;|&#160;|&#xa0;)*\\)",
+        "transform": "integer"
+      },
+      "tokens": {
+        "regex": "<div\\b[^>]*\\bid=(?:[\"']sb65[\"']|sb65(?=[\\s>]))[^>]*>(?:(?!</div>)[\\s\\S])*?<font\\b[^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*Токенов:(?:\\s|&nbsp;|&#160;|&#xa0;)*</font>(?:\\s|&nbsp;|&#160;|&#xa0;)*<font\\b[^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*<a\\b[^>]*\\bhref=(?:[\"']/mytokens\\.php[\"']|/mytokens\\.php(?=[\\s>]))[^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d+)(?:\\s|&nbsp;|&#160;|&#xa0;)*</a>(?:\\s|&nbsp;|&#160;|&#xa0;)*</font>",
+        "transform": "integer"
+      }
+    }
+  },
+  "dashboard": {
+    "byteUnit": "binary"
+  }
+}

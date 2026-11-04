@@ -2494,7 +2494,7 @@
         </div>
 
         <div class="beta-field" style="margin-top:6px">
-          <label>Champs à extraire <span class="nt-hint" id="nt-fields-hint">HTML : regex avec (?&lt;value&gt;…) · transform = bytes / number / integer / string</span></label>
+          <label>Champs à extraire <span class="nt-hint" id="nt-fields-hint">HTML : regex avec (?&lt;value&gt;…) · transform = bytes / bytesBinary (base 1024) / number / integer / string</span></label>
           <div id="nt-fetch-fields" class="nt-field-list"></div>
           <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px">
             <button class="btn-test nt-add" type="button" onclick="ntAddFieldRow()">+ Ajouter un champ</button>
@@ -3797,7 +3797,7 @@
   }
 
   function ntFieldRowHtml(name = '', extract = '', transform = '') {
-    const opts = ['', 'bytes', 'number', 'integer', 'string']
+    const opts = ['', 'bytes', 'bytesBinary', 'number', 'integer', 'string']
       .map(t => `<option value="${t}" ${t === transform ? 'selected' : ''}>${t || '— transform —'}</option>`).join('');
     return `<div class="nt-field-row">
       <input class="tracker-input nt-fname" autocomplete="off" placeholder="nom (ex: uploadedBytes)" value="${escapeHtml(name)}">
@@ -3822,8 +3822,8 @@
     const isJson = ntGetVal('nt-fetch-responsetype') === 'json';
     const hint = document.getElementById('nt-fields-hint');
     if (hint) hint.innerHTML = isJson
-      ? 'JSON : chemin dot-notation (ex: response.stats.uploaded) · transform = bytes / number / integer / string'
-      : 'HTML : regex avec (?&lt;value&gt;…) · transform = bytes / number / integer / string';
+      ? 'JSON : chemin dot-notation (ex: response.stats.uploaded) · transform = bytes / bytesBinary (base 1024) / number / integer / string'
+      : 'HTML : regex avec (?&lt;value&gt;…) · transform = bytes / bytesBinary (base 1024) / number / integer / string';
     // Met a jour les placeholders des lignes existantes.
     document.querySelectorAll('#nt-fetch-fields .nt-fextract').forEach(input => {
       input.placeholder = isJson ? 'chemin JSON (ex: response.uploaded)' : 'regex (?<value>…)';

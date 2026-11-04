@@ -393,7 +393,7 @@ function loadEffectiveTrackerDefinition(trackerId: string): TrackerConfig | null
  * Tolere les champs optionnels absents ; rejette les formes manifestement cassees
  * (id invalide, body de login vide, aucun champ a extraire, regex/path manquant).
  */
-function sanitizeTrackerConfigInput(
+export function sanitizeTrackerConfigInput(
   raw: unknown,
   opts: { isNew?: boolean } = {},
 ): { config: TrackerConfig | null; error?: string } {
@@ -493,7 +493,7 @@ function sanitizeTrackerConfigInput(
 
   const fieldsIn = fetchIn.fields && typeof fetchIn.fields === 'object' ? fetchIn.fields : {};
   const fields: Record<string, FieldExtractor> = {};
-  const allowedTransforms = new Set(['bytes', 'number', 'integer', 'string']);
+  const allowedTransforms = new Set(['bytes', 'bytesBinary', 'number', 'integer', 'string']);
   for (const [key, val] of Object.entries(fieldsIn)) {
     const name = key.trim();
     if (!name) continue;

@@ -1,0 +1,62 @@
+{
+  "id": "pwtorrents",
+  "name": "PWTorrents",
+  "baseUrl": "https://pwtorrents.net",
+  "enabled": false,
+  "login": {
+    "url": "login.php",
+    "postUrl": "takelogin.php",
+    "method": "POST",
+    "contentType": "form",
+    "body": {
+      "username": "{{username}}",
+      "password": "{{password}}"
+    },
+    "failurePatterns": [
+      "name=\"password\"",
+      "name='password'",
+      "Login failed!"
+    ]
+  },
+  "fetch": {
+    "url": "my.php",
+    "mode": "http",
+    "responseType": "html",
+    "fields": {
+      "uploadedBytes": {
+        "regex": "<td\\b[^>]*\\bclass=[\"']rowhead[\"'][^>]*>\\s*Uploaded\\s*</td>\\s*<td\\b[^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d(?:[\\d\\s.,]*\\d)?(?:\\s|&nbsp;|&#160;|&#xa0;)*(?:[kKMGTPE]i?B|B))(?=(?:\\s|&nbsp;|&#160;|&#xa0;)*(?:\\(|</td>))",
+        "transform": "bytesBinary"
+      },
+      "downloadedBytes": {
+        "regex": "<td\\b[^>]*\\bclass=[\"']rowhead[\"'][^>]*>\\s*Downloaded\\s*</td>\\s*<td\\b[^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d(?:[\\d\\s.,]*\\d)?(?:\\s|&nbsp;|&#160;|&#xa0;)*(?:[kKMGTPE]i?B|B))(?=(?:\\s|&nbsp;|&#160;|&#xa0;)*(?:\\(|</td>))",
+        "transform": "bytesBinary"
+      },
+      "memberClass": {
+        "regex": "<td\\b[^>]*\\bclass=[\"']rowhead[\"'][^>]*>\\s*Class\\s*</td>\\s*<td\\b[^>]*>\\s*(?<value>[^<\\s][^<]*?)\\s*</td>",
+        "transform": "string"
+      }
+    },
+    "extraFetch": {
+      "url": "userdetails.php?id={{id}}",
+      "idExtract": {
+        "regex": "<h1\\b[^>]*>\\s*Welcome,\\s*<a\\b[^>]*\\bhref=[\"']/?userdetails\\.php\\?id=(?<value>\\d+)[\"'][^>]*>[^<]+</a>\\s*!\\s*</h1>"
+      },
+      "field": "uploadedBytes",
+      "regex": "<td\\b[^>]*\\bclass=[\"']rowhead[\"'][^>]*>\\s*Uploaded\\s*</td>\\s*<td\\b[^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d(?:[\\d\\s.,]*\\d)?(?:\\s|&nbsp;|&#160;|&#xa0;)*(?:[kKMGTPE]i?B|B))(?=(?:\\s|&nbsp;|&#160;|&#xa0;)*(?:\\(|</td>))",
+      "transform": "bytesBinary",
+      "extraFields": {
+        "downloadedBytes": {
+          "regex": "<td\\b[^>]*\\bclass=[\"']rowhead[\"'][^>]*>\\s*Downloaded\\s*</td>\\s*<td\\b[^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d(?:[\\d\\s.,]*\\d)?(?:\\s|&nbsp;|&#160;|&#xa0;)*(?:[kKMGTPE]i?B|B))(?=(?:\\s|&nbsp;|&#160;|&#xa0;)*(?:\\(|</td>))",
+          "transform": "bytesBinary"
+        },
+        "memberClass": {
+          "regex": "<td\\b[^>]*\\bclass=[\"']rowhead[\"'][^>]*>\\s*Class\\s*</td>\\s*<td\\b[^>]*>\\s*(?<value>[^<\\s][^<]*?)\\s*</td>",
+          "transform": "string"
+        }
+      }
+    }
+  },
+  "dashboard": {
+    "byteUnit": "binary"
+  }
+}

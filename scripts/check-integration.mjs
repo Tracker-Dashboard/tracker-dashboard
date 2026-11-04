@@ -131,9 +131,9 @@ if (!httpModePrefersStoredCookie) {
 const memphisRuntimeWaitsForSpaStats = (
   memphis.fetch?.url === '/?view=profile'
   && memphis.fetch?.mode === 'browser'
-  && browserFetcher.includes("tracker.id === 'memphis'")
+  && browserFetcher.includes("(tracker.baseId ?? tracker.id) === 'memphis'")
   && browserFetcher.includes("document.querySelector('#account-health-panel')")
-  && browserFetcher.includes('/Ratio\\s+indicatif/i.test(text)')
+  && browserFetcher.includes("['ratio', 'uploadedBytes', 'downloadedBytes'].map(field => tracker.fetch.fields[field]?.regex)")
   && memphis.fetch?.fields?.uploadedBytes
   && memphis.fetch?.fields?.downloadedBytes
   && memphis.fetch?.fields?.ratio
@@ -233,6 +233,75 @@ const memphisLoginDetected = (html) => memphis.login.failurePatterns.some(patter
 if (!memphisLoginDetected('<html class="dark auth-locked">') || !memphisLoginDetected('<html class="auth-locked">')
     || memphisLoginDetected('<html class="dark"><main class="login-shell">Mon compte</main>')) {
   errors.push('Memphis login page must be detected with or without the dark theme class, never on the account page');
+}
+
+// Synthetic Memphis account panels: both generations must use the production transforms.
+const memphisFixture = (label, uploaded, downloaded, ratio, seeding) => `
+  <section id="account-health-panel"><div class="account-health-grid">
+    <article><strong>${ratio}</strong><span>Ratio ${label}</span></article>
+    <article><strong>${uploaded}</strong><span>Envoyé</span></article>
+    <article><strong>${downloaded}</strong><span>Reçu</span></article>
+  </div></section>
+  ${seeding === undefined ? '' : label === 'historique'
+    ? `<section id="profile-signal-panel"><h2>Mon empreinte de disponibilité</h2>
+        <div class="signal-profile-metrics"><span><strong>${seeding}</strong> actifs</span>
+        <span><strong>9</strong> maintenus</span></div></section>`
+    : `<strong>En seed actuellement</strong><span>${seeding}</span>`}`;
+const extractMemphis = fixture => Object.fromEntries(Object.entries(memphis.fetch.fields).map(([field, extractor]) => [
+  field, extractExtraFieldResponse({ field, ...extractor }, fixture)?.value,
+]));
+for (const label of ['indicatif', 'historique']) {
+  const cases = [
+    { values: ['1,75 Gio', '0,5 Gio', '3,50', 7], expected: { uploadedBytes: 1.75 * 1024 ** 3, downloadedBytes: 0.5 * 1024 ** 3, ratio: 3.5, seeding: 7 } },
+    { values: ['0 Gio', '0 Gio', '0.00', 0], expected: { uploadedBytes: 0, downloadedBytes: 0, ratio: 0, seeding: 0 } },
+    { values: ['1 Gio', '0 Gio', label === 'historique' ? '∞' : 'Infinity', 2], expected: { uploadedBytes: 1024 ** 3, downloadedBytes: 0, ratio: '∞', seeding: 2 } },
+  ];
+  for (const { values, expected } of cases) {
+    const actual = extractMemphis(memphisFixture(label, ...values));
+    if (Object.entries(expected).some(([field, value]) => actual[field] !== value)) {
+      errors.push(`Memphis ${label} fields must parse nonzero, zero and infinite statistics with production transforms`);
+    }
+  }
+  for (const placeholder of ['', ' ', '—']) {
+    const skeleton = memphisFixture(label, placeholder, placeholder, placeholder);
+    if (Object.values(extractMemphis(skeleton)).some(value => value !== undefined)) {
+      errors.push(`Memphis ${label} loading placeholders must not produce account statistics`);
+    }
+  }
+}
+for (const loginFixture of ['<html class="auth-locked"><form id="login-form"></form></html>', '<html class="dark auth-locked"><main class="login-shell">Connexion</main></html>']) {
+  if (Object.values(extractMemphis(loginFixture)).some(value => value !== undefined)) {
+    errors.push('Memphis login pages must not produce account statistics');
+  }
+}
+// Optional fields follow the public profile renderer, with synthetic account values.
+const memphisOptionalFixture = (points, memberClass) => `
+  <section id="profile"><div class="profile-banner">
+    <div class="profile-avatar"></div><div><span class="eyebrow">${memberClass}</span></div>
+  </div><div id="member-reward-summary" class="impact-overview">
+    <div class="impact-balance"><span>Points disponibles</span><strong>${points}</strong><small>points Impact</small></div>
+    <div class="impact-next"><strong>Prochain palier de seed</strong><p>10 h restantes pour <b>500 points</b></p></div>
+  </div></section>`;
+for (const [points, memberClass] of [['12\u202f345,5', 'Uploader'], ['0', 'Membre']]) {
+  for (const fixture of [memphisOptionalFixture(points, memberClass), memphisOptionalFixture(points, memberClass).replaceAll('"', "'")]) {
+    const actual = extractMemphis(fixture);
+    if (actual.seedBonus !== points || actual.memberClass !== memberClass) {
+      errors.push('Memphis must preserve Impact points as a string, including zero, and extract the profile member class');
+    }
+  }
+}
+for (const placeholder of ['', ' ', '—']) {
+  const fixture = memphisOptionalFixture(placeholder, placeholder).replace('</section>', '<div class="eyebrow">Unrelated panel</div></section>');
+  const actual = extractMemphis(fixture);
+  if (actual.seedBonus !== undefined || actual.memberClass !== undefined) {
+    errors.push('Missing Memphis optional values must stay absent, never use a reward threshold or loading placeholder');
+  }
+}
+const unrelatedMemphisPanels = '<div class="eyebrow">Administrator</div><div><span>Points disponibles</span><strong>999</strong><small>points Impact</small></div>';
+const unrelatedMemphisValues = extractMemphis(unrelatedMemphisPanels);
+if (unrelatedMemphisValues.seedBonus !== undefined || unrelatedMemphisValues.memberClass !== undefined
+    || memphis.dashboard.bonusUnit !== 'Impact') {
+  errors.push('Memphis optional statistics must be scoped to its profile panels and use the Impact bonus unit');
 }
 
 // Tigers-DL V3 : login.php, champ identity et jeton CSRF du formulaire de connexion
@@ -600,6 +669,34 @@ const shipsCrossSeedIntegration = (
 );
 if (!shipsCrossSeedIntegration) {
   errors.push('cross-seed instances, badges, torrent markers, and API test must remain wired');
+}
+
+const draupnirr = JSON.parse(fs.readFileSync(path.join(root, 'config', 'trackers', 'yggrasil.json'), 'utf8'));
+const draupnirrLoginDetected = (body) => draupnirr.login.failurePatterns
+  .some(pattern => body.toLowerCase().includes(pattern.toLowerCase()));
+const draupnirrLoginFixture = '<title>Connexion — Draupnirr</title><form action="/login"><input name="email"><input type="password" name="password"></form>';
+const yggrasilLoginFixture = draupnirrLoginFixture.replace('Draupnirr', 'Yggrasil');
+const draupnirrProfileFixture = '<title>Profil — Draupnirr</title><span class="lbl">Uploadé</span><div class="val">12.34 GB</div>';
+if (!draupnirrLoginDetected(draupnirrLoginFixture)
+    || !draupnirrLoginDetected(yggrasilLoginFixture)
+    || draupnirrLoginDetected(draupnirrProfileFixture)) {
+  errors.push('Draupnirr must reject both current and legacy login pages without rejecting an authenticated profile');
+}
+
+// UNIT3D : les points peuvent porter un suffixe de monnaie (GenerationFree « G★ »),
+// mais une valeur en octets (Seedpool affiche son buffer dans ratio-bar__points) est refusée.
+const unit3dPoints = new RegExp(applyEnginePreset({ id: 'unit3d-points', name: 'UNIT3D', baseUrl: 'https://example.invalid', engine: 'unit3d' })
+  .fetch.fields.seedBonus.regex, 's');
+const unit3dPointsValue = text => unit3dPoints.exec(`<li class="ratio-bar__points" title="Points">
+    <a href="https://example.invalid/users/fixture/earnings">
+        <i class="fas fa-coins"></i>
+        ${text}
+    </a>
+</li>`)?.groups?.value;
+const unit3dPointsCases = [['118 790', '118 790'], ['18 810 G★', '18 810'], ['1 234,5 pts', '1 234,5'],
+  ['258.79 GiB', undefined], ['12 TB', undefined], ['—', undefined]];
+if (unit3dPointsCases.some(([text, expected]) => unit3dPointsValue(text) !== expected)) {
+  errors.push('UNIT3D points must accept a currency suffix and reject byte values');
 }
 
 if (errors.length > 0) {

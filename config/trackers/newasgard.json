@@ -1,0 +1,51 @@
+{
+  "id": "newasgard",
+  "name": "New-Asgard",
+  "baseUrl": "https://new-asgard.xyz",
+  "enabled": false,
+  "login": {
+    "url": "/login",
+    "method": "POST",
+    "contentType": "form",
+    "preStep": {
+      "url": "/login",
+      "includeHiddenInputs": true,
+      "extract": {
+        "_csrf": {
+          "regex": "<input\\b(?=[^>]*\\bname=[\"']_token[\"'])[^>]*\\bvalue=[\"'](?<value>[^\"']+)[\"']"
+        }
+      }
+    },
+    "body": {
+      "_token": "{{_csrf}}",
+      "username": "{{username}}",
+      "password": "{{password}}"
+    },
+    "failurePatterns": [
+      "name=\"password\"",
+      "name='password'"
+    ]
+  },
+  "fetch": {
+    "url": "/",
+    "mode": "http",
+    "responseType": "html",
+    "fields": {
+      "uploadedBytes": {
+        "regex": "<a\\b[^>]*\\bhref=[\"']/torrents/user/[^/\"'?#<>]+/seeding/?[\"'][^>]*>\\s*(?:<i\\b[^>]*>\\s*</i>\\s*)?(?<value>\\d[\\d\\s.,]*(?:&nbsp;|&#160;|&#xa0;|\\s)*(?:[KMGTPE](?:i?B|io|o)|B|o))\\s*</a>",
+        "transform": "bytes"
+      },
+      "downloadedBytes": {
+        "regex": "<a\\b[^>]*\\bhref=[\"']/torrents/user/[^/\"'?#<>]+/leeching/?[\"'][^>]*>\\s*(?:<i\\b[^>]*>\\s*</i>\\s*)?(?<value>\\d[\\d\\s.,]*(?:&nbsp;|&#160;|&#xa0;|\\s)*(?:[KMGTPE](?:i?B|io|o)|B|o))\\s*</a>",
+        "transform": "bytes"
+      },
+      "ratio": {
+        "regex": "<span\\b[^>]*\\bclass=[\"'][^\"']*\\bnavbar-text\\b[^\"']*[\"'][^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*RATIO\\s*:\\s*(?<value>\\d[\\d\\s.,]*|∞|[Ii][Nn][Ff](?:[Ii][Nn][Ii][Tt][Yy]|[Ii][Nn][Ii][Tt][Ee])?)\\s*</span>",
+        "transform": "number"
+      }
+    }
+  },
+  "dashboard": {
+    "byteUnit": "decimal"
+  }
+}

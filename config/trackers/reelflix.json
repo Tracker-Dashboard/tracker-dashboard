@@ -1,0 +1,7 @@
+{
+  "id": "reelflix",
+  "name": "ReelFLiX",
+  "baseUrl": "https://reelflix.cc",
+  "enabled": false,
+  "engine": "unit3d"
+}

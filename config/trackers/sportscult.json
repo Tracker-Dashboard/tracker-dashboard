@@ -1,0 +1,62 @@
+{
+  "id": "sportscult",
+  "name": "SportsCult",
+  "baseUrl": "https://sportscult.org",
+  "enabled": false,
+  "login": {
+    "url": "index.php?page=login",
+    "method": "POST",
+    "contentType": "form",
+    "body": {
+      "uid": "{{username}}",
+      "pwd": "{{password}}"
+    },
+    "failurePatterns": [
+      "Welcome Guest",
+      "name=\"pwd\"",
+      "name='pwd'",
+      "Username Incorrect",
+      "Password Incorrect"
+    ]
+  },
+  "fetch": {
+    "url": "index.php",
+    "mode": "http",
+    "responseType": "html",
+    "fields": {
+      "uploadedBytes": {
+        "regex": "(?:↑|&uarr;|&#8593;|&#x2191;|Uploaded:)(?:\\s|&nbsp;|&#160;|&#xa0;|<[^>]+>)*(?<value>[\\d.,]+(?:\\s|&nbsp;|&#160;|&#xa0;)*[KMGTPE]?i?B)",
+        "transform": "bytesBinary"
+      },
+      "downloadedBytes": {
+        "regex": "(?:↓|&darr;|&#8595;|&#x2193;|Downloaded:)(?:\\s|&nbsp;|&#160;|&#xa0;|<[^>]+>)*(?<value>[\\d.,]+(?:\\s|&nbsp;|&#160;|&#xa0;)*[KMGTPE]?i?B)",
+        "transform": "bytesBinary"
+      },
+      "ratio": {
+        "regex": "\\bRatio:?(?:\\s|&nbsp;|<[^>]+>)*(?<value>Infinity|Infinite|Inf|∞|[\\d.,]+)",
+        "transform": "number"
+      },
+      "seedBonus": {
+        "regex": "\\bBonus(?:\\s|&nbsp;|<[^>]+>)*(?<value>[\\d.,]+)",
+        "transform": "string"
+      },
+      "unreadMessages": {
+        "regex": "<a\\b[^>]*\\bhref=[\"']index\\.php\\?page=usercp(?:&amp;|&)uid=\\d+(?:&amp;|&)do=pm(?:&amp;|&)action=list[\"'][^>]*>[^<]*</a>\\s*\\(\\s*<font\\b[^>]*\\bcolor=[\"']#[Ff]{2}0000[\"'][^>]*>\\s*<b\\b[^>]*>\\s*(?<value>\\d+)\\s*</b>\\s*</font>\\s*\\)",
+        "transform": "integer"
+      }
+    },
+    "extraFetch": {
+      "url": "index.php?page=usercp&uid={{id}}",
+      "responseType": "html",
+      "idExtract": {
+        "regex": "<a\\b[^>]*\\bhref=[\"'][^\"']*index\\.php\\?page=usercp(?:&amp;|&)uid=(?<value>\\d+)(?=[\"'&#])"
+      },
+      "field": "memberClass",
+      "regex": "<td\\b[^>]*>\\s*(?:<(?:b|strong|span|font)\\b[^>]*>\\s*)*Rank:\\s*(?:</(?:b|strong|span|font)>\\s*)*</td>\\s*<td\\b[^>]*>\\s*(?:<(?:b|strong|span|font)\\b[^>]*>\\s*)*(?<value>[^<\\s][^<]*?)\\s*(?:</(?:b|strong|span|font)>\\s*)*</td>",
+      "transform": "string"
+    }
+  },
+  "dashboard": {
+    "byteUnit": "binary"
+  }
+}

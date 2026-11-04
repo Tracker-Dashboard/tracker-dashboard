@@ -1,0 +1,7 @@
+{
+  "id": "lst",
+  "name": "LST",
+  "baseUrl": "https://lst.gg",
+  "enabled": false,
+  "engine": "unit3d"
+}

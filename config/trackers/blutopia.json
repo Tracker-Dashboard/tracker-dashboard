@@ -1,0 +1,7 @@
+{
+  "id": "blutopia",
+  "name": "Blutopia",
+  "baseUrl": "https://blutopia.cc",
+  "enabled": false,
+  "engine": "unit3d"
+}
