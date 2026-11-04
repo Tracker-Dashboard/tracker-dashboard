@@ -38,8 +38,14 @@ for (const [fr, en] of dictionary.patterns) {
   if (used.some(index => index < 1 || index > slots)) errors.push(`Motif mal numéroté : ${JSON.stringify(fr)}`);
 }
 
+// Repérage du français : mots courants ou propres à l'application, et typographie
+// française (espace avant « : », guillemets « ») pour des messages comme « Suppression
+// impossible : … ».
+const frenchWords = /[éèàçêùâôîûœÉÀ]|\b(le|la|les|des|du|une|et|pour|avec|sans|aucun|aucune|est|sont|dans|sur|par|vos|votre|cette|pas|ou|au|aux|de|en|un|il|ne|que|qui|ce|ces|si|non|lu|lus|mais|alerte|jour|jours|erreur|introuvable|invalide|requis|requise|manquant|manquants|attente|depuis|apres|avant|encore|deja|toujours|serveur|fichier|connexion|compte|actif|actifs|desactive|lance|ecoute|repli|demarrage|rafraichissement|sauvegarde|sauvegardee|mot|passe|heure|heures|semaine|mois|seuil|identifiant|identifiants|utilisateur|reponse|echec|echecs|succes|reussi|termine|terminee|ignore|trouve|recu|recue|recus|envoye|envoyes|disponible|indisponible|bloque|bloquee|planifie|cible|vide|absent|absente|dernier|derniere|prochain|prochaine|echouee|evite|expiree|leve|consecutifs|conservees|depasse|interrompu|appele|sauves|invalidees|impactes|reinitialise|authentification|annonce|hote|recupere|demande|partiel|liaison|furtif|perso|copie|optionnel|optionnelle|montracker)\b/i;
+const frenchTypography = /[a-zà-ÿ0-9)] [:;!»]|« /i;
+const french = { test: text => frenchWords.test(text) || frenchTypography.test(text) };
+
 // Tout texte fixe des pages qui ressemble à du français doit avoir sa traduction.
-const french = /[éèàçêùâôîûœÉÀ]|\b(le|la|les|des|du|une|et|pour|avec|sans|aucun|aucune|est|sont|dans|sur|par|vos|votre|ton|tes|cette)\b/i;
 const decode = text => text.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
 const normalize = text => decode(text).replace(/\s+/g, ' ').trim();
 const engine = loadEngine('en');
@@ -56,7 +62,6 @@ for (const file of ['public/index.html', 'public/login.html']) {
 
 // Tout texte français du code (scripts des pages, serveur) doit avoir sa traduction :
 // erreurs affichées, notifications, journaux. Une valeur interpolée vaut « 7 ».
-const frenchWords = /[éèàçêùâôîûœÉÀ]|\b(le|la|les|des|du|une|et|pour|avec|sans|aucun|aucune|est|sont|dans|sur|par|vos|votre|cette|pas|ou|au|aux|de|en|un|il|ne|que|qui|ce|ces|si|non|lu|lus|mais|alerte|jour|jours|erreur|introuvable|invalide|requis|requise|manquant|manquants|attente|depuis|apres|avant|encore|deja|toujours|serveur|fichier|connexion|compte|actif|actifs|desactive|lance|ecoute|repli|demarrage|rafraichissement|sauvegarde|sauvegardee|mot|passe|heure|heures|semaine|mois|seuil|identifiant|identifiants|utilisateur|reponse|echec|echecs|succes|reussi|termine|terminee|ignore|trouve|recu|recue|recus|envoye|envoyes|disponible|indisponible|bloque|bloquee|planifie|cible|vide|absent|absente|dernier|derniere|prochain|prochaine|echouee|evite|expiree|leve|consecutifs|conservees|depasse|interrompu|appele|sauves|invalidees|impactes|reinitialise|authentification|annonce|hote|recupere|demande|partiel|liaison|furtif|perso|copie)\b/i;
 const notText = /^[\w.$-]+$|^[a-z]+:\/\/|[{};]\s*$|=>|<\/?[a-z]/i;
 // Textes à ne pas traduire : reconnaissance des pages des trackers, aide Prometheus.
 const untranslated = new Set([
@@ -65,6 +70,9 @@ const untranslated = new Set([
   "Pièces d'or",
   'Seeds en cours',
   'Votre solde',
+  'Tigers : Seedbonus',
+  // Gabarit dont le texte vient de ses parties internes, vérifiées et traduites à part.
+  '[API] 7 : 7',
   'Active seeding torrents',
   'Active leeching torrents',
   '1 if last API read succeeded, 0 if failed, absent if no API key',
@@ -77,21 +85,50 @@ for (const file of ['public/index.html', 'public/login.html']) {
 const tsFiles = dir => fs.readdirSync(path.join(root, dir), { withFileTypes: true })
   .flatMap(entry => entry.isDirectory() ? tsFiles(path.join(dir, entry.name)) : entry.name.endsWith('.ts') ? [path.join(dir, entry.name)] : []);
 for (const file of tsFiles('src')) sources.push([file, read(file), ts.ScriptKind.TS]);
+const isFrench = text => text.length > 3 && french.test(text)
+  && !notText.test(text) && /[a-zà-ÿ]{3}/i.test(text);
+const isPlus = node => ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.PlusToken;
+// Texte complet d'une chaîne, concaténations comprises, tel qu'affiché (valeur = 7).
+const flatten = node => ts.isParenthesizedExpression(node) ? flatten(node.expression)
+  : isPlus(node) ? flatten(node.left) + flatten(node.right)
+    : ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node) ? node.text
+      : ts.isTemplateExpression(node) ? [node.head.text, ...node.templateSpans.map(span => span.literal.text)].join('7')
+        : '7';
+const inPlusChain = node => {
+  let parent = node.parent;
+  while (parent && ts.isParenthesizedExpression(parent)) parent = parent.parent;
+  return Boolean(parent && isPlus(parent));
+};
+const checkText = (file, raw) => {
+  const text = raw.replace(/\s+/g, ' ').trim();
+  if (isFrench(text) && !untranslated.has(text) && engine.tdT(text) === text) {
+    errors.push(`${file} : texte sans traduction anglaise ${JSON.stringify(text)}`);
+  }
+};
 for (const [file, code, kind] of sources) {
   const visit = node => {
-    let text = null;
-    if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) text = node.text;
-    else if (ts.isTemplateExpression(node)) text = [node.head.text, ...node.templateSpans.map(span => span.literal.text)].join('7');
-    if (text !== null) {
-      text = text.replace(/\s+/g, ' ').trim();
-      if (text.length > 3 && frenchWords.test(text) && !notText.test(text) && /[a-zà-ÿ]{3}/i.test(text)
-        && !untranslated.has(text) && engine.tdT(text) === text) {
-        errors.push(`${file} : texte sans traduction anglaise ${JSON.stringify(text)}`);
-      }
+    const isText = ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node) || ts.isTemplateExpression(node);
+    if (isPlus(node) && !inPlusChain(node)) {
+      // Une concaténation de HTML est traduite nœud par nœud : ses morceaux sont vérifiés seuls.
+      const whole = flatten(node);
+      if (!/<\/?[a-z]/i.test(whole)) checkText(file, whole);
+    } else if (isText) {
+      const chained = inPlusChain(node) && !/<\/?[a-z]/i.test(flatten(node.parent));
+      if (!chained) checkText(file, flatten(node));
     }
     if (!ts.isTemplateExpression(node)) ts.forEachChild(node, visit);
   };
   visit(ts.createSourceFile(file, code, ts.ScriptTarget.Latest, true, kind));
+}
+
+// Textes des définitions de trackers affichés dans l'interface.
+for (const name of fs.readdirSync(path.join(root, 'config/trackers')).filter(entry => entry.endsWith('.json'))) {
+  const definition = JSON.parse(read(path.join('config/trackers', name)));
+  for (const text of [definition.login?.cookieInstructions, definition.api?.keyInstructions]) {
+    if (typeof text === 'string' && engine.tdT(text) === text && isFrench(text)) {
+      errors.push(`config/trackers/${name} : texte sans traduction anglaise ${JSON.stringify(text)}`);
+    }
+  }
 }
 
 // Comportement : texte exact, espaces de bord, valeurs variables, texte inconnu.
