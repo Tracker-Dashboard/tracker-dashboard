@@ -683,6 +683,22 @@ if (!draupnirrLoginDetected(draupnirrLoginFixture)
   errors.push('Draupnirr must reject both current and legacy login pages without rejecting an authenticated profile');
 }
 
+// UNIT3D : les points peuvent porter un suffixe de monnaie (GenerationFree « G★ »),
+// mais une valeur en octets (Seedpool affiche son buffer dans ratio-bar__points) est refusée.
+const unit3dPoints = new RegExp(applyEnginePreset({ id: 'unit3d-points', name: 'UNIT3D', baseUrl: 'https://example.invalid', engine: 'unit3d' })
+  .fetch.fields.seedBonus.regex, 's');
+const unit3dPointsValue = text => unit3dPoints.exec(`<li class="ratio-bar__points" title="Points">
+    <a href="https://example.invalid/users/fixture/earnings">
+        <i class="fas fa-coins"></i>
+        ${text}
+    </a>
+</li>`)?.groups?.value;
+const unit3dPointsCases = [['118 790', '118 790'], ['18 810 G★', '18 810'], ['1 234,5 pts', '1 234,5'],
+  ['258.79 GiB', undefined], ['12 TB', undefined], ['—', undefined]];
+if (unit3dPointsCases.some(([text, expected]) => unit3dPointsValue(text) !== expected)) {
+  errors.push('UNIT3D points must accept a currency suffix and reject byte values');
+}
+
 if (errors.length > 0) {
   console.error(errors.map(error => `- ${error}`).join('\n'));
   process.exit(1);

@@ -27,11 +27,14 @@ export interface EngineTemplate {
 const unit3dSpace = String.raw`(?:\s|&nbsp;|&#160;|&#xa0;)*`;
 const unit3dNumber = String.raw`\d(?:[\d\s.,]*\d)?`;
 const unit3dBytes = String.raw`${unit3dNumber}${unit3dSpace}(?:[KMGTPE]i?B|B)`;
+// Suffixe de monnaie optionnel après les points (ex. GenerationFree : « 18 810 G★ »).
+// Une unité d'octets reste refusée : Seedpool y affiche son buffer (« 258.79 GiB »).
+const unit3dPointsSuffix = String.raw`(?:${unit3dSpace}(?![KMGTPE]i?B\b|B\b)[^<\d\s][^<\d]{0,15}?)?`;
 
 // UNIT3D top-nav.blade.php : une valeur par <li>, après l'icône de son lien.
 // Le bloc suivant ne doit jamais fournir la valeur d'un champ vide.
-function unit3dStatRegex(name: string, value: string): string {
-  return String.raw`<li\b[^>]*\bclass=["'](?:[^"']*\s)?ratio-bar__${name}(?:\s[^"']*)?["'][^>]*>(?:(?!</li\s*>)[\s\S])*?<i\b[^>]*>[^<]*</i>${unit3dSpace}(?<value>${value})${unit3dSpace}</a>`;
+function unit3dStatRegex(name: string, value: string, suffix = ''): string {
+  return String.raw`<li\b[^>]*\bclass=["'](?:[^"']*\s)?ratio-bar__${name}(?:\s[^"']*)?["'][^>]*>(?:(?!</li\s*>)[\s\S])*?<i\b[^>]*>[^<]*</i>${unit3dSpace}(?<value>${value})${suffix}${unit3dSpace}</a>`;
 }
 
 export const ENGINE_TEMPLATES: Record<EngineId, EngineTemplate> = {
@@ -74,7 +77,7 @@ export const ENGINE_TEMPLATES: Record<EngineId, EngineTemplate> = {
           ratio:           { regex: unit3dStatRegex('ratio', `${unit3dNumber}|∞`), transform: 'number' },
           seeding:         { regex: unit3dStatRegex('seeding', String.raw`\d+`), transform: 'integer' },
           leeching:        { regex: unit3dStatRegex('leeching', String.raw`\d+`), transform: 'integer' },
-          seedBonus:       { regex: unit3dStatRegex('points', unit3dNumber), transform: 'string' },
+          seedBonus:       { regex: unit3dStatRegex('points', unit3dNumber, unit3dPointsSuffix), transform: 'string' },
           bufferBytes:     { regex: unit3dStatRegex('buffer', unit3dBytes), transform: 'bytes' },
           tokens:          { regex: unit3dStatRegex('tokens', String.raw`\d+`), transform: 'integer' },
           // top-nav.blade.php affiche animation.notification uniquement si $hasUnreadPm.
