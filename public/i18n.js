@@ -15,6 +15,9 @@
  *
  * Changer de langue recharge la page : les dates et nombres formatés par le code
  * (tdLocale()) suivent ainsi la langue sans re-rendu spécifique.
+ *
+ * Le serveur reprend ce moteur et ces dictionnaires (src/i18n.ts) pour ses journaux et
+ * ses notifications, dans la dernière langue choisie depuis l'interface.
  */
 (function () {
   const STORAGE_KEY = 'td_lang';
@@ -27,10 +30,14 @@
   const SKIPPED_TAGS = new Set(['SCRIPT', 'STYLE', 'TEXTAREA', 'CODE', 'PRE']);
   const supported = code => LANGUAGES.some(lang => lang.code === code);
 
+  let chosen = false;
   function readLanguage() {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (supported(saved)) return saved;
+      if (supported(saved)) {
+        chosen = true;
+        return saved;
+      }
     } catch { /* stockage indisponible : langue du navigateur */ }
     const browser = String(navigator.language || '').slice(0, 2).toLowerCase();
     return supported(browser) ? browser : SOURCE;
@@ -136,6 +143,8 @@
   }
 
   window.tdLanguage = () => current;
+  // Vrai si la langue vient d'un choix fait dans le sélecteur, pas du navigateur.
+  window.tdLanguageChosen = () => chosen;
   window.tdLocale = () => (LANGUAGES.find(lang => lang.code === current) || LANGUAGES[0]).locale;
   window.tdT = text => translate(text);
   window.tdSetLanguage = code => {

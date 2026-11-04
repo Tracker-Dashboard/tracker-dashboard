@@ -113,14 +113,16 @@ La navigation se fait depuis la barre latérale gauche :
 
 ### Langues
 
-L'interface est disponible en **français** et en **anglais**. Le choix se fait par le sélecteur à drapeaux, en bas de la barre latérale ou en haut de la page de connexion. Il est mémorisé dans le navigateur ; à défaut, la langue du navigateur est utilisée, sinon le français. Les dates et nombres suivent la langue choisie.
+Tracker Dashboard est disponible en **français** et en **anglais**. Le choix se fait par le sélecteur à drapeaux, en bas de la barre latérale ou en haut de la page de connexion. Il est mémorisé dans le navigateur ; à défaut, la langue du navigateur est utilisée, sinon le français.
+
+La langue s'applique à toute l'application : interface, messages d'erreur des trackers et des tests, dates et nombres, notifications (Discord, Telegram, Apprise…) et journaux du conteneur. Le serveur suit la dernière langue choisie dans l'interface et la conserve au redémarrage.
 
 Le français reste la langue source du code : chaque texte affiché est cherché dans un dictionnaire par langue, `public/i18n/<code>.js`. Pour ajouter une langue :
 
 1. copier `public/i18n/en.js` en `public/i18n/<code>.js` (code à deux lettres), remplacer `.en =` par `.<code> =` et traduire les valeurs, jamais les clés françaises ;
 2. ajouter une ligne dans `LANGUAGES` en tête de `public/i18n.js` (code, drapeau, nom, locale).
 
-Un texte absent du dictionnaire reste affiché en français. `node scripts/check-i18n.mjs` vérifie que tous les textes fixes des pages ont une traduction anglaise.
+Le serveur réutilise ce moteur et ces dictionnaires (`src/i18n.ts`) : il n'y a qu'une source de traductions. `node scripts/check-i18n.mjs`, lancé par `check:integration`, échoue si un texte français des pages, des scripts ou du serveur n'a pas de traduction anglaise.
 
 ### Fiche d'un tracker
 

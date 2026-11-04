@@ -7658,6 +7658,21 @@
     } catch (e) { console.warn('saveApiPreferred:', e.message); }
   }
 
+  // Journaux et notifications du serveur : dans la langue choisie ici. Sans choix
+  // explicite, la langue du navigateur ne s'impose qu'à un serveur jamais réglé.
+  async function syncServerLanguage() {
+    try {
+      const r = await fetch('/api/settings/language');
+      const d = await r.json();
+      if (d.language === tdLanguage() || (d.stored && !tdLanguageChosen())) return;
+      await fetch('/api/settings/language', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ language: tdLanguage() }),
+      });
+    } catch (e) { console.warn('server language unavailable', e); }
+  }
+
   async function saveFastFetch() {
     const enabled = document.getElementById('fast-fetch-enabled').checked;
     try {
@@ -8023,6 +8038,7 @@
   initSidebarToggle();
 
   init();
+  syncServerLanguage();
 </script>
 </div>
 </body>
