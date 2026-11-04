@@ -6,6 +6,7 @@
   <link rel="icon" type="image/png" href="/favicon.png" />
   <link rel="apple-touch-icon" href="/favicon.png" />
   <title>Tracker Dashboard - Login</title>
+  <script src="/i18n.js"></script>
   <style>
     :root {
       --bg: #0d0f12;
@@ -74,9 +75,22 @@
     }
     button:hover { background: var(--green-hover); }
     #error { color: var(--red); min-height: 18px; margin-top: 12px; font-size: 13px; }
+    .login-lang {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 13px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
+  <select class="login-lang" data-lang-select aria-label="Langue"></select>
   <form onsubmit="submitAuth(event)">
     <img class="login-logo" src="/logo-dark.png" alt="Tracker Dashboard" />
     <h1 id="title">Tracker Dashboard</h1>

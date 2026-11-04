@@ -18,7 +18,7 @@ Le projet est porté par l’organisation [Tracker-Dashboard](https://github.com
 - [Fonctionnalités](#fonctionnalités)
 - [Dernières nouveautés](#dernières-nouveautés)
 - [Installation et premier démarrage](#installation-et-premier-démarrage)
-- [Interface](#interface)
+- [Interface](#interface) · [Langues](#langues)
 - [Cookies de session](#cookies-de-session-sites-à-captcha--cloudflare)
 - [Statistiques via les API des trackers](#statistiques-via-les-api-des-trackers)
 - [Double authentification des trackers](#double-authentification-2fa--totp)
@@ -109,7 +109,18 @@ La navigation se fait depuis la barre latérale gauche :
 - **Calendrier** : calendrier des refreshs (OK/KO par jour) ; un tracker en KO renvoie vers sa configuration.
 - **Trackers activés** : accordéon listant les trackers actifs ; un clic ouvre la **fiche** du tracker.
 - **Configuration** : *Ajouter un tracker* (sites non activés), *Configurer les actifs*, *Clients BitTorrent*, *Notifications* (Canaux, Notifications globales, Par tracker), *Proxies*, *Fréquence d'auto visite*.
-- En bas : *Synchroniser les sites*, horodatage de dernière mise à jour, bascule de thème **Clair / Sombre / Système**, déconnexion.
+- En bas : *Synchroniser les sites*, horodatage de dernière mise à jour, bascule de thème **Clair / Sombre / Système** et sélecteur de langue à drapeaux, déconnexion.
+
+### Langues
+
+L'interface est disponible en **français** et en **anglais**. Le choix se fait par le sélecteur à drapeaux, en bas de la barre latérale ou en haut de la page de connexion. Il est mémorisé dans le navigateur ; à défaut, la langue du navigateur est utilisée, sinon le français. Les dates et nombres suivent la langue choisie.
+
+Le français reste la langue source du code : chaque texte affiché est cherché dans un dictionnaire par langue, `public/i18n/<code>.js`. Pour ajouter une langue :
+
+1. copier `public/i18n/en.js` en `public/i18n/<code>.js` (code à deux lettres), remplacer `.en =` par `.<code> =` et traduire les valeurs, jamais les clés françaises ;
+2. ajouter une ligne dans `LANGUAGES` en tête de `public/i18n.js` (code, drapeau, nom, locale).
+
+Un texte absent du dictionnaire reste affiché en français. `node scripts/check-i18n.mjs` vérifie que tous les textes fixes des pages ont une traduction anglaise.
 
 ### Fiche d'un tracker
 

@@ -17,7 +17,8 @@ function functionSource(name) {
   throw new Error(`Corps de ${name} incomplet`);
 }
 
-const context = { Intl };
+// Langue de l'interface fournie par public/i18n.js ; les exemples ci-dessous sont en français.
+const context = { Intl, tdLocale: () => 'fr-FR' };
 vm.createContext(context);
 vm.runInContext([
   functionSource('hasStatValue'),

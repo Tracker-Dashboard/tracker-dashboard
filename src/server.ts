@@ -2674,6 +2674,15 @@ export async function start(): Promise<void> {
     res.sendFile(path.join(PUBLIC_DIR, 'favicon.png'));
   });
 
+  // Traductions : nécessaires dès la page de connexion, avant authentification.
+  app.get('/i18n.js', (_req, res) => {
+    res.sendFile(path.join(PUBLIC_DIR, 'i18n.js'));
+  });
+  app.get('/i18n/:file', (req, res, next) => {
+    if (!/^[a-z]{2}\.js$/.test(req.params.file)) return next();
+    res.sendFile(path.join(PUBLIC_DIR, 'i18n', req.params.file));
+  });
+
   app.get('/api/auth/status', (req, res) => {
     res.json({
       configured: isAuthConfigured(),
