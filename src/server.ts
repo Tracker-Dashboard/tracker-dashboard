@@ -27,6 +27,7 @@ import {
   type ProxySettings, type ProxyOverride,
 } from './proxy.js';
 import { ensureSshSocks } from './sshTunnel.js';
+import { serverLanguage, setServerLanguage, t } from './i18n.js';
 import crypto from 'crypto';
 import {
   loadIncidents, setIncident, getIncident, clearIncident,
@@ -1208,18 +1209,20 @@ function formatBytesForNotif(bytes: number | string, byteUnit: 'binary' | 'decim
   if (!Number.isFinite(b)) return String(bytes);
   const sign = b < 0 ? '-' : '';
   const abs = Math.abs(b);
+  // Unités françaises (Go, Gio…) traduites dans la langue du serveur.
+  const size = (value: number, unit: string) => `${sign}${value.toFixed(2)} ${t(unit)}`;
   if (byteUnit === 'decimal') {
-    if (abs >= 1e12) return `${sign}${(abs / 1e12).toFixed(2)} To`;
-    if (abs >= 1e9) return `${sign}${(abs / 1e9).toFixed(2)} Go`;
-    if (abs >= 1e6) return `${sign}${(abs / 1e6).toFixed(2)} Mo`;
-    if (abs >= 1e3) return `${sign}${(abs / 1e3).toFixed(2)} Ko`;
-    return `${sign}${abs.toFixed(0)} o`;
+    if (abs >= 1e12) return size(abs / 1e12, 'To');
+    if (abs >= 1e9) return size(abs / 1e9, 'Go');
+    if (abs >= 1e6) return size(abs / 1e6, 'Mo');
+    if (abs >= 1e3) return size(abs / 1e3, 'Ko');
+  } else {
+    if (abs >= 1024 ** 4) return size(abs / 1024 ** 4, 'Tio');
+    if (abs >= 1024 ** 3) return size(abs / 1024 ** 3, 'Gio');
+    if (abs >= 1024 ** 2) return size(abs / 1024 ** 2, 'Mio');
+    if (abs >= 1024) return size(abs / 1024, 'Kio');
   }
-  if (abs >= 1024 ** 4) return `${sign}${(abs / 1024 ** 4).toFixed(2)} Tio`;
-  if (abs >= 1024 ** 3) return `${sign}${(abs / 1024 ** 3).toFixed(2)} Gio`;
-  if (abs >= 1024 ** 2) return `${sign}${(abs / 1024 ** 2).toFixed(2)} Mio`;
-  if (abs >= 1024) return `${sign}${(abs / 1024).toFixed(2)} Kio`;
-  return `${sign}${abs.toFixed(0)} o`;
+  return `${sign}${abs.toFixed(0)} ${serverLanguage() === 'fr' ? 'o' : 'B'}`;
 }
 
 function formatStatLine(stat: TrackerStats): string {
@@ -1299,7 +1302,7 @@ function evaluateThresholds(stat: TrackerStats, cfg: AlertConfig): string[] {
   return out;
 }
 
-const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? 's' : ''}`;
+const plural = (n: number, word: string) => t(`${n} ${word}${n > 1 ? 's' : ''}`);
 
 // Construit jusqu'a 3 notifications (echecs / succes / alertes) a partir d'une liste
 // de trackers et d'une config. Le titre est partage : "TD : X succes - Y echecs - Z MP".
@@ -1320,7 +1323,7 @@ function buildNotifications(
   const totalMp = wantMp ? relevant.filter(r => r.status === 'ok').reduce((s, r) => s + unreadMessagesCount(r), 0) : 0;
 
   const titleParts: string[] = [];
-  if (ok.length > 0) titleParts.push(`${ok.length} succès`);
+  if (ok.length > 0) titleParts.push(t(`${ok.length} succès`));
   if (errors.length > 0) titleParts.push(plural(errors.length, 'échec'));
   if (totalMp > 0) titleParts.push(plural(totalMp, 'MP'));
   const sharedTitle = titleParts.length ? `TD : ${titleParts.join(' - ')}` : 'TD';
@@ -1330,19 +1333,19 @@ function buildNotifications(
   if (errors.length > 0) {
     notifications.push({
       title: sharedTitle,
-      lines: errors.map(r => `- ${r.name} : ${failureMessage(r)}`),
+      lines: errors.map(r => `- ${r.name} : ${t(failureMessage(r))}`),
     });
   }
 
   if (ok.length > 0) {
     const lines: string[] = [];
     if (recovered.length > 0) {
-      lines.push(`Sites rétablis : ${recovered.map(r => r.name).join(', ')}`, '');
+      lines.push(t(`Sites rétablis : ${recovered.map(r => r.name).join(', ')}`), '');
     }
     if (wantStats) {
       ok.forEach((r, index) => {
         const mp = wantMp ? unreadMessagesCount(r) : 0;
-        const mpSuffix = mp > 0 ? ` - ${mp} MP non lu${mp > 1 ? 's' : ''}` : '';
+        const mpSuffix = mp > 0 ? ` - ${t(`${mp} MP non lu${mp > 1 ? 's' : ''}`)}` : '';
         lines.push(`- ${r.name}${mpSuffix}`);
         lines.push(formatStatLine(r) || 'OK');
         if (index < ok.length - 1) lines.push('');
@@ -1350,7 +1353,7 @@ function buildNotifications(
     } else {
       ok.forEach(r => {
         const mp = wantMp ? unreadMessagesCount(r) : 0;
-        const mpSuffix = mp > 0 ? ` - ${mp} MP non lu${mp > 1 ? 's' : ''}` : '';
+        const mpSuffix = mp > 0 ? ` - ${t(`${mp} MP non lu${mp > 1 ? 's' : ''}`)}` : '';
         lines.push(`- ${r.name}${mpSuffix}`);
       });
     }
@@ -1362,7 +1365,7 @@ function buildNotifications(
   if (alertMessages.length > 0) {
     notifications.push({
       title: `TD : ${plural(alertMessages.length, 'alerte')}`,
-      lines: alertMessages.map(m => `- ${m}`),
+      lines: alertMessages.map(m => `- ${t(m)}`),
     });
   }
 
@@ -1418,23 +1421,23 @@ async function notifyScheduledResult(
       const wantStats = manual ? cfg.notifyManualStats : cfg.notifyStats;
       const wantMp = manual ? cfg.notifyManualMp : cfg.notifyMp;
       if (wantError && isFailedStat(stat)) {
-        errLines.push(`- ${stat.name} : ${failureMessage(stat)}`);
+        errLines.push(`- ${stat.name} : ${t(failureMessage(stat))}`);
         errCount += 1;
       }
       if (wantSuccess && !isFailedStat(stat)) {
         const mp = wantMp ? unreadMessagesCount(stat) : 0;
-        const mpSuffix = mp > 0 ? ` - ${mp} MP non lu${mp > 1 ? 's' : ''}` : '';
+        const mpSuffix = mp > 0 ? ` - ${t(`${mp} MP non lu${mp > 1 ? 's' : ''}`)}` : '';
         okLines.push(`- ${stat.name}${mpSuffix}`);
         if (wantStats) okLines.push(formatStatLine(stat) || 'OK');
         okCount += 1;
         mpCount += mp;
       }
       const thr = evaluateThresholds(stat, cfg);
-      alertLines.push(...thr.map(m => `- ${m}`));
+      alertLines.push(...thr.map(m => `- ${t(m)}`));
       alertCount += thr.length;
     }
     const titleParts: string[] = [];
-    if (okCount > 0) titleParts.push(`${okCount} succès`);
+    if (okCount > 0) titleParts.push(t(`${okCount} succès`));
     if (errCount > 0) titleParts.push(plural(errCount, 'échec'));
     if (mpCount > 0) titleParts.push(plural(mpCount, 'MP'));
     const trackerTitle = titleParts.length ? `TD : ${titleParts.join(' - ')}` : 'TD';
@@ -2155,11 +2158,11 @@ function qbitSeedingByTrackerId(trackers: TrackerConfig[]): Map<string, { count:
 }
 
 function betaLog(message: string): void {
-  console.log(`[Beta BitTorrent] ${message}`);
+  console.log(`[Beta BitTorrent] ${t(message)}`);
 }
 
 function betaWarn(message: string): void {
-  console.warn(`[Beta BitTorrent] ${message}`);
+  console.warn(`[Beta BitTorrent] ${t(message)}`);
 }
 
 function redactedAnnounceForLog(value: string): string {
@@ -2674,6 +2677,15 @@ export async function start(): Promise<void> {
     res.sendFile(path.join(PUBLIC_DIR, 'favicon.png'));
   });
 
+  // Traductions : nécessaires dès la page de connexion, avant authentification.
+  app.get('/i18n.js', (_req, res) => {
+    res.sendFile(path.join(PUBLIC_DIR, 'i18n.js'));
+  });
+  app.get('/i18n/:file', (req, res, next) => {
+    if (!/^[a-z]{2}\.js$/.test(req.params.file)) return next();
+    res.sendFile(path.join(PUBLIC_DIR, 'i18n', req.params.file));
+  });
+
   app.get('/api/auth/status', (req, res) => {
     res.json({
       configured: isAuthConfigured(),
@@ -2961,7 +2973,7 @@ export async function start(): Promise<void> {
     const target = settings.notificationTargets.find(item => item.id === id);
     if (!target) return res.status(404).json({ ok: false, error: 'Destination introuvable' });
     try {
-      await sendBetaNotification(target, 'Test Tracker Dashboard Beta : notification recue.', 'Tracker Dashboard Beta', settings.notificationTargets);
+      await sendBetaNotification(target, t('Test Tracker Dashboard Beta : notification recue.'), 'Tracker Dashboard Beta', settings.notificationTargets);
       res.json({ ok: true });
     } catch (err: unknown) {
       res.json({ ok: false, error: err instanceof Error ? err.message : String(err) });
@@ -3662,6 +3674,18 @@ export async function start(): Promise<void> {
     setTrackerStatSource(id, source);
     console.log(`[API] ${id} : source des stats = ${source}`);
     res.json({ ok: true, statSource: source });
+  });
+
+  // Langue des journaux et notifications : suit le choix fait dans l'interface.
+  app.get('/api/settings/language', (_req, res) => {
+    res.json({ language: serverLanguage(), stored: getJsonSetting<string | null>('ui_language', null) !== null });
+  });
+
+  app.post('/api/settings/language', (req, res) => {
+    const language = typeof req.body?.language === 'string' ? req.body.language : '';
+    if (!setServerLanguage(language)) return res.status(400).json({ ok: false, error: 'Langue non prise en charge' });
+    setJsonSetting('ui_language', language);
+    res.json({ ok: true, language });
   });
 
   // Réglage global : préférer l'API quand elle est disponible (clé enregistrée).
