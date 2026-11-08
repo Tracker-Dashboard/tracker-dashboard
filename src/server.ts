@@ -1400,16 +1400,11 @@ async function notifyScheduledResult(
   };
   const notifications = buildNotifications(relevant, globalCfg, previousFailures, manual);
 
-  // 2) NOTIF PAR TRACKER : independante, groupee, uniquement les trackers ayant des
-  // reglages specifiques, chacun selon SES reglages. Une notif distincte du global.
+  // 2) NOTIF PAR TRACKER : conserver uniquement les informations supplementaires
+  // par rapport a la notification globale de ce meme rafraichissement.
   const specificStats = relevant.filter(stat => trackerAlerts[stat.id]);
   if (specificStats.length > 0) {
-    // Chaque tracker specifique evalue avec sa propre config ; on agrege les lignes.
-    const perTrackerNotifs = specificStats.flatMap(stat =>
-      buildNotifications([stat], trackerAlerts[stat.id] as AlertConfig, previousFailures, manual),
-    );
-    // Regrouper par titre identique serait complexe ; on prefixe d'un marqueur clair.
-    // On fusionne toutes les lignes en une seule notif "par tracker".
+    // Regrouper les complements par categorie : echecs, succes et seuils.
     const errLines: string[] = [];
     const okLines: string[] = [];
     const alertLines: string[] = [];
@@ -1420,11 +1415,17 @@ async function notifyScheduledResult(
       const wantSuccess = manual ? cfg.notifyManualSuccess : cfg.notifySuccess;
       const wantStats = manual ? cfg.notifyManualStats : cfg.notifyStats;
       const wantMp = manual ? cfg.notifyManualMp : cfg.notifyMp;
-      if (wantError && isFailedStat(stat)) {
+      const globalError = manual ? globalCfg.notifyManualError : globalCfg.notifyError;
+      const globalSuccess = manual ? globalCfg.notifyManualSuccess : globalCfg.notifySuccess;
+      const globalStats = manual ? globalCfg.notifyManualStats : globalCfg.notifyStats;
+      const globalMp = manual ? globalCfg.notifyManualMp : globalCfg.notifyMp;
+      if (wantError && !globalError && isFailedStat(stat)) {
         errLines.push(`- ${stat.name} : ${t(failureMessage(stat))}`);
         errCount += 1;
       }
-      if (wantSuccess && !isFailedStat(stat)) {
+      const addsStats = wantStats && !globalStats && Boolean(formatStatLine(stat));
+      const addsMp = wantMp && !globalMp && unreadMessagesCount(stat) > 0;
+      if (wantSuccess && !isFailedStat(stat) && (!globalSuccess || addsStats || addsMp)) {
         const mp = wantMp ? unreadMessagesCount(stat) : 0;
         const mpSuffix = mp > 0 ? ` - ${t(`${mp} MP non lu${mp > 1 ? 's' : ''}`)}` : '';
         okLines.push(`- ${stat.name}${mpSuffix}`);
@@ -1432,7 +1433,8 @@ async function notifyScheduledResult(
         okCount += 1;
         mpCount += mp;
       }
-      const thr = evaluateThresholds(stat, cfg);
+      const globalThresholds = new Set(evaluateThresholds(stat, globalCfg));
+      const thr = evaluateThresholds(stat, cfg).filter(message => !globalThresholds.has(message));
       alertLines.push(...thr.map(m => `- ${t(m)}`));
       alertCount += thr.length;
     }
