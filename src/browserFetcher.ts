@@ -352,12 +352,17 @@ async function waitForTrackerContent(tracker: TrackerConfig, page: Page): Promis
       return false;
     }
   }
-  if (tracker.id === 'tigersdl') {
+  if ((tracker.baseId ?? tracker.id) === 'tigersdl') {
     try {
       await page.waitForFunction(
         () => {
-          const text = document.body?.innerText ?? '';
-          return text.includes('Votre solde') || document.title.includes('Tigers : Seedbonus');
+          // La V3 expose les statistiques dans les champs du compte, pas mybonus.php.
+          return Boolean(document.querySelector('a[href="/logout.php"]'))
+            && !document.querySelector('input[name="identity"]')
+            && ['tracker_uploaded', 'tracker_downloaded', 'account_seedbonus'].every(id => {
+              const input = document.getElementById(id);
+              return input instanceof HTMLInputElement && input.readOnly && input.value.trim() !== '';
+            });
         },
         null,
         { timeout: 20_000 },

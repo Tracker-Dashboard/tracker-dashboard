@@ -205,6 +205,24 @@ if (astraV4Values.uploadedBytes !== 39580000000 || astraV4Values.downloadedBytes
   errors.push('AstraTorrent V4 KPI cards, let userKarmaPoints and active seed count must be extracted');
 }
 
+// Synthetic mobile cockpit: seed slots and Karma income are not account totals.
+const astraMobileFixture = `<div class="m-stat-val">Unlimited (∞)</div><div class="m-stat-lbl">Slots d'Essaim (Seed)</div>
+<div class="m-stat-val karma" style="color:gold">12 345 💎</div><div class="m-stat-lbl">Points Karma</div>
+<div class="m-stat-val">999</div><div class="m-stat-lbl">Rente Karma</div>
+<div class="m-stat-val" style="color:green">52,75 Go</div><div class="m-stat-lbl">Upload Total</div>`;
+const astraMobileValues = Object.fromEntries(Object.entries(astratorrent.fetch.fields).map(([field, extractor]) => [
+  field, extractExtraFieldResponse({ field, ...extractor }, astraMobileFixture)?.value,
+]));
+if (astraMobileValues.uploadedBytes !== 52750000000 || astraMobileValues.points !== 12345
+    || astraMobileValues.downloadedBytes !== undefined || astraMobileValues.seeding !== undefined) {
+  errors.push('AstraTorrent mobile cockpit must read upload and Karma without inventing download or seeding');
+}
+const astraMobileZero = astraMobileFixture.replace('12 345 💎', '0 💎').replace('52,75 Go', '0 o');
+if (extractExtraFieldResponse({ field: 'points', ...astratorrent.fetch.fields.points }, astraMobileZero)?.value !== 0
+    || extractExtraFieldResponse({ field: 'uploadedBytes', ...astratorrent.fetch.fields.uploadedBytes }, astraMobileZero)?.value !== 0) {
+  errors.push('AstraTorrent mobile cockpit must preserve zero values');
+}
+
 // Nostradamus : pages compte deplacees sous /user/profile/ (fragment synthetique).
 const nostradamus = JSON.parse(fs.readFileSync(path.join(root, 'config', 'trackers', 'nostradamus.json'), 'utf8'));
 const nostraFixture = `<span class="hero-banknotes size-3"></span> Points </span>
@@ -316,6 +334,29 @@ if (tigersdl.login.url !== 'login.php' || tigersdl.login.body.identity !== '{{us
     || tigersdl.login.body.csrf_token !== '{{csrf_token}}' || tigersCsrf !== 'login-token'
     || tigersdl.login.preStep.includeHiddenInputs) {
   errors.push('Tigers-DL V3 login must post identity/password with the login form CSRF token only');
+}
+
+// Synthetic Tigers-DL V3 account inputs; pending points and site-wide peers are decoys.
+const tigersAccountFixture = `<a href="/logout.php">Logout</a>
+<input id="tracker_uploaded" type="text" value="12,50 Go" readonly>
+<input value='0 o' readonly id='tracker_downloaded' type='text'>
+<input id="tracker_ratio" value="∞" readonly>
+<input id="account_seedbonus_pending" value="999999" readonly>
+<input id="account_seedbonus" value="1 234,50" readonly>
+<div>Seeders en cours <strong>9999</strong></div>`;
+const tigersAccountValues = Object.fromEntries(Object.entries(tigersdl.fetch.fields).map(([field, extractor]) => [
+  field, extractExtraFieldResponse({ field, ...extractor }, tigersAccountFixture)?.value,
+]));
+if (tigersdl.fetch.url !== 'mon-compte.php'
+    || tigersAccountValues.uploadedBytes !== 12500000000 || tigersAccountValues.downloadedBytes !== 0
+    || tigersAccountValues.ratio !== '∞' || tigersAccountValues.seedBonus !== 1234.5
+    || tigersAccountValues.seeding !== undefined) {
+  errors.push('Tigers-DL V3 must read account inputs, including zero download, without using pending points or global seeders');
+}
+for (const html of [tigersLoginFixture, '<title>404 Not Found</title>', '<input id="account_seedbonus_pending" value="9999">']) {
+  if (Object.entries(tigersdl.fetch.fields).some(([field, extractor]) => extractExtraFieldResponse({ field, ...extractor }, html))) {
+    errors.push('Tigers-DL must not extract statistics from login, missing pages or pending points alone');
+  }
 }
 
 // Synthetic SpeedApp fragment : profil Vue, stats serialisees dans data-app-user-value.

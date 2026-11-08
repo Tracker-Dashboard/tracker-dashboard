@@ -26,7 +26,7 @@
     "responseType": "html",
     "fields": {
       "uploadedBytes": {
-        "regex": "(?:<span>⬆️|Upload R[ée]el\\s*</span>[\\s\\S]{0,160}?kpi-val[^>]*>)\\s*(?<value>[\\d\\s.,]+\\s*[KMGTPE]?(?:i?[Bo]|o))\\s*</span>",
+        "regex": "(?:<span>⬆️|Upload R[ée]el\\s*</span>[\\s\\S]{0,160}?kpi-val[^>]*>|class=[\"']m-stat-val[\"'][^>]*>(?=[^<]*</div>\\s*<div[^>]*>\\s*Upload Total\\s*</div>))\\s*(?<value>[\\d\\s.,]+\\s*[KMGTPE]?(?:i?[Bo]|o))\\s*</(?:span|div)>",
         "transform": "bytes"
       },
       "downloadedBytes": {
@@ -34,7 +34,7 @@
         "transform": "bytes"
       },
       "points": {
-        "regex": "\\b(?:var|let|const)\\s+userKarmaPoints\\s*=\\s*(?<value>\\d+(?:\\.\\d+)?)\\s*;",
+        "regex": "(?:\\b(?:var|let|const)\\s+userKarmaPoints\\s*=|class=[\"']m-stat-val karma[\"'][^>]*>)\\s*(?<value>\\d[\\d\\s.,]*)(?:;|💎\\s*</div>)",
         "transform": "number"
       },
       "seeding": {

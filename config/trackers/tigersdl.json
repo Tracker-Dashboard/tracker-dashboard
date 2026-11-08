@@ -27,25 +27,25 @@
     ]
   },
   "fetch": {
-    "url": "mybonus.php",
+    "url": "mon-compte.php",
     "mode": "browser",
     "responseType": "html",
     "fields": {
       "uploadedBytes": {
-        "regex": "title=['\"]Partager['\"][\\s\\S]{0,180}?<font[^>]*>\\s*(?<value>[\\d\\s.,]+\\s*(?:[KMGTPE](?:i?B|io|o)|B|o))\\s*</font>",
+        "regex": "<input\\b(?=[^>]*\\bid=[\"']tracker_uploaded[\"'])[^>]*\\bvalue=[\"'](?<value>[^\"']+)[\"']",
         "transform": "bytes"
       },
       "downloadedBytes": {
-        "regex": "title=['\"][^'\"]*charg[^'\"]*['\"][\\s\\S]{0,180}?<font[^>]*>\\s*(?<value>[\\d\\s.,]+\\s*(?:[KMGTPE](?:i?B|io|o)|B|o))\\s*</font>",
+        "regex": "<input\\b(?=[^>]*\\bid=[\"']tracker_downloaded[\"'])[^>]*\\bvalue=[\"'](?<value>[^\"']+)[\"']",
         "transform": "bytes"
       },
-      "seedBonus": {
-        "regex": "Votre solde[\\s\\S]{0,180}?score-points[^>]*>\\s*(?<value>[\\d\\s.,]+)",
+      "ratio": {
+        "regex": "<input\\b(?=[^>]*\\bid=[\"']tracker_ratio[\"'])[^>]*\\bvalue=[\"'](?<value>[^\"']+)[\"']",
         "transform": "string"
       },
-      "seeding": {
-        "regex": "(?:Nombres de Torrents que vous avez en seed\\s*:\\s*|title=['\"]Seeding['\"][\\s\\S]{0,120}?<b>\\s*)(?<value>\\d+)",
-        "transform": "integer"
+      "seedBonus": {
+        "regex": "<input\\b(?=[^>]*\\bid=[\"']account_seedbonus[\"'])[^>]*\\bvalue=[\"'](?<value>[^\"']+)[\"']",
+        "transform": "number"
       }
     }
   },
