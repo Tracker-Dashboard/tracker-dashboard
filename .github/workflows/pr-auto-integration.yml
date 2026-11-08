@@ -12,6 +12,7 @@ on:
 
 permissions:
   actions: write
+  checks: read
   contents: write
   pull-requests: write
 
@@ -22,6 +23,7 @@ jobs:
       github.event.pull_request.head.repo.full_name == github.repository &&
       github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: Attendre les contrôles requis puis fusionner
@@ -51,17 +53,61 @@ jobs:
               return;
             }
 
-            await github.graphql(`
-              mutation($pullRequestId: ID!) {
-                enablePullRequestAutoMerge(input: {
-                  pullRequestId: $pullRequestId,
-                  mergeMethod: SQUASH
-                }) {
-                  pullRequest { number }
-                }
+            const pause = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
+            for (let attempt = 1; attempt <= 60; attempt += 1) {
+              const { data: current } = await github.rest.pulls.get({
+                ...context.repo, pull_number: pull.number,
+              });
+              if (current.merged) return;
+              if (current.state !== 'open' || current.draft || current.head.sha !== pull.head.sha) {
+                core.setFailed('PR fermée, repassée en brouillon ou modifiée : fusion interrompue.');
+                return;
               }
-            `, { pullRequestId: pullRequest.id });
-            core.info('Fusion automatique activée : GitHub attend les contrôles requis.');
+              try {
+                await github.graphql(`
+                  mutation($pullRequestId: ID!) {
+                    enablePullRequestAutoMerge(input: {
+                      pullRequestId: $pullRequestId,
+                      mergeMethod: SQUASH
+                    }) {
+                      pullRequest { number }
+                    }
+                  }
+                `, { pullRequestId: pullRequest.id });
+                core.info('Fusion automatique activée : GitHub attend les contrôles requis.');
+                return;
+              } catch (error) {
+                // GitHub peut refuser auto-merge en UNSTABLE, y compris après un
+                // échec de ce job. Une fusion normale reste soumise aux protections.
+                if (!String(error.message).includes('unstable status')) throw error;
+                const checks = await github.paginate(github.rest.checks.listForRef, {
+                  ...context.repo, ref: current.head.sha, filter: 'latest', per_page: 100,
+                });
+                const required = ['Node build', 'Docker build and CVE scan', 'Docker build runtime navigateur'];
+                const passed = required.every(name => {
+                  const matches = checks.filter(check => check.name === name);
+                  return matches.length > 0 && matches.every(check =>
+                    check.status === 'completed' && check.conclusion === 'success');
+                });
+                if (passed) {
+                  try {
+                    const result = await github.rest.pulls.merge({
+                      ...context.repo, pull_number: pull.number,
+                      sha: current.head.sha, merge_method: 'squash',
+                    });
+                    if (result.data.merged) {
+                      core.info('PR fusionnée après réussite des contrôles, sans contournement des protections.');
+                      return;
+                    }
+                  } catch (mergeError) {
+                    if (![405, 409].includes(mergeError.status)) throw mergeError;
+                  }
+                }
+                core.info(`État GitHub instable (${attempt}/60), nouvelle vérification dans 15 s.`);
+                await pause(15_000);
+              }
+            }
+            core.setFailed('GitHub refuse toujours la fusion après attente des contrôles.');
 
   publish-after-auto-merge:
     name: Publier les images après fusion
