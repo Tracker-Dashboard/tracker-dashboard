@@ -131,7 +131,7 @@
       border-bottom: 1px solid var(--border);
     }
     .sidebar-brand .brand-logo { height: 30px; width: auto; display: block; flex: 0 0 auto; }
-    .sidebar-brand .header-logo-text { font-family: var(--mono); font-size: 15px; font-weight: 600; color: var(--accent); letter-spacing: .04em; white-space: nowrap; }
+    .sidebar-brand .header-logo-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; font-family: var(--mono); font-size: 15px; font-weight: 600; color: var(--accent); letter-spacing: .04em; white-space: nowrap; }
     .sidebar-brand .header-logo-text span { color: var(--text2); font-weight: 400; }
     /* Sous-contrôle (ex: bascule vue cartes/lignes sous Dashboard) */
     .nav-subcontrol {
@@ -2063,8 +2063,8 @@
 <body>
 
 <button id="sidebar-toggle" type="button" onclick="toggleSidebar()" aria-controls="sidebar" aria-expanded="true" aria-label="Afficher ou masquer le menu" title="Afficher ou masquer le menu">
-  <svg class="icon-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
-  <svg class="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+  <svg class="icon-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+  <svg class="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>
 </button>
 
 <nav class="sidebar" id="sidebar">
@@ -2804,7 +2804,7 @@
   <section class="tab-view" data-view="notif-tracker">
     <section class="beta-panel" style="width:100%">
       <h3>Notifications par tracker</h3>
-      <p class="beta-note" style="margin-bottom:10px">Notifications spécifiques à un tracker, envoyées dans une notification distincte de la globale. Sélectionnez un tracker, puis activez les options voulues (mêmes options que les notifications globales).</p>
+      <p class="beta-note" style="margin-bottom:10px">Notifications spécifiques à un tracker : seules les informations supplémentaires à la notification globale sont envoyées séparément. Sélectionnez un tracker, puis activez les options voulues.</p>
       <div id="beta-tracker-alerts"></div>
       <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap">
         <button class="beta-icon-btn primary" onclick="saveBetaSettings()" type="button">Enregistrer</button>
@@ -7987,7 +7987,7 @@
   // ── Menu escamotable ────────────────────────────────────────────
   // Etat unique porte par <body class="sidebar-hidden">.
   // Ordi : deplie par defaut, le choix de l'utilisateur est memorise.
-  // Mobile : replie par defaut, jamais memorise (comportement hamburger).
+  // Mobile : replie par defaut, jamais memorise.
   const SIDEBAR_MOBILE_MQ = '(max-width: 760px)';
   const SIDEBAR_STORE_KEY = 'tracker-dashboard-sidebar-hidden';
 

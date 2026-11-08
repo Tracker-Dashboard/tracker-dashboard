@@ -4,6 +4,8 @@
 
 # Tracker Dashboard
 
+**Français** | [English](README.en.md)
+
 Tracker Dashboard réunit les statistiques de vos trackers BitTorrent dans une interface web : upload, download, ratio, buffer, points bonus, torrents en seed et messages privés non lus, selon les données disponibles sur chaque site. Il planifie les visites, conserve un historique SQLite et compare les statistiques des trackers aux torrents présents dans vos clients BitTorrent.
 
 Le projet est porté par l’organisation [Tracker-Dashboard](https://github.com/Tracker-Dashboard), en collaboration avec [Zup](https://github.com/Gusdezup) ([Autovisit-Web](https://github.com/Gusdezup/Autovisit-Web)). **Toute aide est la bienvenue** : corrections, nouveaux trackers, documentation et nouvelles fonctionnalités.
@@ -102,7 +104,9 @@ Les fonctionnalités plus anciennes sont présentées dans les sections ci-desso
 
 ## Interface
 
-La navigation se fait depuis la barre latérale gauche :
+La navigation se fait depuis la barre latérale gauche. Le nom complet reste visible en haut ; les chevrons **<** et **>** permettent de fermer et de rouvrir le menu, sur ordinateur comme sur mobile.
+
+La barre latérale donne accès aux vues suivantes :
 
 - **Dashboard** : vue d'ensemble des trackers (cartes ou lignes, bascule sous le menu). Chaque carte peut porter un « incident connu » et une note libre.
 - **Graphiques** : Global (UP/DL/seedtime agrégés), Évolution (par tracker ou « Tous »), comparaison multi-trackers (sélection libre des trackers), Totaux par tracker. Chaque graphe a un sélecteur de période et une plage de dates Du/Au.
@@ -247,7 +251,9 @@ Configurables dans **Configuration → Notifications**, en trois volets :
 
 - **Canaux** : destinations **Discord**, **Apprise** ou **e-mail**.
 - **Notifications globales** : échecs, succès, rétablissement après échec, statistiques, MP non lus.
-- **Par tracker** : réglages spécifiques (échecs, succès, stats, MP, seuils de ratio / buffer / ancienneté de session) qui priment sur les réglages globaux.
+- **Par tracker** : réglages spécifiques (échecs, succès, stats, MP, seuils de ratio / buffer / ancienneté de session) qui complètent les réglages globaux.
+
+Lors d’un même rafraîchissement, un échec, un succès ou une alerte de seuil déjà couvert par la notification globale n’est pas renvoyé à l’identique par les réglages par tracker. Les détails supplémentaires (statistiques, MP non lus) et les alertes portant sur un seuil différent restent envoyés séparément. Cette règle s’applique aux visites automatiques comme aux rafraîchissements manuels, selon leurs options respectives, et conserve l’envoi sur chaque canal actif. Elle ne bloque pas les notifications des rafraîchissements suivants.
 
 ## Prometheus et Grafana
 

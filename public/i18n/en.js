@@ -204,7 +204,7 @@
     "— envoi via votre serveur Apprise. Nécessite un canal Apprise actif.": "— sent through your Apprise server. Requires an active Apprise channel.",
     "S'appliquent à tous les trackers. Le bouton choisit le mode édité. Les seuils ratio / buffer / session sont communs aux deux modes.": "Apply to every tracker. The button picks the edited mode. Ratio / buffer / session thresholds are shared by both modes.",
     "Notifications par tracker": "Per-tracker notifications",
-    "Notifications spécifiques à un tracker, envoyées dans une notification distincte de la globale. Sélectionnez un tracker, puis activez les options voulues (mêmes options que les notifications globales).": "Notifications specific to one tracker, sent separately from the global one. Select a tracker, then enable the options you want (same options as global notifications).",
+    "Notifications spécifiques à un tracker : seules les informations supplémentaires à la notification globale sont envoyées séparément. Sélectionnez un tracker, puis activez les options voulues.": "Tracker-specific notifications: only information additional to the global notification is sent separately. Select a tracker, then enable the options you want.",
     "créé avec ❤️ par": "made with ❤️ by",
     "Migration de l'image Docker requise": "Docker image migration required",
     "Tracker Dashboard a été transféré vers l'organisation GitHub": "Tracker Dashboard has moved to the GitHub organisation",
