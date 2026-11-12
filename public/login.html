@@ -110,7 +110,7 @@
     async function init() {
       const r = await fetch('/api/auth/status');
       const status = await r.json();
-      if (status.authenticated) location.href = '/';
+      if (status.authenticated) location.href = '/' + location.hash;
       setupMode = !status.configured;
       if (setupMode) {
         document.getElementById('title').textContent = 'Créer le compte admin';
@@ -135,7 +135,8 @@
       });
       const data = await r.json();
       if (data.ok) {
-        location.href = '/';
+        // Le fragment (#/fiche/…) survit à la redirection vers /login.html : on y retourne.
+        location.href = '/' + location.hash;
       } else {
         error.textContent = data.error || 'Erreur';
       }

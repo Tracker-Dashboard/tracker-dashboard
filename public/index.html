@@ -225,6 +225,11 @@
     /* L'attribut [hidden] doit l'emporter sur le display:flex de .nav-item (meme
        specificite : sans cette regle, masquer une entree via el.hidden reste sans effet). */
     .nav-item[hidden], .nav-group[hidden] { display: none !important; }
+    /* Entrées de navigation en <a> (adresse propre à chaque vue) : même rendu que les boutons. */
+    a.nav-item, a.nav-sub-item, a.card-refresh { text-decoration: none; }
+    /* Liens et boutons voisins dans la même police (celle de la page), sinon les
+       boutons gardent la police par défaut du navigateur. */
+    .nav-item, .nav-sub-item, .card-refresh, .beta-icon-btn, .rows-table .row-fiche-btn { font-family: inherit; }
     .nav-item:hover { color: var(--text); background: color-mix(in srgb, var(--bg) 60%, transparent); }
     .nav-item.active { color: var(--accent); border-left-color: var(--accent); background: rgba(74,222,128,.06); }
     .nav-icon { width: 16px; text-align: center; font-size: 14px; flex-shrink: 0; }
@@ -2073,9 +2078,9 @@
     <span class="header-logo-text">tracker<span>.dashboard</span></span>
   </span>
 
-  <button class="nav-item active" data-nav="dashboard" onclick="showView('dashboard')" type="button">
+  <a class="nav-item active" data-nav="dashboard" href="#/dashboard">
     <span class="nav-icon">◈</span> Dashboard
-  </button>
+  </a>
   <button class="nav-subcontrol" id="view-toggle" onclick="toggleViewMode()" type="button" title="Basculer entre vue cartes et vue lignes">
     <span class="nav-subcontrol-icon">▦</span> <span id="view-toggle-label">Vue lignes</span>
   </button>
@@ -2084,12 +2089,12 @@
     <span id="cardsize-value">100%</span>
   </div>
 
-  <button class="nav-item" data-nav="graphs" onclick="showView('graphs')" type="button">
+  <a class="nav-item" data-nav="graphs" href="#/graphs">
     <span class="nav-icon">▤</span> Graphiques
-  </button>
-  <button class="nav-item" data-nav="calendar" onclick="showView('calendar')" type="button">
+  </a>
+  <a class="nav-item" data-nav="calendar" href="#/calendar">
     <span class="nav-icon">▥</span> Calendrier
-  </button>
+  </a>
 
   <div class="nav-group" data-nav-group="fiche">
     <button class="nav-item nav-group-toggle" onclick="toggleNavGroup(event, 'fiche')" type="button">
@@ -2124,8 +2129,8 @@
               <span class="nav-caret">▸</span>
             </button>
             <div class="nav-sub" id="nav-sub-personal">
-              <button class="nav-sub-item" data-nav="tracker-guided" onclick="openGuidedTrackerForm()" type="button"><span class="nav-sub-name">Guidé</span></button>
-              <button class="nav-sub-item" data-nav="tracker-new" onclick="openNewTrackerForm()" type="button"><span class="nav-sub-name">Expert</span></button>
+              <a class="nav-sub-item" data-nav="tracker-guided" href="#/add-tracker/guided"><span class="nav-sub-name">Guidé</span></a>
+              <a class="nav-sub-item" data-nav="tracker-new" href="#/add-tracker/expert"><span class="nav-sub-name">Expert</span></a>
             </div>
           </div>
         </div>
@@ -2137,21 +2142,21 @@
         </button>
         <div class="nav-sub" id="nav-sub-configure"></div>
       </div>
-      <button class="nav-item" data-nav="qbit" onclick="showView('qbit')" type="button"><span class="nav-icon">⬇</span> Clients BitTorrent</button>
-      <button class="nav-item" data-nav="visual-settings" onclick="showView('visual-settings')" type="button"><span class="nav-icon">◫</span> Affichage</button>
+      <a class="nav-item" data-nav="qbit" href="#/qbit"><span class="nav-icon">⬇</span> Clients BitTorrent</a>
+      <a class="nav-item" data-nav="visual-settings" href="#/settings/visual"><span class="nav-icon">◫</span> Affichage</a>
       <div class="nav-group" data-nav-group="notif">
         <button class="nav-item nav-group-toggle" onclick="toggleNavGroup(event, 'notif')" type="button">
           <span class="nav-icon">⚑</span> Notifications
           <span class="nav-caret">▸</span>
         </button>
         <div class="nav-sub" id="nav-sub-notif">
-          <button class="nav-sub-item" data-nav="notif-canaux" onclick="showView('notif-canaux')" type="button"><span class="nav-sub-name">Canaux</span></button>
-          <button class="nav-sub-item" data-nav="notif-globales" onclick="showView('notif-globales')" type="button"><span class="nav-sub-name">Notifications globales</span></button>
-          <button class="nav-sub-item" data-nav="notif-tracker" onclick="showView('notif-tracker')" type="button"><span class="nav-sub-name">Par tracker</span></button>
+          <a class="nav-sub-item" data-nav="notif-canaux" href="#/notifications/channels"><span class="nav-sub-name">Canaux</span></a>
+          <a class="nav-sub-item" data-nav="notif-globales" href="#/notifications/global"><span class="nav-sub-name">Notifications globales</span></a>
+          <a class="nav-sub-item" data-nav="notif-tracker" href="#/notifications/trackers"><span class="nav-sub-name">Par tracker</span></a>
         </div>
       </div>
-      <button class="nav-item" data-nav="proxies" onclick="showView('proxies')" type="button"><span class="nav-icon">⇄</span> Proxies</button>
-      <button class="nav-item" data-nav="scraping" onclick="showView('scraping')" type="button"><span class="nav-icon">⟳</span> Fréquence d'auto visite</button>
+      <a class="nav-item" data-nav="proxies" href="#/proxies"><span class="nav-icon">⇄</span> Proxies</a>
+      <a class="nav-item" data-nav="scraping" href="#/settings/scraping"><span class="nav-icon">⟳</span> Fréquence d'auto visite</a>
     </div>
   </div>
 
@@ -3425,9 +3430,9 @@
   // « Fiche » de la vue lignes).
   function cardFicheButton(stat) {
     return `
-      <button class="card-refresh card-fiche-btn" data-tracker="${escapeHtml(stat.id)}" onclick="openTrackerFiche(this.dataset.tracker)" title="Ouvrir la fiche du tracker" aria-label="Ouvrir la fiche du tracker">
+      <a class="card-refresh card-fiche-btn" href="${escapeHtml(routeHash('fiche', stat.id))}" title="Ouvrir la fiche du tracker" aria-label="Ouvrir la fiche du tracker">
         ${CARD_ICON_FICHE}
-      </button>`;
+      </a>`;
   }
 
   function openTrackerEdit(trackerId) {
@@ -3568,7 +3573,7 @@
     });
     // Synchronise la taille des cartes avec le reglage serveur (autre appareil, save...).
     applyCardWidth(currentCardWidthPct());
-    if (!isViewEnabled(currentView)) showView('dashboard');
+    if (!isViewEnabled(currentView)) showView('dashboard', { replace: true });
   }
 
   function hasTrackerProblem(stat) {
@@ -3703,11 +3708,11 @@
       const dot = hasTrackerProblem(stat) ? 'bad' : 'ok';
       const active = currentView === 'fiche' && stat.id === betaSelectedTrackerId;
       return `
-        <button class="nav-sub-item ${active ? 'active' : ''}" onclick="openTrackerFiche('${escapeHtml(stat.id)}')" type="button" title="${escapeHtml(mode)}">
+        <a class="nav-sub-item ${active ? 'active' : ''}" href="${escapeHtml(routeHash('fiche', stat.id))}" title="${escapeHtml(mode)}">
           <i class="nav-sub-dot ${dot}"></i>
           <span class="nav-sub-name">${escapeHtml(stat.name)}</span>
           ${crossSeedTrackerMarks(stat.id, false)}
-        </button>`;
+        </a>`;
     };
     const items = trackers.map(stat => ({ id: stat.id, name: stat.name, baseId: baseById.get(stat.id), stat }));
     subFiche.innerHTML = groupTrackersByBase(items, nameById).map(group => navGroupHtml(group, itemHtml)).join('')
@@ -3751,9 +3756,9 @@
     if (!subAdd && !subConfigure) return;
     const nameById = new Map(cachedTrackerDefinitions.map(def => [def.id, def.name]));
     const itemHtml = def => `
-      <button class="nav-sub-item ${currentView === 'trackers' && def.id === configSelectedTrackerId ? 'active' : ''}" onclick="openTrackerConfig('${escapeHtml(def.id)}')" type="button">
+      <a class="nav-sub-item ${currentView === 'trackers' && def.id === configSelectedTrackerId ? 'active' : ''}" href="${escapeHtml(routeHash('trackers', def.id))}">
         <span class="nav-sub-name">${escapeHtml(def.name)}</span>${requirementMarks(def)}
-      </button>`;
+      </a>`;
     if (subAdd) {
       const groups = groupTrackersByBase(cachedTrackerDefinitions.filter(def => !def.enabled), nameById);
       subAdd.innerHTML = groups.map(group => navGroupHtml(group, itemHtml)).join('')
@@ -3852,12 +3857,12 @@
   function ntRenderFields() { ntSyncResponseHint(); }
 
   // Ouvre le formulaire vierge (creation).
-  function openNewTrackerForm() {
+  function openNewTrackerForm({ replace = false } = {}) {
     ntEditingTrackerId = null;
     setNavGroupOpen('config', true);
     setNavGroupOpen('add', true);
     setNavGroupOpen('add-personal', true);
-    showView('tracker-new');
+    showView('tracker-new', { replace });
     document.getElementById('newtracker-title').textContent = 'Configurer un nouveau tracker';
     ['nt-id','nt-name','nt-baseurl','nt-login-url','nt-login-posturl','nt-login-otpfield','nt-login-successfield','nt-login-csrfheader','nt-login-tokenfield','nt-login-previsit','nt-prestep-url','nt-prestep-csrf','nt-otpstep-url','nt-otpstep-field','nt-fetch-url','nt-login-failures','nt-test-user','nt-test-pass','nt-test-totp','nt-test-cookie']
       .forEach(id => ntSetVal(id, ''));
@@ -3987,6 +3992,7 @@
       if (!d.ok) throw new Error(d.error || 'Erreur');
       ntFlash('✓ Tracker enregistré. Renseigne ses identifiants dans « Configurer les actifs ».', 'var(--green)');
       ntEditingTrackerId = config.id;
+      syncRoute({ replace: true });
       document.getElementById('nt-id').disabled = true;
       document.getElementById('newtracker-title').textContent = 'Éditer : ' + config.name;
       document.getElementById('nt-delete-btn').style.display = '';
@@ -4012,7 +4018,7 @@
       await loadTrackerDefinitionsPanel();
       await loadConfig();
       await loadStats();
-      openNewTrackerForm();
+      openNewTrackerForm({ replace: true });
       ntFlash('✓ Tracker supprimé.', 'var(--green)');
     } catch (e) {
       ntFlash('✗ ' + e.message, 'var(--red)');
@@ -4023,11 +4029,17 @@
   // Édite un tracker custom existant en pré-remplissant le formulaire.
   function ntEditCustomTracker(trackerId) {
     const def = cachedTrackerDefinitions.find(d => d.id === trackerId);
+    // Ouvert depuis une adresse (#/trackers/x/edit) : la réponse arrive après
+    // applyRoute, on remplace donc l'entrée d'historique au lieu d'en empiler une.
+    const replace = applyingRoute;
+    const seq = navigationSeq;
     fetch(`/api/trackers`).then(r => r.json()).then(data => {
+      if (navigationSeq !== seq) return; // l'utilisateur est allé ailleurs entre-temps
       const cfg = (data.trackers || []).find(t => t.id === trackerId);
-      if (!cfg) { openNewTrackerForm(); return; }
-      openNewTrackerForm();
+      if (!cfg) { openNewTrackerForm({ replace: true }); return; }
+      openNewTrackerForm({ replace });
       ntEditingTrackerId = trackerId;
+      syncRoute({ replace: true });
       document.getElementById('newtracker-title').textContent = 'Éditer : ' + cfg.name;
       ntSetVal('nt-id', cfg.id); document.getElementById('nt-id').disabled = true;
       ntSetVal('nt-name', cfg.name); ntSetVal('nt-baseurl', cfg.baseUrl);
@@ -4406,7 +4418,7 @@
                 <td class="num">${formatPoints(bonusRaw)}${hasStatValue(fields.seedBonus) && bonusUnit(stat) ? ` <span class="stat-unit">${bonusUnit(stat)}</span>` : ''}</td>
                 <td>
                   <div class="beta-table-actions">
-                    <button class="beta-icon-btn" onclick="openTrackerFiche('${escapeHtml(stat.id)}')" type="button">Fiche</button>
+                    <a class="beta-icon-btn" href="${escapeHtml(routeHash('fiche', stat.id))}">Fiche</a>
                     <button class="beta-icon-btn" onclick="refreshTracker('${escapeHtml(stat.id)}', this)" type="button">MàJ</button>
                   </div>
                 </td>
@@ -5382,11 +5394,7 @@
   }
 
   function betaTrackerPageUrl(trackerId) {
-    const url = new URL(window.location.href);
-    url.searchParams.set('tab', 'beta');
-    url.searchParams.set('section', 'overview');
-    url.searchParams.set('tracker', trackerId);
-    return url.toString();
+    return routeHash('fiche', trackerId);
   }
 
   function latestBetaRowsForDay(day) {
@@ -5793,6 +5801,7 @@
   function setBetaTrackerAlert(trackerId) {
     collectBetaTrackerAlertFromDom();
     betaTrackerAlertId = trackerId;
+    syncRoute();
     renderBetaTrackerAlerts();
   }
 
@@ -6162,11 +6171,117 @@
     alert(data.ok ? 'Notification envoyée' : `Notification KO: ${data.error}`);
   }
 
-  const ALL_VIEWS = ['dashboard', 'trackers', 'tracker-new', 'tracker-guided', 'proxies', 'calendar', 'graphs', 'qbit', 'visual-settings', 'scraping', 'notif-canaux', 'notif-globales', 'notif-tracker', 'fiche'];
+  // ── Routage ─────────────────────────────────────────────────────────────
+  // Chaque vue a son adresse dans le fragment d'URL (#/fiche/c411, #/graphs…) :
+  // bouton Retour, favoris, F5, partage de lien et ouverture dans un nouvel
+  // onglet fonctionnent. Fragment plutôt que chemin : le serveur ne sert que « / »
+  // et le navigateur conserve le fragment à travers la redirection vers la connexion.
+  const VIEW_PATHS = {
+    'dashboard': 'dashboard',
+    'graphs': 'graphs',
+    'calendar': 'calendar',
+    'fiche': 'fiche',                         // #/fiche/<tracker>
+    'trackers': 'trackers',                   // #/trackers/<tracker>
+    // Création hors de « trackers/ » : un tracker perso peut s'appeler new ou guided.
+    'tracker-new': 'add-tracker/expert',      // #/trackers/<tracker>/edit en édition
+    'tracker-guided': 'add-tracker/guided',
+    'qbit': 'qbit',
+    'proxies': 'proxies',
+    'visual-settings': 'settings/visual',
+    'scraping': 'settings/scraping',
+    'notif-canaux': 'notifications/channels',
+    'notif-globales': 'notifications/global',
+    'notif-tracker': 'notifications/trackers', // #/notifications/trackers/<tracker>
+  };
+  const ALL_VIEWS = Object.keys(VIEW_PATHS);
+
+  function routeHash(view, trackerId) {
+    const path = VIEW_PATHS[view] || VIEW_PATHS.dashboard;
+    if (!trackerId) return `#/${path}`;
+    const id = encodeURIComponent(trackerId);
+    return view === 'tracker-new' ? `#/trackers/${id}/edit` : `#/${path}/${id}`;
+  }
+
+  // Tracker affiché par la vue courante : partie variable de l'adresse.
+  function currentRouteTrackerId() {
+    if (currentView === 'fiche') return betaSelectedTrackerId;
+    if (currentView === 'trackers') return configSelectedTrackerId;
+    if (currentView === 'notif-tracker') return betaTrackerAlertId;
+    if (currentView === 'tracker-new') return ntEditingTrackerId;
+    return null;
+  }
+
+  // « #/fiche/c411 » -> { view: 'fiche', id: 'c411' } ; null si inconnu.
+  function parseRoute(hash) {
+    const parts = String(hash || '').replace(/^#\/?/, '').split('/').filter(Boolean)
+      .map(part => { try { return decodeURIComponent(part); } catch { return part; } });
+    if (!parts.length) return null;
+    const [first, second, third] = parts;
+    if (first === 'fiche') return { view: 'fiche', id: second || null };
+    if (first === 'trackers') {
+      if (second && third === 'edit') return { view: 'tracker-new', id: second };
+      return { view: 'trackers', id: second || null };
+    }
+    if (first === 'notifications' && second === 'trackers') return { view: 'notif-tracker', id: third || null };
+    const path = parts.join('/');
+    const view = ALL_VIEWS.find(key => VIEW_PATHS[key] === path);
+    return view ? { view, id: null } : null;
+  }
+
+  // Vrai pendant l'application d'une adresse : l'adresse est alors seulement
+  // normalisée (replaceState), sinon #/fiche -> #/fiche/x créerait une entrée
+  // d'historique de plus et piégerait le bouton Retour.
+  let applyingRoute = false;
+
+  // Incrémenté à chaque changement de vue : une réponse réseau arrivée après une
+  // autre navigation (Retour, clic…) sait qu'elle ne doit plus rien afficher.
+  let navigationSeq = 0;
+
+  // Aligne l'adresse sur la vue affichée : une navigation ajoute une entrée
+  // d'historique, une correction remplace l'entrée courante.
+  function syncRoute({ replace = false } = {}) {
+    const hash = routeHash(currentView, currentRouteTrackerId());
+    if (location.hash === hash) return;
+    const url = location.pathname + location.search + hash;
+    if (replace || applyingRoute) history.replaceState(null, '', url);
+    else history.pushState(null, '', url);
+  }
+
+  // Affiche la vue désignée par une adresse, via les mêmes fonctions que les clics.
+  function applyRoute(route) {
+    applyingRoute = true;
+    try {
+      const id = route?.id;
+      switch (route?.view) {
+        case 'fiche': if (id) return openTrackerFiche(id); break;
+        case 'trackers': if (id) return openTrackerConfig(id); break;
+        case 'notif-tracker': if (id) return openTrackerNotif(id); break;
+        case 'tracker-new': return id ? ntEditCustomTracker(id) : openNewTrackerForm();
+        case 'tracker-guided': return openGuidedTrackerForm();
+      }
+      showView(route?.view || 'dashboard');
+    } finally {
+      applyingRoute = false;
+    }
+  }
+
+  // Anciennes adresses (?view=…, ?tracker=… des liens « Fiche ») : converties
+  // en fragment, et la query retirée de la barre d'adresse.
+  function legacyRoute() {
+    const params = new URLSearchParams(window.location.search);
+    const view = params.get('view') || (params.get('tracker') ? 'fiche' : null);
+    if (!view) return null;
+    history.replaceState(null, '', location.pathname + location.hash);
+    return { view, id: view === 'fiche' ? params.get('tracker') : null };
+  }
+
+  // Liens <a href="#/…">, Retour / Suivant, adresse modifiée à la main.
+  window.addEventListener('hashchange', () => applyRoute(parseRoute(location.hash)));
 
   // Affiche la vue demandée : bascule les sections de <main>, le panneau proxy
-  // (sibling de <main>) et l'état actif de la barre latérale.
-  function showView(view) {
+  // (sibling de <main>) et l'état actif de la barre latérale, puis met l'adresse à jour.
+  function showView(view, { replace = false } = {}) {
+    navigationSeq++;
     currentView = ALL_VIEWS.includes(view) && isViewEnabled(view) ? view : 'dashboard';
     localStorage.setItem('tracker-dashboard-view-active', currentView);
 
@@ -6188,12 +6303,14 @@
     renderGrid();
     renderBetaTrackerList();
     renderTrackerConfigNav();
+    syncRoute({ replace });
   }
 
+  // Au chargement : l'adresse prime ; sans adresse, la dernière vue ouverte.
   function loadActiveView() {
-    const params = new URLSearchParams(window.location.search);
-    const stored = params.get('view') || localStorage.getItem('tracker-dashboard-view-active') || 'dashboard';
-    showView(stored);
+    const route = parseRoute(location.hash) || legacyRoute()
+      || { view: localStorage.getItem('tracker-dashboard-view-active') || 'dashboard', id: null };
+    applyRoute(route);
   }
 
   // ── Accordéons de la barre latérale ──────────────────────────────────────
@@ -6221,9 +6338,7 @@
   }
 
   function loadBetaSettings() {
-    const params = new URLSearchParams(window.location.search);
     betaStatusFilter = localStorage.getItem('tracker-dashboard-beta-filter') || 'all';
-    betaSelectedTrackerId = params.get('tracker') || betaSelectedTrackerId;
   }
 
   async function loadBetaSettingsFromServer() {
@@ -6671,7 +6786,7 @@
     const mainRow = `
       <tr class="row-main ${isOpen ? 'is-open' : ''}">
         <td><button class="row-refresh" data-tracker="${id}" onclick="refreshTracker(this.dataset.tracker, this)" title="Rafraichir ce tracker">MàJ</button></td>
-        <td class="cell-name">${trackerName(stat)}<button type="button" class="row-fiche-btn" onclick="openTrackerFiche('${id}')" title="Ouvrir la fiche du tracker" aria-label="Ouvrir la fiche">Fiche</button></td>
+        <td class="cell-name">${trackerName(stat)}<a class="row-fiche-btn" href="${escapeHtml(routeHash('fiche', stat.id))}" title="Ouvrir la fiche du tracker" aria-label="Ouvrir la fiche">Fiche</a></td>
         <td class="cell-muted">${formatDateTime(stat.lastLoginAt || stat.lastUpdated)}</td>
         <td>${rowScheduleCell(stat)}</td>
         <td class="num">${dl}</td>
