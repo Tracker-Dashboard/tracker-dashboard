@@ -89,6 +89,19 @@ export async function applyStoredCookies(tracker: TrackerConfig): Promise<void> 
 }
 
 const PROFILE_DIR = path.join(process.cwd(), 'config', 'browser-profile');
+
+// Trace des étapes du navigateur pour diagnostiquer un login lent ou bloqué.
+// BROWSER_TRACE=zxx,ygg (ids de trackers) ou BROWSER_TRACE=* ; inactif par défaut.
+const traceStarts = new WeakMap<Page, number>();
+function trace(tracker: TrackerConfig, page: Page, step: string): void {
+  const wanted = (process.env.BROWSER_TRACE ?? '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+  if (!wanted.includes('*') && !wanted.includes(tracker.id.toLowerCase())) return;
+  const start = traceStarts.get(page) ?? Date.now();
+  if (!traceStarts.has(page)) traceStarts.set(page, start);
+  let url = '';
+  try { url = page.url(); } catch { /* page fermée */ }
+  console.log(`[Trace ${tracker.id}] +${((Date.now() - start) / 1000).toFixed(1)}s ${step} (${url})`);
+}
 const contexts = new Map<string, BrowserContext>();
 
 function resolveUrl(baseUrl: string, relativePath: string): string {
@@ -106,7 +119,8 @@ function hasFailurePattern(text: string, patterns: string[] = []): boolean {
 }
 
 function isLoginPath(pathname: string): boolean {
-  return pathname.includes('login') || pathname.includes('sign-in') || pathname.includes('signin');
+  return pathname.includes('login') || pathname.includes('sign-in') || pathname.includes('signin') ||
+    /(^|\/)connexion(\/|$)/i.test(pathname); // ZXX CLUB : /connexion/ (et pas /deconnexion/)
 }
 
 function isAnubisChallenge(html: string): boolean {
@@ -215,16 +229,51 @@ async function waitForLiveView(page: Page): Promise<void> {
   ).catch(() => {});
 }
 
-async function waitForTurnstile(page: Page): Promise<void> {
-  if (await page.locator('.cf-turnstile').count() === 0) return;
-  await page.waitForFunction(
+/**
+ * Attend le jeton Turnstile du formulaire de login.
+ * Renvoie 'none' sans widget, 'ok' avec un jeton, 'missing' si le widget est resté sans jeton.
+ * Le mode géré de Cloudflare peut exiger un clic sur la case : sans jeton après 10 s,
+ * on clique dans le widget (l'iframe est dans un shadow root fermé, d'où le clic par
+ * coordonnées), puis on attend encore 20 s.
+ */
+async function waitForTurnstile(page: Page, tracker?: TrackerConfig): Promise<'none' | 'ok' | 'missing'> {
+  // .cf-turnstile = rendu implicite ; le rendu explicite (ZXX CLUB : #turnstile-widget)
+  // n'a pas cette classe mais pose aussi l'input cf-turnstile-response dans le conteneur.
+  const widget = page.locator('.cf-turnstile, input[name="cf-turnstile-response"], iframe[src*="challenges.cloudflare.com"]');
+  if (await widget.count() === 0) {
+    // Rendu explicite : l'input n'existe qu'une fois api.js chargé. On lui laisse 5 s.
+    const explicit = await page.locator('[data-sitekey]').count() > 0
+      && await page.locator('script[src*="challenges.cloudflare.com/turnstile"]').count() > 0;
+    if (!explicit) return 'none';
+    await page.locator('input[name="cf-turnstile-response"]').first()
+      .waitFor({ state: 'attached', timeout: 5_000 }).catch(() => {});
+  }
+  const hasToken = (timeout: number) => page.waitForFunction(
     () => {
       const response = document.querySelector<HTMLInputElement>('input[name="cf-turnstile-response"]');
       return Boolean(response?.value);
     },
     null,
-    { timeout: 20_000 },
-  ).catch(() => {});
+    { timeout },
+  ).then(() => true).catch(() => false);
+
+  if (await hasToken(10_000)) return 'ok';
+
+  const box = await page.locator('input[name="cf-turnstile-response"]').first()
+    .locator('xpath=..').boundingBox().catch(() => null)
+    ?? await page.locator('.cf-turnstile, [data-sitekey]').first().boundingBox().catch(() => null);
+  if (box && box.width > 0 && box.height > 0) {
+    // Case à cocher : à gauche, sur la première ligne du widget (normal 65 px, compact 140 px).
+    const x = box.x + Math.min(30, box.width / 5);
+    const y = box.y + Math.min(box.height / 2, 33);
+    if (tracker) trace(tracker, page, `Turnstile: no token after 10 s, clicking the widget (${Math.round(x)},${Math.round(y)})`);
+    await page.mouse.move(x - 40, y + 15, { steps: 8 }).catch(() => {});
+    await page.mouse.move(x, y, { steps: 12 }).catch(() => {});
+    await page.waitForTimeout(250);
+    await page.mouse.click(x, y, { delay: 80 }).catch(() => {});
+    if (await hasToken(20_000)) return 'ok';
+  }
+  return 'missing';
 }
 
 /**
@@ -545,7 +594,12 @@ async function submitV3xApiLogin(
 
 async function waitForAntiBotChallenge(page: Page): Promise<void> {
   for (let i = 0; i < 20; i += 1) {
-    if (!looksAntiBot(await safeContent(page))) return;
+    const html = await safeContent(page);
+    // Un formulaire de login avec un widget Turnstile (ZXX CLUB, YGGReborn…) n'est pas
+    // une page de challenge : le jeton est attendu plus loin par waitForTurnstile. Sans
+    // ce garde-fou, la boucle perdait 20 s sur chaque page de login protégée.
+    if (/<input\b[^>]*\btype=["']password["']/i.test(html)) return;
+    if (!looksAntiBot(html)) return;
     await page.waitForTimeout(1000);
   }
 }
@@ -589,7 +643,11 @@ async function ensureLoggedIn(
   overrides?: BrowserFetchOverrides,
 ): Promise<void> {
   const html = await safeContent(page);
-  if (!hasFailurePattern(html, tracker.login.failurePatterns ?? [])) return;
+  if (!hasFailurePattern(html, tracker.login.failurePatterns ?? [])) {
+    trace(tracker, page, 'session already valid, no login needed');
+    return;
+  }
+  trace(tracker, page, 'login page detected, logging in');
 
   // Mode cookie uniquement : on ne soumet JAMAIS le formulaire (sinon, sur des sites
   // comme MyAnonamouse, chaque tentative cree une session et finit par bloquer le compte).
@@ -625,6 +683,7 @@ async function ensureLoggedIn(
   await waitForLiveView(page);
   await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
   await page.locator('input').first().waitFor({ timeout: 10_000 }).catch(() => {});
+  trace(tracker, page, 'login form loaded');
 
   if (tracker.id === 'v3x') {
     await submitV3xApiLogin(tracker, credentials, page);
@@ -708,7 +767,16 @@ async function ensureLoggedIn(
   }
 
   await waitForLiveView(page);
-  await waitForTurnstile(page);
+  trace(tracker, page, 'fields filled, waiting for Turnstile');
+  const turnstile = await waitForTurnstile(page, tracker);
+  trace(tracker, page, `Turnstile: ${turnstile}`);
+  if (turnstile === 'missing') {
+    // Sans jeton, le site refuse le formulaire : inutile de perdre une minute en
+    // tentatives de soumission. On échoue tout de suite avec un dump.
+    const dump = writeBrowserDump(tracker, page.url(), await safeContent(page), 'turnstile');
+    const suffix = dump ? ` - dump: ${dump}` : '';
+    throw new Error(`Verification Cloudflare Turnstile non validee par le navigateur (pas de jeton apres 30 s)${suffix}`);
+  }
   if (['kufirc', 'happyfappy', 'empornium'].includes(tracker.id)) {
     await page.waitForFunction(
       () => {
@@ -749,6 +817,7 @@ async function ensureLoggedIn(
       await button.elementHandle(),
       { timeout: 10_000 },
     ).catch(() => {});
+    trace(tracker, page, 'clicking the login button');
     await button.click({ timeout: 10_000 });
   } else {
     await page.keyboard.press('Enter');
@@ -757,6 +826,7 @@ async function ensureLoggedIn(
   const leftLogin = await page.waitForURL(url => !isLoginPath(url.pathname), { timeout: 30_000 })
     .then(() => true)
     .catch(() => false);
+  trace(tracker, page, `after submit, left login page=${leftLogin}`);
   if (!leftLogin && isLoginPath(new URL(page.url()).pathname)) {
     await page.keyboard.press('Enter').catch(() => {});
     await page.waitForURL(url => !isLoginPath(url.pathname), { timeout: 15_000 }).catch(() => {});
@@ -770,6 +840,7 @@ async function ensureLoggedIn(
   await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
   await waitForAnubis(page);
   await waitForLiveView(page);
+  trace(tracker, page, 'login done');
 
   if (tracker.id === 'v3x') {
     const postHtml = await safeContent(page);
@@ -834,11 +905,13 @@ export async function fetchWithBrowser(
   }));
 
   try {
+    trace(tracker, page, `start, opening ${url}`);
     await page.goto(url, { waitUntil: 'commit', timeout: 45_000 });
     await page.waitForLoadState('domcontentloaded', { timeout: 30_000 }).catch(() => {});
     await waitForAnubis(page);
     await waitForAntiBotChallenge(page);
     await waitForLiveView(page);
+    trace(tracker, page, 'premiere page chargee');
     await ensureLoggedIn(tracker, credentials, page, overrides);
     await page.goto(url, { waitUntil: 'commit', timeout: 45_000 });
     await page.waitForLoadState('domcontentloaded', { timeout: 30_000 }).catch(() => {});
@@ -862,6 +935,7 @@ export async function fetchWithBrowser(
     if (tracker.id === 'milkie') {
       await revealMilkieStats(page);
     }
+    trace(tracker, page, 'stats page loaded');
     const authConfirmed = await waitForTrackerContent(tracker, page);
     if (tracker.id === 'v3x' && authConfirmed) {
       await waitForV3xActivityValues(page);

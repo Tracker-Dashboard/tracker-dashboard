@@ -183,6 +183,10 @@ function extractHtml(
   let byteUnit: 'decimal' | 'binary' | null = null;
   for (const [name, ext] of Object.entries(fields)) {
     if (!ext.regex) continue;
+    if (ext.count) {
+      out[name] = applyTransform(String(html.match(new RegExp(ext.regex, 'gs'))?.length ?? 0), ext.transform ?? 'integer');
+      continue;
+    }
     const match = new RegExp(ext.regex, 's').exec(html);
     const rawValue = match?.groups?.['value'] ?? match?.[1];
     // Groupe optionnel (?<unit>...) : pour les sites qui écrivent la valeur et son unité
