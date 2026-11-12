@@ -176,6 +176,20 @@ export type ExtraFetchConfig = {
    * n'empêche pas les autres.
    */
   extraFields?: Record<string, FieldExtractor>;
+  /**
+   * Liste paginée sans total affiché (ex. ABN /User/Seeds) : avec `count: true`, le
+   * total vaut (dernière page - 1) × lignes par page + lignes de la dernière page.
+   * `url` donne la première page ; si `lastPage` n'y trouve rien, une seule page.
+   * La page N est demandée en plus seulement si N > 1. Transport HTTP/curl uniquement.
+   */
+  pagination?: {
+    /** Regex (?<value>) du numéro de la dernière page, lue sur la première page. */
+    lastPage: string;
+    /** URL de la page N : placeholder {{page}} (et {{username}}, {{id}}). */
+    pageUrl: string;
+    /** Regex (?<value>) du nombre de lignes par page ; à défaut, les lignes de la page 1. */
+    perPage?: string;
+  };
 } & FieldExtractor;
 
 /** Normalise fetch.extraFetch (objet unique ou liste) en liste. */

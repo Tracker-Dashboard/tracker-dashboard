@@ -58,6 +58,19 @@
         "regex": "class=\"userclass_(?<value>[A-Za-z0-9]+)",
         "transform": "string"
       }
+    },
+    "extraFetch": {
+      "url": "User/Seeds",
+      "responseType": "html",
+      "field": "seeding",
+      "regex": "<tr>\\s*<td>",
+      "count": true,
+      "transform": "integer",
+      "pagination": {
+        "lastPage": "data-page=\"(?<value>\\d+)\">\\s*(?:&#187;|&raquo;|»)\\s*<",
+        "pageUrl": "User/Seeds?page={{page}}",
+        "perPage": "class=\"mvc-grid-pager-rows\"[^>]*\\bvalue=\"(?<value>\\d+)\""
+      }
     }
   },
   "dashboard": {

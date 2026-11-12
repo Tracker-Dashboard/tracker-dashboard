@@ -228,7 +228,7 @@ export function extractExtraFieldResponse(
   body: string,
 ): ExtraFieldResult | null {
   const extractors: Record<string, FieldExtractor> = {
-    [ef.field]: { path: ef.path, regex: ef.regex, transform: ef.transform },
+    [ef.field]: { path: ef.path, regex: ef.regex, transform: ef.transform, count: ef.count },
     ...(ef.extraFields ?? {}),
   };
   const responseType = ef.responseType ?? (ef.path ? 'json' : 'html');
@@ -425,10 +425,44 @@ async function fetchOneExtraField(
     const url = resolveUrl(tracker.baseUrl, interpolate(ef.url, vars));
     const res = await request(url, headers);
     if (!res || res.status >= 400) return null;
-    return extractAuthenticatedExtraFieldResponse(tracker, ef, res.body);
+    const first = extractAuthenticatedExtraFieldResponse(tracker, ef, res.body);
+    if (!first || !ef.pagination || !ef.count) return first;
+    return await countPaginatedExtraField(tracker, ef, first, res.body, vars, request, headers);
   } catch {
     return null;
   }
+}
+
+/**
+ * Total d'une liste paginée (extraFetch.pagination) : (N - 1) × lignes par page +
+ * lignes de la page N. Une page N illisible renvoie null plutôt qu'un total faux.
+ */
+async function countPaginatedExtraField(
+  tracker: TrackerConfig,
+  ef: ExtraFetchConfig,
+  first: ExtraFieldResult,
+  firstBody: string,
+  vars: Record<string, string>,
+  request: UnreadMessagesRequest,
+  headers: Record<string, string>,
+): Promise<ExtraFieldResult | null> {
+  const pagination = ef.pagination!;
+  const firstCount = Number(first.field === ef.field ? first.value : 0);
+  const lastPage = Number(new RegExp(pagination.lastPage, 's').exec(firstBody)?.groups?.['value']);
+  if (!Number.isInteger(lastPage) || lastPage <= 1) return first;
+  const perPageRaw = pagination.perPage
+    ? Number(new RegExp(pagination.perPage, 's').exec(firstBody)?.groups?.['value'])
+    : NaN;
+  const perPage = Number.isInteger(perPageRaw) && perPageRaw > 0 ? perPageRaw : firstCount;
+  if (perPage <= 0) return null;
+
+  const url = resolveUrl(tracker.baseUrl, interpolate(pagination.pageUrl, { ...vars, page: String(lastPage) }));
+  const res = await request(url, headers);
+  if (!res || res.status >= 400) return null;
+  const last = extractAuthenticatedExtraFieldResponse(tracker, { ...ef, extraFields: undefined }, res.body);
+  const lastCount = Number(last?.value);
+  if (!last || !Number.isInteger(lastCount) || lastCount <= 0) return null;
+  return { ...first, field: ef.field, value: (lastPage - 1) * perPage + lastCount };
 }
 
 async function fetchExtraFieldViaAxios(
