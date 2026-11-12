@@ -868,6 +868,7 @@
     ["[{}] curl: failure pattern détecté - début body: {}", "[{1}] curl: failure pattern detected - body start: {2}"],
     ["[{}] curl: champ JSON \"{}\" absent/false sur fetch - body={}", "[{1}] curl: JSON field \"{2}\" missing/false on fetch - body={3}"],
     ["[{}] Login+fetch via curl-impersonate OK (axios evite)", "[{1}] Login+fetch via curl-impersonate OK (axios avoided)"],
+    ["Verification Cloudflare Turnstile non validee par le navigateur (pas de jeton apres 30 s){}", "Cloudflare Turnstile verification not completed by the browser (no token after 30 s){1}"],
     ["Session navigateur non authentifiee - verifier les credentials ou valider le challenge dans le profil navigateur{}", "Browser session not authenticated - check the credentials or complete the challenge in the browser profile{1}"],
     ["[{}] Session navigateur expiree, re-login...", "[{1}] Browser session expired, logging in again..."],
     ["HTTP {} lors du fetch de {}", "HTTP {1} while fetching {2}"],

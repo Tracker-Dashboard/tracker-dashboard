@@ -1,0 +1,60 @@
+{
+  "id": "zxx",
+  "name": "ZXX CLUB",
+  "baseUrl": "https://zxxclub.com",
+  "enabled": true,
+  "login": {
+    "url": "connexion/",
+    "method": "POST",
+    "contentType": "form",
+    "body": {
+      "username": "{{username}}",
+      "password": "{{password}}"
+    },
+    "failurePatterns": [
+      "id=\"entry-form\"",
+      "action=\"/connexion/\"",
+      "name=\"password\"",
+      "id=\"turnstile-widget\""
+    ]
+  },
+  "fetch": {
+    "url": "partage/?etat=seed",
+    "mode": "browser",
+    "responseType": "html",
+    "fields": {
+      "uploadedBytes": {
+        "regex": "data-personal=\"uploaded\">\\s*(?<value>\\d[\\d\\s.,]*\\s*(?:[KMGTPE]io|octets?))\\s*<",
+        "transform": "bytes"
+      },
+      "downloadedBytes": {
+        "regex": "data-personal=\"downloaded\">\\s*(?<value>\\d[\\d\\s.,]*\\s*(?:[KMGTPE]io|octets?))\\s*<",
+        "transform": "bytes"
+      },
+      "ratio": {
+        "regex": "data-personal=\"ratio\">\\s*(?<value>\\d[\\d\\s.,]*|∞)\\s*<",
+        "transform": "number"
+      },
+      "seedBonus": {
+        "regex": "data-wallet-balance(?:=\"\")?>\\s*(?<value>\\d[\\d\\s.,]*)\\s*<",
+        "transform": "string"
+      },
+      "seeding": {
+        "regex": "<article\\b[^>]*\\bclass=\"[^\"]*\\bshare-record\\b",
+        "count": true,
+        "transform": "integer"
+      },
+      "seedTime": {
+        "regex": "Seed cumulé par torrent</span>\\s*<strong>\\s*(?<value>[\\d\\s.,]+\\s*h)\\s*<",
+        "transform": "string"
+      },
+      "memberClass": {
+        "regex": "class=\"nav-rank\"[^>]*>\\s*(?<value>[^<]+?)\\s*<",
+        "transform": "string"
+      }
+    }
+  },
+  "dashboard": {
+    "byteUnit": "binary"
+  }
+}

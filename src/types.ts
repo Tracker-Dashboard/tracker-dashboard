@@ -114,6 +114,11 @@ export interface FieldExtractor {
   sumPaths?: string[];
   // HTML : regex avec groupe nommé (?<value>...)
   regex?: string;
+  /**
+   * HTML : la valeur est le nombre d'occurrences de `regex` (pas de groupe value).
+   * Pour les sites qui listent les torrents en seed sans afficher de total (ZXX CLUB).
+   */
+  count?: boolean;
   /** bytesBinary : les unités affichées KB/GB/Ko utilisent 1024 (ex. NexusPHP). */
   transform?: 'bytes' | 'bytesBinary' | 'number' | 'integer' | 'string';
 }
