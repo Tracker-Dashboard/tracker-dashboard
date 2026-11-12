@@ -2129,8 +2129,8 @@
               <span class="nav-caret">▸</span>
             </button>
             <div class="nav-sub" id="nav-sub-personal">
-              <a class="nav-sub-item" data-nav="tracker-guided" href="#/trackers/guided"><span class="nav-sub-name">Guidé</span></a>
-              <a class="nav-sub-item" data-nav="tracker-new" href="#/trackers/new"><span class="nav-sub-name">Expert</span></a>
+              <a class="nav-sub-item" data-nav="tracker-guided" href="#/add-tracker/guided"><span class="nav-sub-name">Guidé</span></a>
+              <a class="nav-sub-item" data-nav="tracker-new" href="#/add-tracker/expert"><span class="nav-sub-name">Expert</span></a>
             </div>
           </div>
         </div>
@@ -4032,7 +4032,9 @@
     // Ouvert depuis une adresse (#/trackers/x/edit) : la réponse arrive après
     // applyRoute, on remplace donc l'entrée d'historique au lieu d'en empiler une.
     const replace = applyingRoute;
+    const seq = navigationSeq;
     fetch(`/api/trackers`).then(r => r.json()).then(data => {
+      if (navigationSeq !== seq) return; // l'utilisateur est allé ailleurs entre-temps
       const cfg = (data.trackers || []).find(t => t.id === trackerId);
       if (!cfg) { openNewTrackerForm({ replace: true }); return; }
       openNewTrackerForm({ replace });
@@ -6180,8 +6182,9 @@
     'calendar': 'calendar',
     'fiche': 'fiche',                         // #/fiche/<tracker>
     'trackers': 'trackers',                   // #/trackers/<tracker>
-    'tracker-new': 'trackers/new',            // #/trackers/<tracker>/edit en édition
-    'tracker-guided': 'trackers/guided',
+    // Création hors de « trackers/ » : un tracker perso peut s'appeler new ou guided.
+    'tracker-new': 'add-tracker/expert',      // #/trackers/<tracker>/edit en édition
+    'tracker-guided': 'add-tracker/guided',
     'qbit': 'qbit',
     'proxies': 'proxies',
     'visual-settings': 'settings/visual',
@@ -6216,8 +6219,6 @@
     const [first, second, third] = parts;
     if (first === 'fiche') return { view: 'fiche', id: second || null };
     if (first === 'trackers') {
-      if (second === 'new') return { view: 'tracker-new', id: null };
-      if (second === 'guided') return { view: 'tracker-guided', id: null };
       if (second && third === 'edit') return { view: 'tracker-new', id: second };
       return { view: 'trackers', id: second || null };
     }
@@ -6231,6 +6232,10 @@
   // normalisée (replaceState), sinon #/fiche -> #/fiche/x créerait une entrée
   // d'historique de plus et piégerait le bouton Retour.
   let applyingRoute = false;
+
+  // Incrémenté à chaque changement de vue : une réponse réseau arrivée après une
+  // autre navigation (Retour, clic…) sait qu'elle ne doit plus rien afficher.
+  let navigationSeq = 0;
 
   // Aligne l'adresse sur la vue affichée : une navigation ajoute une entrée
   // d'historique, une correction remplace l'entrée courante.
@@ -6276,6 +6281,7 @@
   // Affiche la vue demandée : bascule les sections de <main>, le panneau proxy
   // (sibling de <main>) et l'état actif de la barre latérale, puis met l'adresse à jour.
   function showView(view, { replace = false } = {}) {
+    navigationSeq++;
     currentView = ALL_VIEWS.includes(view) && isViewEnabled(view) ? view : 'dashboard';
     localStorage.setItem('tracker-dashboard-view-active', currentView);
 
