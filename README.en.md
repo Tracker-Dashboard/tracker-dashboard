@@ -62,7 +62,7 @@ Changes merged into the main branch, from newest to oldest. Availability on your
 
 ### November 2026
 
-- **November 13 — Optional proxy:** trackers are no longer blocked without an active proxy, and the “Explicitly allow direct connections without a proxy” checkbox is gone. Without a proxy, connections are direct; global and per-tracker proxies remain available. See [Proxies](#proxies).
+- **November 13 — Optional proxy:** trackers are no longer blocked without an active proxy, and the “Explicitly allow direct connections without a proxy” checkbox is gone. Without a proxy, connections are direct; global and per-tracker proxies remain available. See [Proxies](#proxies). ([#250](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/250))
 - **November 13 — Expired session:** when the WebUI session has expired or was closed in another tab, the dashboard sends you to the login page instead of showing empty cards, then brings you back to the original view after you sign in again. ([#247](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/247))
 - **November 13 — Draupnirr (HTTP 419):** instances still configured with `yggrasil.xyz` move automatically to `draupnirr.xyz`; a custom domain is never changed. Cookies received after a cross-domain redirect are stored for the right site. ([#246](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/246))
 - **November 12 — An address for every view:** dashboard, charts, tracker details, configuration and notifications each have their own address (`#/fiche/<tracker>`, `#/trackers/<tracker>`…). Back, F5, bookmarks and opening in a new tab work; after login you return to the requested page. ([#244](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/244))
