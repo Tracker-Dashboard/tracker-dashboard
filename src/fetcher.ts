@@ -730,11 +730,21 @@ export async function injectStoredCookieIntoJar(tracker: TrackerConfig, jar: Coo
   }
 }
 
+// URL qui a reellement emis la reponse. Apres une redirection suivie par axios
+// (ex. ancien domaine yggrasil.xyz -> draupnirr.xyz), config.url reste l'URL de
+// depart : y rattacher les Set-Cookie les rangeait sous le mauvais domaine, et le
+// POST de login suivant partait sans cookie de session (HTTP 419 Laravel).
+function responseUrl(response: AxiosResponse): string | null {
+  const finalUrl = (response.request as { res?: { responseUrl?: unknown } } | undefined)?.res?.responseUrl;
+  if (typeof finalUrl === 'string' && /^https?:\/\//i.test(finalUrl)) return finalUrl;
+  return response.config ? requestUrl(response.config) : null;
+}
+
 async function storeResponseCookies(
   jar: CookieJar,
   response: AxiosResponse,
 ): Promise<void> {
-  const url = response.config ? requestUrl(response.config) : null;
+  const url = responseUrl(response);
   const setCookie = response.headers['set-cookie'];
   if (!url || !setCookie) return;
 
@@ -742,7 +752,7 @@ async function storeResponseCookies(
   await Promise.all(cookies.map(cookie => jar.setCookie(cookie, url)));
 }
 
-function attachCookieJar(client: AxiosInstance, jar: CookieJar): void {
+export function attachCookieJar(client: AxiosInstance, jar: CookieJar): void {
   client.interceptors.request.use(async config => {
     const url = requestUrl(config);
     if (!url) return config;

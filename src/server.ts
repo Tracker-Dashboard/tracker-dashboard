@@ -1,4 +1,5 @@
 import express from 'express';
+import { migrateLegacyBaseUrl } from './catalogMigrations.js';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -343,6 +344,7 @@ function normalizeTrackerConfigs(): TrackerConfig[] {
     // donc des memes corrections de login que l'original.
     const definition = loadDefaultTrackerDefinition(tracker.baseId ?? tracker.id);
     if (definition) {
+      if (migrateLegacyBaseUrl(tracker, definition)) changed = true;
       if (JSON.stringify(tracker.login) !== JSON.stringify(definition.login)) {
         tracker.login = definition.login;
         changed = true;

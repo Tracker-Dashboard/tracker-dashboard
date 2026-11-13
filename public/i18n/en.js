@@ -748,6 +748,7 @@
     "placeholders : {{username}} {{password}} {{otp}} {{_csrf}}": "placeholders: {{username}} {{password}} {{otp}} {{_csrf}}",
   },
   patterns: [
+    ["[Migration] {} : ancien domaine {} remplace par {}", "[Migration] {1}: legacy domain {2} replaced by {3}"],
     ["dans {}s", "in {1}s"],
     ["dans {}min", "in {1}min"],
     ["dans {}h", "in {1}h"],
