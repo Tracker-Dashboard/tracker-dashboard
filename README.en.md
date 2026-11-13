@@ -19,6 +19,7 @@ The project is maintained by the [Tracker-Dashboard](https://github.com/Tracker-
 
 - [Features](#features)
 - [Recent updates](#recent-updates)
+- [Built-in trackers](#built-in-trackers)
 - [Installation and first start](#installation-and-first-start)
 - [Interface](#interface) · [Languages](#languages)
 - [Session cookies](#session-cookies-captcha--cloudflare-sites)
@@ -96,6 +97,94 @@ Changes merged into the main branch, from newest to oldest. Availability on your
 - **September 1 — Draupnirr:** new name and domain for the former Yggrasil; the technical identifier `yggrasil` is retained to preserve existing configuration.
 
 Older features are described below. The [commit history](https://github.com/Tracker-Dashboard/tracker-dashboard/commits/main/) lists other fixes and dependency updates.
+
+</details>
+
+## Built-in trackers
+
+Tracker Dashboard supports the trackers below out of the box. For another site, see [Built-in sites and adding a site](#built-in-sites-and-adding-a-site).
+
+<details>
+<summary>Show the 74 built-in trackers</summary>
+
+The **API** column marks definitions that can read statistics with a personal API key; the UNIT3D preset also supports it for compatible sites.
+
+| Tracker | Engine | API |
+|---|---|:---:|
+| [52PT](https://52pt.site) | Custom definition |  |
+| [ABNormal](https://abn.lol) | Custom definition |  |
+| [AstraTorrent](https://astratorrent.la) | Custom definition |  |
+| [AvistaZ](https://avistaz.to) | AvistaZ Network |  |
+| [BitPorn](https://bitporn.eu) | UNIT3D |  |
+| [Blutopia](https://blutopia.cc) | UNIT3D |  |
+| [BrokenStones](https://brokenstones.is) | Gazelle |  |
+| [BwTorrents](https://bwtorrents.tv) | Custom definition |  |
+| [C411](https://c411.org) | Custom definition |  |
+| [CarPT](https://carpt.net) | Custom definition |  |
+| [CinemaZ](https://cinemaz.to) | AvistaZ Network |  |
+| [CrazySpirits](https://crazyspirits.com) | Custom definition |  |
+| [DarkPeers](https://darkpeers.org) | UNIT3D |  |
+| [DigitalCore](https://digitalcore.club) | Custom definition |  |
+| [Draupnirr](https://draupnirr.xyz) | Custom definition |  |
+| [Empornium](https://www.empornium.sx) | Gazelle |  |
+| [ExoticaZ](https://exoticaz.to) | AvistaZ Network |  |
+| [G3MINI](https://gemini-tracker.org) | UNIT3D |  |
+| [Generation-Free](https://generation-free.org) | UNIT3D |  |
+| [HappyFappy](https://www.happyfappy.net) | Gazelle |  |
+| [HD-Forever](https://hdf.world) | Gazelle | ✓ |
+| [HD-Only](https://hd-only.org) | Gazelle |  |
+| [HD-Space](https://hd-space.org) | Custom definition |  |
+| [HDVideo](https://hdvideo.top) | Custom definition |  |
+| [HomieHelpDesk (HHD)](https://homiehelpdesk.net) | UNIT3D |  |
+| [IPTorrents](https://www.iptorrents.com) | Custom definition |  |
+| [ItaTorrents](https://itatorrents.xyz) | UNIT3D |  |
+| [KaraGarga](https://karagarga.in) | Custom definition |  |
+| [Kufei (库非)](https://kufei.org) | Custom definition |  |
+| [KuFirc](https://kufirc.com) | Gazelle |  |
+| [Les Rescapés de Ygg](https://lesrescapesdeygg.org) | Custom definition |  |
+| [LeSaloon v2](https://lesaloonv2-0.net) | Custom definition |  |
+| [LST](https://lst.gg) | UNIT3D |  |
+| [MAM](https://www.myanonamouse.net) | Custom definition |  |
+| [Memphis](https://memphis.fit) | Custom definition |  |
+| [Milkie](https://milkie.cc) | Custom definition |  |
+| [MuseBootlegs](https://musebootlegs.com) | Custom definition |  |
+| [NetHD](https://nethd.org) | Custom definition |  |
+| [New-Asgard](https://new-asgard.xyz) | Custom definition |  |
+| [Nirvana](https://nirvana.li) | UNIT3D |  |
+| [Nostradamus](https://nostradamus.foo) | Custom definition |  |
+| [OKPT](https://www.okpt.net) | Custom definition |  |
+| [Oldtoons](https://oldtoons.world) | UNIT3D |  |
+| [Orpheus](https://orpheus.network) | Gazelle | ✓ |
+| [Panda](https://pandapt.net) | Custom definition |  |
+| [PassThePopcorn](https://passthepopcorn.me) | Gazelle | ✓ |
+| [Phoenix Project](https://phoenixproject.app) | Gazelle | ✓ |
+| [PrivateHD](https://privatehd.to) | AvistaZ Network |  |
+| [PT分享站 (itzmx)](https://pt.itzmx.com) | Custom definition |  |
+| [PussyTorrents](https://pussytorrents.org) | Custom definition |  |
+| [PWTorrents](https://pwtorrents.net) | Custom definition |  |
+| [Redacted](https://redacted.sh) | Gazelle | ✓ |
+| [ReelFLiX](https://reelflix.cc) | UNIT3D |  |
+| [SceneTime](https://www.scenetime.com) | Custom definition |  |
+| [Seedpool](https://seedpool.org) | UNIT3D |  |
+| [SexTorrent](https://sextorrent.myds.me) | UNIT3D |  |
+| [SpeedApp](https://speedapp.io) | Custom definition |  |
+| [SportsCult](https://sportscult.org) | Custom definition |  |
+| [Team CT Game](https://tctg.pm) | Custom definition |  |
+| [TeamFlix](https://tracker.teamflix.cc) | UNIT3D |  |
+| [TeamHD](https://teamhd.org) | Custom definition |  |
+| [The Old School](https://theoldschool.cc) | UNIT3D |  |
+| [Tigers-DL](https://www.tigers-dl.net) | Custom definition |  |
+| [TorrentBytes](https://www.torrentbytes.net) | Custom definition |  |
+| [Torrenteros](https://torrenteros.org) | UNIT3D |  |
+| [TorrentLeech](https://www.torrentleech.org) | Custom definition |  |
+| [TR4KER](https://tr4ker.net) | Custom definition | ✓ |
+| [TribalMixes](https://www.tribalmixes.com) | Custom definition |  |
+| [UBits](https://ubits.club) | Custom definition |  |
+| [UniOtaku](https://tracker.uniotaku.com) | Custom definition |  |
+| [V3X](https://v3x.club) | Custom definition |  |
+| [YGGReborn](https://www.yggreborn.org) | Custom definition |  |
+| [YUSCENE](https://yu-scene.net) | UNIT3D |  |
+| [ZXX CLUB](https://zxxclub.com) | Custom definition |  |
 
 </details>
 
@@ -384,89 +473,7 @@ User-Agents are rotated automatically using `top-user-agents` for new HTTP sessi
 
 Built-in definitions are in `config/trackers/*.json` (one JSON file per site: login, page to fetch and fields to extract). New definitions are detected at startup and offered for activation.
 
-<details>
-<summary>Show the 74 built-in trackers</summary>
-
-The **API** column marks definitions that can read statistics with a personal API key; the UNIT3D preset also supports it for compatible sites.
-
-| Tracker | Engine | API |
-|---|---|:---:|
-| [52PT](https://52pt.site) | Custom definition |  |
-| [ABNormal](https://abn.lol) | Custom definition |  |
-| [AstraTorrent](https://astratorrent.la) | Custom definition |  |
-| [AvistaZ](https://avistaz.to) | AvistaZ Network |  |
-| [BitPorn](https://bitporn.eu) | UNIT3D |  |
-| [Blutopia](https://blutopia.cc) | UNIT3D |  |
-| [BrokenStones](https://brokenstones.is) | Gazelle |  |
-| [BwTorrents](https://bwtorrents.tv) | Custom definition |  |
-| [C411](https://c411.org) | Custom definition |  |
-| [CarPT](https://carpt.net) | Custom definition |  |
-| [CinemaZ](https://cinemaz.to) | AvistaZ Network |  |
-| [CrazySpirits](https://crazyspirits.com) | Custom definition |  |
-| [DarkPeers](https://darkpeers.org) | UNIT3D |  |
-| [DigitalCore](https://digitalcore.club) | Custom definition |  |
-| [Draupnirr](https://draupnirr.xyz) | Custom definition |  |
-| [Empornium](https://www.empornium.sx) | Gazelle |  |
-| [ExoticaZ](https://exoticaz.to) | AvistaZ Network |  |
-| [G3MINI](https://gemini-tracker.org) | UNIT3D |  |
-| [Generation-Free](https://generation-free.org) | UNIT3D |  |
-| [HappyFappy](https://www.happyfappy.net) | Gazelle |  |
-| [HD-Forever](https://hdf.world) | Gazelle | ✓ |
-| [HD-Only](https://hd-only.org) | Gazelle |  |
-| [HD-Space](https://hd-space.org) | Custom definition |  |
-| [HDVideo](https://hdvideo.top) | Custom definition |  |
-| [HomieHelpDesk (HHD)](https://homiehelpdesk.net) | UNIT3D |  |
-| [IPTorrents](https://www.iptorrents.com) | Custom definition |  |
-| [ItaTorrents](https://itatorrents.xyz) | UNIT3D |  |
-| [KaraGarga](https://karagarga.in) | Custom definition |  |
-| [Kufei (库非)](https://kufei.org) | Custom definition |  |
-| [KuFirc](https://kufirc.com) | Gazelle |  |
-| [Les Rescapés de Ygg](https://lesrescapesdeygg.org) | Custom definition |  |
-| [LeSaloon v2](https://lesaloonv2-0.net) | Custom definition |  |
-| [LST](https://lst.gg) | UNIT3D |  |
-| [MAM](https://www.myanonamouse.net) | Custom definition |  |
-| [Memphis](https://memphis.fit) | Custom definition |  |
-| [Milkie](https://milkie.cc) | Custom definition |  |
-| [MuseBootlegs](https://musebootlegs.com) | Custom definition |  |
-| [NetHD](https://nethd.org) | Custom definition |  |
-| [New-Asgard](https://new-asgard.xyz) | Custom definition |  |
-| [Nirvana](https://nirvana.li) | UNIT3D |  |
-| [Nostradamus](https://nostradamus.foo) | Custom definition |  |
-| [OKPT](https://www.okpt.net) | Custom definition |  |
-| [Oldtoons](https://oldtoons.world) | UNIT3D |  |
-| [Orpheus](https://orpheus.network) | Gazelle | ✓ |
-| [Panda](https://pandapt.net) | Custom definition |  |
-| [PassThePopcorn](https://passthepopcorn.me) | Gazelle | ✓ |
-| [Phoenix Project](https://phoenixproject.app) | Gazelle | ✓ |
-| [PrivateHD](https://privatehd.to) | AvistaZ Network |  |
-| [PT分享站 (itzmx)](https://pt.itzmx.com) | Custom definition |  |
-| [PussyTorrents](https://pussytorrents.org) | Custom definition |  |
-| [PWTorrents](https://pwtorrents.net) | Custom definition |  |
-| [Redacted](https://redacted.sh) | Gazelle | ✓ |
-| [ReelFLiX](https://reelflix.cc) | UNIT3D |  |
-| [SceneTime](https://www.scenetime.com) | Custom definition |  |
-| [Seedpool](https://seedpool.org) | UNIT3D |  |
-| [SexTorrent](https://sextorrent.myds.me) | UNIT3D |  |
-| [SpeedApp](https://speedapp.io) | Custom definition |  |
-| [SportsCult](https://sportscult.org) | Custom definition |  |
-| [Team CT Game](https://tctg.pm) | Custom definition |  |
-| [TeamFlix](https://tracker.teamflix.cc) | UNIT3D |  |
-| [TeamHD](https://teamhd.org) | Custom definition |  |
-| [The Old School](https://theoldschool.cc) | UNIT3D |  |
-| [Tigers-DL](https://www.tigers-dl.net) | Custom definition |  |
-| [TorrentBytes](https://www.torrentbytes.net) | Custom definition |  |
-| [Torrenteros](https://torrenteros.org) | UNIT3D |  |
-| [TorrentLeech](https://www.torrentleech.org) | Custom definition |  |
-| [TR4KER](https://tr4ker.net) | Custom definition | ✓ |
-| [TribalMixes](https://www.tribalmixes.com) | Custom definition |  |
-| [UBits](https://ubits.club) | Custom definition |  |
-| [UniOtaku](https://tracker.uniotaku.com) | Custom definition |  |
-| [V3X](https://v3x.club) | Custom definition |  |
-| [YGGReborn](https://www.yggreborn.org) | Custom definition |  |
-| [YUSCENE](https://yu-scene.net) | UNIT3D |  |
-| [ZXX CLUB](https://zxxclub.com) | Custom definition |  |
-
-</details>
+The full list is in [Built-in trackers](#built-in-trackers).
 
 To help add a site, ideally provide its name, base URL, login URL and any special login method, statistics page URL, authenticated HTML, fields to extract and CMS if known (UNIT3D, Gazelle, Luminance…).
 
