@@ -604,28 +604,6 @@ function listAllTrackerSummaries(): Array<{ id: string; name: string; baseUrl: s
 }
 
 
-function proxyAllowsTrackerConnections(): boolean {
-  const proxy = loadProxySettings();
-  const proxyActive = Boolean(proxy.enabled && proxy.host && proxy.port);
-  return proxyActive || proxy.directConnectAllowed;
-}
-
-function blockedStats(trackers: TrackerConfig[]): TrackerStats[] {
-  const error = 'Connexion bloquee : active un proxy ou coche explicitement la connexion directe sans proxy.';
-  return trackers
-    .filter(t => t.enabled !== false)
-    .map(tracker => ({
-      id:          tracker.id,
-      name:        tracker.name,
-      trackerUrl:  tracker.baseUrl,
-      status:      'error',
-      error,
-      lastUpdated: new Date().toISOString(),
-      byteUnit:    tracker.dashboard?.byteUnit ?? 'binary',
-      fields:      {},
-    }));
-}
-
 // Compteur de OK consecutifs par tracker (en memoire) pour l'auto-lever d'incident.
 // Reset au redemarrage = conservateur (on garde l'incident plus longtemps), ce qui est voulu.
 const incidentOkStreaks = new Map<string, number>();
@@ -1032,13 +1010,6 @@ async function refresh(trackers: TrackerConfig[]): Promise<TrackerStats[]> {
       return cachedStats;
     }
 
-    if (!proxyAllowsTrackerConnections()) {
-      cachedStats = blockedStats(trackers);
-      lastRefresh = new Date().toISOString();
-      console.warn('  Connexions trackers bloquees : proxy absent et connexion directe non autorisee');
-      return cachedStats;
-    }
-
     const credentials = loadCredentialsFromDb();
     const enabledTrackers = trackers.filter(t => t.enabled !== false);
     const results = await mapWithConcurrency(enabledTrackers, REFRESH_CONCURRENCY, async tracker => {
@@ -1098,13 +1069,6 @@ async function refreshOneTracker(
     if (stat) return stat;
   }
 
-  if (!proxyAllowsTrackerConnections()) {
-    const stat = blockedStats([tracker])[0];
-    upsertCachedStat(stat);
-    logStatResult(stat);
-    return stat;
-  }
-
   const creds = loadCredentialsFromDb()[tracker.id];
   if (!creds && !storedCookieReady(tracker)) {
     const stat: TrackerStats = {
@@ -1152,11 +1116,6 @@ async function refreshScheduledTracker(
   tracker: TrackerConfig,
 ): Promise<void> {
   if (isRefreshing) return;
-  if (!proxyAllowsTrackerConnections()) {
-    console.warn(`  [${tracker.name}] Refresh planifie bloque : proxy absent et connexion directe non autorisee`);
-    return;
-  }
-
   const creds = loadCredentialsFromDb()[tracker.id];
   if (!creds && !storedCookieReady(tracker)) {
     console.warn(`  [${tracker.name}] Refresh planifie ignore : credentials manquants`);
@@ -3213,15 +3172,6 @@ export async function start(): Promise<void> {
       if (username && password) saveTrackerCredentials(config.id, username, password);
       invalidateSession(config.id);
 
-      // Meme garde qu'en production : si aucun proxy et connexion directe interdite,
-      // le test doit le signaler clairement plutot que d'echouer de maniere opaque.
-      if (!proxyAllowsTrackerConnections()) {
-        return res.status(200).json({
-          ok: false,
-          error: 'Connexions aux trackers bloquees : aucun proxy actif et connexion directe non autorisee. Active un proxy ou autorise la connexion directe dans Proxies.',
-        });
-      }
-
       const stat = await fetchTracker(
         { ...config, enabled: true },
         { username, password },
@@ -3462,7 +3412,6 @@ export async function start(): Promise<void> {
         password,
         privateKey,
         passphrase,
-        directConnectAllowed,
       } = req.body as ProxySettings;
       const current = loadProxySettings();
       const updated: ProxySettings = {
@@ -3475,7 +3424,6 @@ export async function start(): Promise<void> {
         password: password === '••••••••' ? current.password : (password ?? current.password),
         privateKey: privateKey === '••••••••' ? current.privateKey : (privateKey ?? current.privateKey),
         passphrase: passphrase === '••••••••' ? current.passphrase : (passphrase ?? current.passphrase),
-        directConnectAllowed: Boolean(directConnectAllowed),
       };
       saveProxySettings(updated);
       // Invalider toutes les sessions — elles reprendront avec le nouveau proxy
@@ -3791,7 +3739,6 @@ export async function start(): Promise<void> {
       password: password === '••••••••' ? current.password : (password ?? ''),
       privateKey: privateKey === '••••••••' ? current.privateKey : (privateKey ?? ''),
       passphrase: passphrase === '••••••••' ? current.passphrase : (passphrase ?? ''),
-      directConnectAllowed: current.directConnectAllowed,
     };
     // Proxy SSH : etablir le tunnel avant de construire l'agent SOCKS local.
     if (type === 'ssh') {

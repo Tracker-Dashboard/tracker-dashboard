@@ -31,7 +31,7 @@ The project is maintained by the [Tracker-Dashboard](https://github.com/Tracker-
 - [BitTorrent clients and cross-seed](#bittorrent-clients)
 - [Notifications](#notifications)
 - [Prometheus and Grafana](#prometheus-and-grafana)
-- [Proxy security](#proxy-security)
+- [Proxies](#proxies)
 - [Browser runtime, FlareSolverr and TRAWL](#browser-runtime)
 - [Fast fetching](#fast-fetching-curl-impersonate)
 - [Random User-Agent](#random-user-agent)
@@ -62,6 +62,7 @@ Changes merged into the main branch, from newest to oldest. Availability on your
 
 ### November 2026
 
+- **November 13 — Optional proxy:** trackers are no longer blocked without an active proxy, and the “Explicitly allow direct connections without a proxy” checkbox is gone. Without a proxy, connections are direct; global and per-tracker proxies remain available. See [Proxies](#proxies). ([#250](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/250))
 - **November 13 — Expired session:** when the WebUI session has expired or was closed in another tab, the dashboard sends you to the login page instead of showing empty cards, then brings you back to the original view after you sign in again. ([#247](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/247))
 - **November 13 — Draupnirr (HTTP 419):** instances still configured with `yggrasil.xyz` move automatically to `draupnirr.xyz`; a custom domain is never changed. Cookies received after a cross-domain redirect are stored for the right site. ([#246](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/246))
 - **November 12 — An address for every view:** dashboard, charts, tracker details, configuration and notifications each have their own address (`#/fiche/<tracker>`, `#/trackers/<tracker>`…). Back, F5, bookmarks and opening in a new tab work; after login you return to the requested page. ([#244](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/244))
@@ -193,7 +194,7 @@ The **API** column marks definitions that can read statistics with a personal AP
 1. Create a stack in Dockge-Enhanced or your Docker Compose manager using the included [docker-compose.yml](docker-compose.yml). It contains the main application, browser runtime, FlareSolverr and TRAWL.
 2. Choose the host port (`3000` by default) and a persistent directory for the `./config:/app/config` mount. Keep and back up this directory: it holds your configuration and history.
 3. Start the stack, open `http://server-address:3000` (or your chosen port), then create the WebUI administrator account.
-4. Under **Configuration → Proxies**, configure a proxy or explicitly allow direct connections. Tracker visits are blocked by default without an active proxy.
+4. Optional: under **Configuration → Proxies**, configure a global proxy or per-tracker proxies. Without a proxy, trackers are contacted directly.
 5. Add your trackers, enter credentials or cookies as required, then configure visit schedules. You can then connect BitTorrent clients and notifications.
 
 **Unraid:** beta templates let you install the services separately. See the [Unraid guide](unraid/README.md) (in French).
@@ -361,14 +362,9 @@ The `/metrics` endpoint exposes statistics for enabled trackers (`tracker_*`) an
 
 Set **`METRICS_TOKEN`** on the main service and use it as a Bearer token in Prometheus. Without a token, the export is disabled by default and returns HTTP 503. Import [grafana/dashboard.json](grafana/dashboard.json) into Grafana; see the [Grafana guide](grafana/README.md) (in French) for configuration details.
 
-## Proxy security
+## Proxies
 
-Tracker connections are **blocked by default if no proxy is active**. To allow connections:
-
-- Configure and enable a proxy, or
-- Explicitly enable direct connections without a proxy (useful if the container already uses a VPN through its Docker network).
-
-This protection also applies on first startup.
+Using a proxy is **optional**. Without an active proxy, trackers are contacted directly using the container's outgoing IP (the server's, or a VPN's if the container already uses a Gluetun-style Docker network). Enable a global proxy under **Configuration → Proxies** to route every connection through it, and add overrides so that a given tracker uses another proxy or a direct connection.
 
 Supported types: **HTTP**, **HTTPS**, **SOCKS4**, **SOCKS5** and **SSH**, both globally and as per-tracker overrides.
 

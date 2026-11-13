@@ -2230,14 +2230,6 @@
         <p style="font-size:11px; color:var(--muted); margin:6px 0 0">SSH : renseigne hôte/port/utilisateur ci-dessus, puis un mot de passe OU une clé privée. Le dashboard ouvre un tunnel SSH et route le trafic via un SOCKS5 local.</p>
       </div>
     </div>
-    <div class="proxy-form" style="margin-top:10px">
-      <div></div>
-      <label class="toggle-switch" style="grid-column:span 4" title="Autoriser les connexions aux trackers sans proxy">
-        <input type="checkbox" id="proxy-direct-allowed">
-        <div class="toggle-track"><div class="toggle-knob"></div></div>
-        <span>Autoriser explicitement la connexion directe sans proxy</span>
-      </label>
-    </div>
     <div class="proxy-actions">
       <button class="btn-save" onclick="saveSettings()">Enregistrer</button>
       <button class="btn-test" onclick="testProxy()">Tester</button>
@@ -7539,7 +7531,6 @@
       document.getElementById('proxy-password').value   = d.password|| '';
       document.getElementById('proxy-private-key').value = d.privateKey || '';
       document.getElementById('proxy-passphrase').value  = d.passphrase || '';
-      document.getElementById('proxy-direct-allowed').checked = Boolean(d.directConnectAllowed);
       syncProxySshRow();
       // Refléter l'état sur l'entrée Proxies de la barre latérale
       document.querySelector('.sidebar [data-nav="proxies"]')?.classList.toggle('proxy-on', d.enabled);
@@ -7837,7 +7828,6 @@
           password: document.getElementById('proxy-password').value,
           privateKey: document.getElementById('proxy-private-key').value,
           passphrase: document.getElementById('proxy-passphrase').value,
-          directConnectAllowed: document.getElementById('proxy-direct-allowed').checked,
         }),
       });
       const d = await r.json();
