@@ -61,12 +61,22 @@ Changes merged into the main branch, from newest to oldest. Availability on your
 
 ### November 2026
 
-- **November 1 — `__Host-` cookies:** pasted `__Host-` and `__Secure-` cookies are forwarded again during HTTP fallback. The expiry-date indication added in #232 has been removed: an exported cookie's date does not establish whether the tracker still accepts it.
+- **November 13 — Expired session:** when the WebUI session has expired or was closed in another tab, the dashboard sends you to the login page instead of showing empty cards, then brings you back to the original view after you sign in again. ([#247](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/247))
+- **November 13 — Draupnirr (HTTP 419):** instances still configured with `yggrasil.xyz` move automatically to `draupnirr.xyz`; a custom domain is never changed. Cookies received after a cross-domain redirect are stored for the right site. ([#246](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/246))
+- **November 12 — An address for every view:** dashboard, charts, tracker details, configuration and notifications each have their own address (`#/fiche/<tracker>`, `#/trackers/<tracker>`…). Back, F5, bookmarks and opening in a new tab work; after login you return to the requested page. ([#244](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/244))
+- **November 12 — ZXX CLUB and ABNormal:** ZXX CLUB added (browser login, Cloudflare Turnstile supported). Seeding torrents can now be counted on paginated lists, used in particular for ABNormal. ([#243](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/243), [#245](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/245))
+- **November 8 — Tigers-DL and AstraTorrent:** Tigers-DL is read from `mon-compte.php` since `mybonus.php` is gone; AstraTorrent is also read from its mobile cockpit. Global and per-tracker notifications are no longer sent twice, the application name stays whole in the sidebar and the README is available in English. ([#240](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/240), [#241](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/241))
+- **November 5 — English version:** interface, login page, error messages, notifications and container logs are translated, with a 🇫🇷 / 🇬🇧 flag selector. See [Languages](#languages). ([#237](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/237))
+- **November 4 — 27 new trackers:** 52PT, Blutopia, BwTorrents, CarPT, HD-Space, HDVideo, HomieHelpDesk, ItaTorrents, Kufei, LST, MuseBootlegs, NetHD, New-Asgard, Nirvana, OKPT, Panda, PT分享站 (itzmx), PWTorrents, ReelFLiX, SportsCult, Team CT Game, TeamHD, Torrenteros, TribalMixes, UBits, UniOtaku and YUSCENE. ([#235](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/235))
+- **November 1 — `__Host-` cookies:** pasted `__Host-` and `__Secure-` cookies are forwarded again during HTTP fallback. The expiry-date indication added in #232 has been removed: an exported cookie's date does not establish whether the tracker still accepts it. ([#233](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/233))
 - **November 1 — Nostradamus, Memphis and Tigers-DL:** Nostradamus reads its new `/user/profile/` pages; Memphis login pages are recognized again with the dark theme; Tigers-DL login supports the V3 platform. ([#232](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/232))
 - **November 1 — AstraTorrent V4 and SpeedApp:** AstraTorrent statistics come from the new account dashboard (actual upload/download, Karma, active seeds), while retaining V3 compatibility; SpeedApp traffic is read from profile data, now rendered with Vue. ([#231](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/231))
 
 ### October 2026
 
+- **October 26 — MAM:** statistics read through the site's JSON API with the `mam_id` cookie only. ([#230](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/230))
+- **October 24 — C411:** Zen balance shown in the Bonus box, alongside seeding. ([#226](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/226))
+- **October 23–24 — Constant card height:** the "Login KO" warning opens in a popover and the badge area keeps the same height from one card to the next. ([#223](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/223), [#228](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/228))
 - **October 22 — More visible login failures:** a collapsible login-failure panel when the API still provides statistics, shorter error notifications and warnings preserved after restart. ([#221](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/221), [#222](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/222))
 - **October 22 — Docker images and security:** updated Node 22 base, weekly checks for base-image updates and scans of published images; weekly rebuilds only when the base changes. ([#219](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/219), [#220](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/220))
 - **October 17 — AstraTorrent V3:** corrected volumes, Karma and seeds on the new portal, support for missing ratio data and preserved mappings to historical announces. ([#217](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/217))
@@ -373,6 +383,90 @@ User-Agents are rotated automatically using `top-user-agents` for new HTTP sessi
 ## Built-in sites and adding a site
 
 Built-in definitions are in `config/trackers/*.json` (one JSON file per site: login, page to fetch and fields to extract). New definitions are detected at startup and offered for activation.
+
+<details>
+<summary>Show the 74 built-in trackers</summary>
+
+The **API** column marks definitions that can read statistics with a personal API key; the UNIT3D preset also supports it for compatible sites.
+
+| Tracker | Engine | API |
+|---|---|:---:|
+| [52PT](https://52pt.site) | Custom definition |  |
+| [ABNormal](https://abn.lol) | Custom definition |  |
+| [AstraTorrent](https://astratorrent.la) | Custom definition |  |
+| [AvistaZ](https://avistaz.to) | AvistaZ Network |  |
+| [BitPorn](https://bitporn.eu) | UNIT3D |  |
+| [Blutopia](https://blutopia.cc) | UNIT3D |  |
+| [BrokenStones](https://brokenstones.is) | Gazelle |  |
+| [BwTorrents](https://bwtorrents.tv) | Custom definition |  |
+| [C411](https://c411.org) | Custom definition |  |
+| [CarPT](https://carpt.net) | Custom definition |  |
+| [CinemaZ](https://cinemaz.to) | AvistaZ Network |  |
+| [CrazySpirits](https://crazyspirits.com) | Custom definition |  |
+| [DarkPeers](https://darkpeers.org) | UNIT3D |  |
+| [DigitalCore](https://digitalcore.club) | Custom definition |  |
+| [Draupnirr](https://draupnirr.xyz) | Custom definition |  |
+| [Empornium](https://www.empornium.sx) | Gazelle |  |
+| [ExoticaZ](https://exoticaz.to) | AvistaZ Network |  |
+| [G3MINI](https://gemini-tracker.org) | UNIT3D |  |
+| [Generation-Free](https://generation-free.org) | UNIT3D |  |
+| [HappyFappy](https://www.happyfappy.net) | Gazelle |  |
+| [HD-Forever](https://hdf.world) | Gazelle | ✓ |
+| [HD-Only](https://hd-only.org) | Gazelle |  |
+| [HD-Space](https://hd-space.org) | Custom definition |  |
+| [HDVideo](https://hdvideo.top) | Custom definition |  |
+| [HomieHelpDesk (HHD)](https://homiehelpdesk.net) | UNIT3D |  |
+| [IPTorrents](https://www.iptorrents.com) | Custom definition |  |
+| [ItaTorrents](https://itatorrents.xyz) | UNIT3D |  |
+| [KaraGarga](https://karagarga.in) | Custom definition |  |
+| [Kufei (库非)](https://kufei.org) | Custom definition |  |
+| [KuFirc](https://kufirc.com) | Gazelle |  |
+| [Les Rescapés de Ygg](https://lesrescapesdeygg.org) | Custom definition |  |
+| [LeSaloon v2](https://lesaloonv2-0.net) | Custom definition |  |
+| [LST](https://lst.gg) | UNIT3D |  |
+| [MAM](https://www.myanonamouse.net) | Custom definition |  |
+| [Memphis](https://memphis.fit) | Custom definition |  |
+| [Milkie](https://milkie.cc) | Custom definition |  |
+| [MuseBootlegs](https://musebootlegs.com) | Custom definition |  |
+| [NetHD](https://nethd.org) | Custom definition |  |
+| [New-Asgard](https://new-asgard.xyz) | Custom definition |  |
+| [Nirvana](https://nirvana.li) | UNIT3D |  |
+| [Nostradamus](https://nostradamus.foo) | Custom definition |  |
+| [OKPT](https://www.okpt.net) | Custom definition |  |
+| [Oldtoons](https://oldtoons.world) | UNIT3D |  |
+| [Orpheus](https://orpheus.network) | Gazelle | ✓ |
+| [Panda](https://pandapt.net) | Custom definition |  |
+| [PassThePopcorn](https://passthepopcorn.me) | Gazelle | ✓ |
+| [Phoenix Project](https://phoenixproject.app) | Gazelle | ✓ |
+| [PrivateHD](https://privatehd.to) | AvistaZ Network |  |
+| [PT分享站 (itzmx)](https://pt.itzmx.com) | Custom definition |  |
+| [PussyTorrents](https://pussytorrents.org) | Custom definition |  |
+| [PWTorrents](https://pwtorrents.net) | Custom definition |  |
+| [Redacted](https://redacted.sh) | Gazelle | ✓ |
+| [ReelFLiX](https://reelflix.cc) | UNIT3D |  |
+| [SceneTime](https://www.scenetime.com) | Custom definition |  |
+| [Seedpool](https://seedpool.org) | UNIT3D |  |
+| [SexTorrent](https://sextorrent.myds.me) | UNIT3D |  |
+| [SpeedApp](https://speedapp.io) | Custom definition |  |
+| [SportsCult](https://sportscult.org) | Custom definition |  |
+| [Team CT Game](https://tctg.pm) | Custom definition |  |
+| [TeamFlix](https://tracker.teamflix.cc) | UNIT3D |  |
+| [TeamHD](https://teamhd.org) | Custom definition |  |
+| [The Old School](https://theoldschool.cc) | UNIT3D |  |
+| [Tigers-DL](https://www.tigers-dl.net) | Custom definition |  |
+| [TorrentBytes](https://www.torrentbytes.net) | Custom definition |  |
+| [Torrenteros](https://torrenteros.org) | UNIT3D |  |
+| [TorrentLeech](https://www.torrentleech.org) | Custom definition |  |
+| [TR4KER](https://tr4ker.net) | Custom definition | ✓ |
+| [TribalMixes](https://www.tribalmixes.com) | Custom definition |  |
+| [UBits](https://ubits.club) | Custom definition |  |
+| [UniOtaku](https://tracker.uniotaku.com) | Custom definition |  |
+| [V3X](https://v3x.club) | Custom definition |  |
+| [YGGReborn](https://www.yggreborn.org) | Custom definition |  |
+| [YUSCENE](https://yu-scene.net) | UNIT3D |  |
+| [ZXX CLUB](https://zxxclub.com) | Custom definition |  |
+
+</details>
 
 To help add a site, ideally provide its name, base URL, login URL and any special login method, statistics page URL, authenticated HTML, fields to extract and CMS if known (UNIT3D, Gazelle, Luminance…).
 
