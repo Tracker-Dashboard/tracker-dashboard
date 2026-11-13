@@ -13,7 +13,6 @@ export interface ProxySettings {
   port: string;
   username: string;
   password: string;
-  directConnectAllowed: boolean;
   /** SSH uniquement : cle privee PEM (alternative au mot de passe) */
   privateKey?: string;
   /** SSH uniquement : passphrase de la cle privee (optionnel) */
@@ -76,7 +75,6 @@ function defaultProxy(): ProxySettings {
     port: '',
     username: '',
     password: '',
-    directConnectAllowed: false,
   };
 }
 
@@ -103,7 +101,6 @@ export function resolveProxyForTracker(trackerId?: string): ProxySettings {
         port: '',
         username: '',
         password: '',
-        directConnectAllowed: true,
       };
     }
     if (override && override.host && override.port) {
@@ -116,8 +113,6 @@ export function resolveProxyForTracker(trackerId?: string): ProxySettings {
         password: override.password,
         privateKey: override.privateKey,
         passphrase: override.passphrase,
-        // Un override ne reactive pas la connexion directe — c'est un detail du proxy global
-        directConnectAllowed: false,
       };
     }
   }
@@ -199,10 +194,8 @@ export function logProxyStatus(): void {
   const p = loadProxySettings();
   if (p.enabled && p.host && p.port) {
     console.log(`Proxy global : ${p.type}://${p.host}:${p.port}`);
-  } else if (p.directConnectAllowed) {
-    console.log('Proxy global desactive, connexion directe autorisee');
   } else {
-    console.log('Proxy global desactive, connexions trackers bloquees (hors overrides)');
+    console.log('Proxy global desactive, connexion directe');
   }
   const overrides = loadProxyOverrides().filter(o => o.enabled);
   if (overrides.length > 0) {

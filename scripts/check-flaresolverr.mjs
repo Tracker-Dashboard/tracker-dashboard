@@ -65,7 +65,7 @@ try {
   const result = await fetchWithFlareSolverr(tracker, { username: 'user', password: 'unused' }, {
     baseUrl,
     cookieRaw: 'remember_token=session; __ygg_sess=token',
-    proxy: { enabled: true, type: 'http', host: 'proxy.local', port: '8887', username: '', password: '', directConnectAllowed: false },
+    proxy: { enabled: true, type: 'http', host: 'proxy.local', port: '8887', username: '', password: '' },
     timeoutMs: 5_000,
   });
 
@@ -90,7 +90,7 @@ try {
   }, { username: 'user', password: 'unused' }, {
     baseUrl,
     cookieRaw: 'remember_token=session; __ygg_sess=token',
-    proxy: { enabled: false, type: 'direct', host: '', port: '', username: '', password: '', directConnectAllowed: true },
+    proxy: { enabled: false, type: 'direct', host: '', port: '', username: '', password: '' },
     timeoutMs: 5_000,
   });
   if (!bestEffortResult.html.includes('Upload') || bestEffortResult.extraHtml !== undefined) {

@@ -31,7 +31,7 @@ Le projet est porté par l’organisation [Tracker-Dashboard](https://github.com
 - [Clients BitTorrent et cross-seed](#clients-bittorrent)
 - [Notifications](#notifications)
 - [Prometheus et Grafana](#prometheus-et-grafana)
-- [Sécurité proxy](#sécurité-proxy)
+- [Proxies](#proxies)
 - [Runtime navigateur, FlareSolverr et TRAWL](#runtime-navigateur)
 - [Lecture rapide](#lecture-rapide-curl-impersonate)
 - [User-Agent aléatoire](#user-agent-aléatoire)
@@ -62,6 +62,7 @@ Le projet est porté par l’organisation [Tracker-Dashboard](https://github.com
 
 ### Novembre 2026
 
+- **13 novembre — Proxy facultatif :** les trackers ne sont plus bloqués sans proxy actif et la case « Autoriser explicitement la connexion directe sans proxy » disparaît. Sans proxy, la connexion est directe ; un proxy global ou par tracker reste disponible. Voir [Proxies](#proxies).
 - **13 novembre — Session expirée :** lorsque la session de la WebUI a expiré ou a été fermée dans un autre onglet, le dashboard renvoie vers la page de connexion au lieu de rester sur des cartes vides, puis ramène sur la vue d’origine après reconnexion. ([#247](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/247))
 - **13 novembre — Draupnirr (HTTP 419) :** les instances encore configurées sur `yggrasil.xyz` passent automatiquement sur `draupnirr.xyz`, un domaine personnalisé n’étant jamais modifié. Les cookies reçus après une redirection vers un autre domaine sont rattachés au bon site. ([#246](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/246))
 - **12 novembre — Une adresse pour chaque vue :** dashboard, graphiques, fiches, configuration et notifications ont leur propre adresse (`#/fiche/<tracker>`, `#/trackers/<tracker>`…). Le bouton Retour, F5, les favoris et l’ouverture dans un nouvel onglet fonctionnent ; après connexion, on revient sur la page demandée. ([#244](https://github.com/Tracker-Dashboard/tracker-dashboard/pull/244))
@@ -193,7 +194,7 @@ La colonne **API** signale les définitions qui proposent une lecture par clé A
 1. Créez une stack dans Dockge-Enhanced ou votre gestionnaire Docker Compose à partir du fichier [docker-compose.yml](docker-compose.yml) fourni. Il contient l’application principale, le runtime navigateur, FlareSolverr et TRAWL.
 2. Choisissez le port publié sur l’hôte (`3000` par défaut) et un dossier persistant pour le montage `./config:/app/config`. Conservez et sauvegardez ce dossier : il contient votre configuration et l’historique.
 3. Démarrez la stack, ouvrez `http://adresse-du-serveur:3000` (ou le port choisi), puis créez le compte administrateur de la WebUI.
-4. Dans **Configuration → Proxies**, configurez un proxy ou autorisez explicitement les connexions directes. Par défaut, les visites des trackers sont bloquées sans proxy actif.
+4. Facultatif : dans **Configuration → Proxies**, configurez un proxy global ou des proxies par tracker. Sans proxy, les trackers sont contactés en connexion directe.
 5. Ajoutez vos trackers, renseignez leurs identifiants ou leur cookie selon le site, puis configurez la fréquence des visites. Vous pouvez ensuite associer vos clients BitTorrent et vos notifications.
 
 **Unraid :** des templates bêta permettent d’installer les services séparément. Consultez le [guide Unraid](unraid/README.md).
@@ -360,13 +361,9 @@ L’endpoint `/metrics` expose les statistiques des trackers activés (`tracker_
 
 Définissez **`METRICS_TOKEN`** sur le service principal et utilisez ce jeton comme Bearer token dans Prometheus. Sans jeton, l’export est désactivé par défaut et renvoie HTTP 503. Le fichier [grafana/dashboard.json](grafana/dashboard.json) fournit un tableau de bord à importer ; le [guide Prometheus et Grafana](grafana/README.md) détaille la configuration.
 
-## Sécurité proxy
+## Proxies
 
-Par défaut, les connexions aux trackers sont **bloquées si aucun proxy n'est actif**. Pour autoriser les connexions, il faut soit :
-- configurer et activer un proxy,
-- cocher explicitement l'option de connexion directe sans proxy (utile si le conteneur sort déjà via un VPN au niveau du réseau Docker).
-
-Cette sécurité s'applique aussi au premier lancement.
+L'utilisation d'un proxy est **facultative**. Sans proxy actif, les trackers sont contactés en connexion directe, avec l'IP de sortie du conteneur (celle du serveur, ou d'un VPN si le conteneur passe déjà par un réseau Docker de type Gluetun). Activez un proxy global dans **Configuration → Proxies** pour faire sortir toutes les connexions par celui-ci, et ajoutez des overrides pour qu'un tracker donné passe par un autre proxy ou sorte en connexion directe.
 
 Types pris en charge : **HTTP**, **HTTPS**, **SOCKS4**, **SOCKS5** et **SSH** — en proxy global comme en override par tracker.
 
