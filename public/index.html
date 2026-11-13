@@ -2842,6 +2842,28 @@
 </div>
 
 <script>
+  // ── Session expirée ────────────────────────────────────────────────────────
+  // Une fois la session expirée (ou après une déconnexion dans un autre onglet),
+  // toute l'API répond 401 : sans ce filet, le rafraîchissement automatique et
+  // les boutons échouent en silence et le dashboard reste sur des cartes vides.
+  // Au premier 401 de l'API, on renvoie vers la connexion en gardant le fragment
+  // de la vue courante. /api/auth/* gère ses propres 401 (identifiants invalides).
+  (() => {
+    const nativeFetch = window.fetch.bind(window);
+    let redirecting = false;
+    window.fetch = async (input, init) => {
+      const response = await nativeFetch(input, init);
+      if (response.status === 401 && !redirecting) {
+        const url = new URL(input instanceof Request ? input.url : String(input), location.href);
+        if (url.origin === location.origin && url.pathname.startsWith('/api/') && !url.pathname.startsWith('/api/auth/')) {
+          redirecting = true;
+          location.href = '/login.html' + location.hash;
+        }
+      }
+      return response;
+    };
+  })();
+
   let dashboardTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
 
   function setDashboardTimeZone(value) {
