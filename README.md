@@ -19,6 +19,7 @@ Le projet est porté par l’organisation [Tracker-Dashboard](https://github.com
 
 - [Fonctionnalités](#fonctionnalités)
 - [Dernières nouveautés](#dernières-nouveautés)
+- [Trackers intégrés](#trackers-intégrés)
 - [Installation et premier démarrage](#installation-et-premier-démarrage)
 - [Interface](#interface) · [Langues](#langues)
 - [Cookies de session](#cookies-de-session-sites-à-captcha--cloudflare)
@@ -96,6 +97,94 @@ Le projet est porté par l’organisation [Tracker-Dashboard](https://github.com
 - **1er septembre — Draupnirr :** nouveau nom et domaine de l’ancien Yggrasil ; l’identifiant technique `yggrasil` est conservé pour préserver la configuration existante.
 
 Les fonctionnalités plus anciennes sont présentées dans les sections ci-dessous. L’[historique des modifications](https://github.com/Tracker-Dashboard/tracker-dashboard/commits/main/) permet de retrouver les autres corrections et mises à jour de dépendances.
+
+</details>
+
+## Trackers intégrés
+
+Tracker Dashboard reconnaît d’emblée les trackers ci-dessous. Pour un autre site, consultez [Sites intégrés et ajout d’un site](#sites-intégrés--ajout-dun-site).
+
+<details>
+<summary>Afficher les 74 trackers intégrés</summary>
+
+La colonne **API** signale les définitions qui proposent une lecture par clé API personnelle ; le preset UNIT3D la permet aussi pour les sites compatibles.
+
+| Tracker | Moteur | API |
+|---|---|:---:|
+| [52PT](https://52pt.site) | Définition dédiée |  |
+| [ABNormal](https://abn.lol) | Définition dédiée |  |
+| [AstraTorrent](https://astratorrent.la) | Définition dédiée |  |
+| [AvistaZ](https://avistaz.to) | AvistaZ Network |  |
+| [BitPorn](https://bitporn.eu) | UNIT3D |  |
+| [Blutopia](https://blutopia.cc) | UNIT3D |  |
+| [BrokenStones](https://brokenstones.is) | Gazelle |  |
+| [BwTorrents](https://bwtorrents.tv) | Définition dédiée |  |
+| [C411](https://c411.org) | Définition dédiée |  |
+| [CarPT](https://carpt.net) | Définition dédiée |  |
+| [CinemaZ](https://cinemaz.to) | AvistaZ Network |  |
+| [CrazySpirits](https://crazyspirits.com) | Définition dédiée |  |
+| [DarkPeers](https://darkpeers.org) | UNIT3D |  |
+| [DigitalCore](https://digitalcore.club) | Définition dédiée |  |
+| [Draupnirr](https://draupnirr.xyz) | Définition dédiée |  |
+| [Empornium](https://www.empornium.sx) | Gazelle |  |
+| [ExoticaZ](https://exoticaz.to) | AvistaZ Network |  |
+| [G3MINI](https://gemini-tracker.org) | UNIT3D |  |
+| [Generation-Free](https://generation-free.org) | UNIT3D |  |
+| [HappyFappy](https://www.happyfappy.net) | Gazelle |  |
+| [HD-Forever](https://hdf.world) | Gazelle | ✓ |
+| [HD-Only](https://hd-only.org) | Gazelle |  |
+| [HD-Space](https://hd-space.org) | Définition dédiée |  |
+| [HDVideo](https://hdvideo.top) | Définition dédiée |  |
+| [HomieHelpDesk (HHD)](https://homiehelpdesk.net) | UNIT3D |  |
+| [IPTorrents](https://www.iptorrents.com) | Définition dédiée |  |
+| [ItaTorrents](https://itatorrents.xyz) | UNIT3D |  |
+| [KaraGarga](https://karagarga.in) | Définition dédiée |  |
+| [Kufei (库非)](https://kufei.org) | Définition dédiée |  |
+| [KuFirc](https://kufirc.com) | Gazelle |  |
+| [Les Rescapés de Ygg](https://lesrescapesdeygg.org) | Définition dédiée |  |
+| [LeSaloon v2](https://lesaloonv2-0.net) | Définition dédiée |  |
+| [LST](https://lst.gg) | UNIT3D |  |
+| [MAM](https://www.myanonamouse.net) | Définition dédiée |  |
+| [Memphis](https://memphis.fit) | Définition dédiée |  |
+| [Milkie](https://milkie.cc) | Définition dédiée |  |
+| [MuseBootlegs](https://musebootlegs.com) | Définition dédiée |  |
+| [NetHD](https://nethd.org) | Définition dédiée |  |
+| [New-Asgard](https://new-asgard.xyz) | Définition dédiée |  |
+| [Nirvana](https://nirvana.li) | UNIT3D |  |
+| [Nostradamus](https://nostradamus.foo) | Définition dédiée |  |
+| [OKPT](https://www.okpt.net) | Définition dédiée |  |
+| [Oldtoons](https://oldtoons.world) | UNIT3D |  |
+| [Orpheus](https://orpheus.network) | Gazelle | ✓ |
+| [Panda](https://pandapt.net) | Définition dédiée |  |
+| [PassThePopcorn](https://passthepopcorn.me) | Gazelle | ✓ |
+| [Phoenix Project](https://phoenixproject.app) | Gazelle | ✓ |
+| [PrivateHD](https://privatehd.to) | AvistaZ Network |  |
+| [PT分享站 (itzmx)](https://pt.itzmx.com) | Définition dédiée |  |
+| [PussyTorrents](https://pussytorrents.org) | Définition dédiée |  |
+| [PWTorrents](https://pwtorrents.net) | Définition dédiée |  |
+| [Redacted](https://redacted.sh) | Gazelle | ✓ |
+| [ReelFLiX](https://reelflix.cc) | UNIT3D |  |
+| [SceneTime](https://www.scenetime.com) | Définition dédiée |  |
+| [Seedpool](https://seedpool.org) | UNIT3D |  |
+| [SexTorrent](https://sextorrent.myds.me) | UNIT3D |  |
+| [SpeedApp](https://speedapp.io) | Définition dédiée |  |
+| [SportsCult](https://sportscult.org) | Définition dédiée |  |
+| [Team CT Game](https://tctg.pm) | Définition dédiée |  |
+| [TeamFlix](https://tracker.teamflix.cc) | UNIT3D |  |
+| [TeamHD](https://teamhd.org) | Définition dédiée |  |
+| [The Old School](https://theoldschool.cc) | UNIT3D |  |
+| [Tigers-DL](https://www.tigers-dl.net) | Définition dédiée |  |
+| [TorrentBytes](https://www.torrentbytes.net) | Définition dédiée |  |
+| [Torrenteros](https://torrenteros.org) | UNIT3D |  |
+| [TorrentLeech](https://www.torrentleech.org) | Définition dédiée |  |
+| [TR4KER](https://tr4ker.net) | Définition dédiée | ✓ |
+| [TribalMixes](https://www.tribalmixes.com) | Définition dédiée |  |
+| [UBits](https://ubits.club) | Définition dédiée |  |
+| [UniOtaku](https://tracker.uniotaku.com) | Définition dédiée |  |
+| [V3X](https://v3x.club) | Définition dédiée |  |
+| [YGGReborn](https://www.yggreborn.org) | Définition dédiée |  |
+| [YUSCENE](https://yu-scene.net) | UNIT3D |  |
+| [ZXX CLUB](https://zxxclub.com) | Définition dédiée |  |
 
 </details>
 
@@ -382,89 +471,7 @@ Rotation automatique de User-Agents (paquet `top-user-agents`) pour les nouvelle
 
 Les définitions de sites intégrées sont fournies dans `config/trackers/*.json` (un fichier JSON par site : connexion, page à lire, champs à extraire). Les nouvelles définitions sont détectées au démarrage et proposées à l'activation.
 
-<details>
-<summary>Afficher les 74 trackers intégrés</summary>
-
-La colonne **API** signale les définitions qui proposent une lecture par clé API personnelle ; le preset UNIT3D la permet aussi pour les sites compatibles.
-
-| Tracker | Moteur | API |
-|---|---|:---:|
-| [52PT](https://52pt.site) | Définition dédiée |  |
-| [ABNormal](https://abn.lol) | Définition dédiée |  |
-| [AstraTorrent](https://astratorrent.la) | Définition dédiée |  |
-| [AvistaZ](https://avistaz.to) | AvistaZ Network |  |
-| [BitPorn](https://bitporn.eu) | UNIT3D |  |
-| [Blutopia](https://blutopia.cc) | UNIT3D |  |
-| [BrokenStones](https://brokenstones.is) | Gazelle |  |
-| [BwTorrents](https://bwtorrents.tv) | Définition dédiée |  |
-| [C411](https://c411.org) | Définition dédiée |  |
-| [CarPT](https://carpt.net) | Définition dédiée |  |
-| [CinemaZ](https://cinemaz.to) | AvistaZ Network |  |
-| [CrazySpirits](https://crazyspirits.com) | Définition dédiée |  |
-| [DarkPeers](https://darkpeers.org) | UNIT3D |  |
-| [DigitalCore](https://digitalcore.club) | Définition dédiée |  |
-| [Draupnirr](https://draupnirr.xyz) | Définition dédiée |  |
-| [Empornium](https://www.empornium.sx) | Gazelle |  |
-| [ExoticaZ](https://exoticaz.to) | AvistaZ Network |  |
-| [G3MINI](https://gemini-tracker.org) | UNIT3D |  |
-| [Generation-Free](https://generation-free.org) | UNIT3D |  |
-| [HappyFappy](https://www.happyfappy.net) | Gazelle |  |
-| [HD-Forever](https://hdf.world) | Gazelle | ✓ |
-| [HD-Only](https://hd-only.org) | Gazelle |  |
-| [HD-Space](https://hd-space.org) | Définition dédiée |  |
-| [HDVideo](https://hdvideo.top) | Définition dédiée |  |
-| [HomieHelpDesk (HHD)](https://homiehelpdesk.net) | UNIT3D |  |
-| [IPTorrents](https://www.iptorrents.com) | Définition dédiée |  |
-| [ItaTorrents](https://itatorrents.xyz) | UNIT3D |  |
-| [KaraGarga](https://karagarga.in) | Définition dédiée |  |
-| [Kufei (库非)](https://kufei.org) | Définition dédiée |  |
-| [KuFirc](https://kufirc.com) | Gazelle |  |
-| [Les Rescapés de Ygg](https://lesrescapesdeygg.org) | Définition dédiée |  |
-| [LeSaloon v2](https://lesaloonv2-0.net) | Définition dédiée |  |
-| [LST](https://lst.gg) | UNIT3D |  |
-| [MAM](https://www.myanonamouse.net) | Définition dédiée |  |
-| [Memphis](https://memphis.fit) | Définition dédiée |  |
-| [Milkie](https://milkie.cc) | Définition dédiée |  |
-| [MuseBootlegs](https://musebootlegs.com) | Définition dédiée |  |
-| [NetHD](https://nethd.org) | Définition dédiée |  |
-| [New-Asgard](https://new-asgard.xyz) | Définition dédiée |  |
-| [Nirvana](https://nirvana.li) | UNIT3D |  |
-| [Nostradamus](https://nostradamus.foo) | Définition dédiée |  |
-| [OKPT](https://www.okpt.net) | Définition dédiée |  |
-| [Oldtoons](https://oldtoons.world) | UNIT3D |  |
-| [Orpheus](https://orpheus.network) | Gazelle | ✓ |
-| [Panda](https://pandapt.net) | Définition dédiée |  |
-| [PassThePopcorn](https://passthepopcorn.me) | Gazelle | ✓ |
-| [Phoenix Project](https://phoenixproject.app) | Gazelle | ✓ |
-| [PrivateHD](https://privatehd.to) | AvistaZ Network |  |
-| [PT分享站 (itzmx)](https://pt.itzmx.com) | Définition dédiée |  |
-| [PussyTorrents](https://pussytorrents.org) | Définition dédiée |  |
-| [PWTorrents](https://pwtorrents.net) | Définition dédiée |  |
-| [Redacted](https://redacted.sh) | Gazelle | ✓ |
-| [ReelFLiX](https://reelflix.cc) | UNIT3D |  |
-| [SceneTime](https://www.scenetime.com) | Définition dédiée |  |
-| [Seedpool](https://seedpool.org) | UNIT3D |  |
-| [SexTorrent](https://sextorrent.myds.me) | UNIT3D |  |
-| [SpeedApp](https://speedapp.io) | Définition dédiée |  |
-| [SportsCult](https://sportscult.org) | Définition dédiée |  |
-| [Team CT Game](https://tctg.pm) | Définition dédiée |  |
-| [TeamFlix](https://tracker.teamflix.cc) | UNIT3D |  |
-| [TeamHD](https://teamhd.org) | Définition dédiée |  |
-| [The Old School](https://theoldschool.cc) | UNIT3D |  |
-| [Tigers-DL](https://www.tigers-dl.net) | Définition dédiée |  |
-| [TorrentBytes](https://www.torrentbytes.net) | Définition dédiée |  |
-| [Torrenteros](https://torrenteros.org) | UNIT3D |  |
-| [TorrentLeech](https://www.torrentleech.org) | Définition dédiée |  |
-| [TR4KER](https://tr4ker.net) | Définition dédiée | ✓ |
-| [TribalMixes](https://www.tribalmixes.com) | Définition dédiée |  |
-| [UBits](https://ubits.club) | Définition dédiée |  |
-| [UniOtaku](https://tracker.uniotaku.com) | Définition dédiée |  |
-| [V3X](https://v3x.club) | Définition dédiée |  |
-| [YGGReborn](https://www.yggreborn.org) | Définition dédiée |  |
-| [YUSCENE](https://yu-scene.net) | UNIT3D |  |
-| [ZXX CLUB](https://zxxclub.com) | Définition dédiée |  |
-
-</details>
+La liste complète figure dans [Trackers intégrés](#trackers-intégrés).
 
 Pour préparer l'ajout d'un site, fournissez idéalement : nom, URL de base, URL de login (et méthode particulière éventuelle), URL de la page de stats, son HTML une fois connecté, les valeurs à récupérer, et le CMS éventuel (UNIT3D, Gazelle, Luminance…).
 
