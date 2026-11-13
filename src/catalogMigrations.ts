@@ -63,3 +63,38 @@ export function migrateV3xCatalogAvailability(): void {
 
   setJsonSetting(V3X_CATALOG_MIGRATION_KEY, { done: true });
 }
+
+// Anciens domaines de trackers integres dont le site a demenage. Le baseUrl d'une
+// instance n'est pas resynchronise depuis l'image (il peut etre personnalise),
+// mais un ancien domaine connu doit l'etre : Yggrasil est devenu Draupnirr et
+// yggrasil.xyz ne fait plus que rediriger, ce qui separait les cookies de la page
+// de login (ancien domaine) du POST de login (nouveau domaine) -> HTTP 419.
+const LEGACY_BASE_HOSTS: Record<string, readonly string[]> = {
+  yggrasil: ['yggrasil.xyz', 'www.yggrasil.xyz'],
+};
+
+/**
+ * Remplace le baseUrl d'une instance s'il pointe encore vers un ancien domaine
+ * connu de sa definition integree. Renvoie true si la config a ete modifiee.
+ * Un domaine personnalise (miroir, proxy local) n'est jamais touche.
+ */
+export function migrateLegacyBaseUrl(
+  tracker: { id: string; name?: string; baseId?: string; baseUrl: string },
+  definition: { baseUrl: string } | null,
+): boolean {
+  if (!definition?.baseUrl) return false;
+  const legacyHosts = LEGACY_BASE_HOSTS[tracker.baseId ?? tracker.id];
+  if (!legacyHosts) return false;
+  let host: string;
+  try {
+    host = new URL(tracker.baseUrl).hostname.toLowerCase();
+  } catch {
+    return false;
+  }
+  if (!legacyHosts.includes(host)) return false;
+  const target = definition.baseUrl.replace(/\/+$/, '');
+  if (tracker.baseUrl === target) return false;
+  tracker.baseUrl = target;
+  console.log(`[Migration] ${tracker.name ?? tracker.id} : ancien domaine ${host} remplace par ${target}`);
+  return true;
+}
