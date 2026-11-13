@@ -5382,6 +5382,20 @@
     });
   }
 
+  // « Aujourd'hui » dépend du fuseau du dashboard, connu seulement après
+  // /api/config : on recale le jour et le mois par défaut tant que
+  // l'utilisateur n'a choisi ni un jour ni un autre mois.
+  let betaCalendarTouched = false;
+  function alignBetaCalendarToday() {
+    if (betaCalendarTouched) return;
+    const today = dashboardDayKey(new Date());
+    if (today === betaSelectedCalendarDay) return;
+    const [year, month] = today.split('-').map(Number);
+    betaSelectedCalendarDay = today;
+    betaCalendarMonth = new Date(year, month - 1, 1);
+    if (currentView === 'calendar') renderBetaCalendar();
+  }
+
   function renderBetaCalendar() {
     const container = document.getElementById('beta-calendar');
     if (!container) return;
@@ -5480,11 +5494,13 @@
   }
 
   function selectBetaCalendarDay(day) {
+    betaCalendarTouched = true;
     betaSelectedCalendarDay = day;
     renderBetaCalendar();
   }
 
   function shiftBetaCalendar(delta) {
+    betaCalendarTouched = true;
     betaCalendarMonth = new Date(betaCalendarMonth.getFullYear(), betaCalendarMonth.getMonth() + delta, 1);
     renderBetaCalendar();
   }
@@ -7438,6 +7454,7 @@
       const r = await fetch('/api/config');
       const d = await r.json();
       setDashboardTimeZone(d.timeZone);
+      alignBetaCalendarToday();
       trackerConfig = d.trackers || [];
       trackerCount = d.trackers.filter(t => t.enabled).length;
       renderSchedulePanel(trackerConfig);
