@@ -2872,6 +2872,27 @@
       // Conserver le fuseau du navigateur si le serveur fournit une valeur invalide.
     }
   }
+
+  // Jour (AAAA-MM-JJ) d'un instant dans le fuseau du dashboard, celui des heures
+  // affichées : un relevé de 00 h 30 compte pour ce jour-là, pas pour la veille UTC.
+  let dayKeyFormatter = null;
+  let dayKeyFormatterZone = '';
+  function dashboardDayKey(value) {
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value || '').slice(0, 10);
+    if (!dayKeyFormatter || dayKeyFormatterZone !== dashboardTimeZone) {
+      dayKeyFormatter = new Intl.DateTimeFormat('en-US', { timeZone: dashboardTimeZone, year: 'numeric', month: '2-digit', day: '2-digit' });
+      dayKeyFormatterZone = dashboardTimeZone;
+    }
+    const parts = Object.fromEntries(dayKeyFormatter.formatToParts(date).map(part => [part.type, part.value]));
+    return `${parts.year}-${parts.month}-${parts.day}`;
+  }
+
+  // Clé AAAA-MM-JJ d'une case du calendrier, sans conversion de fuseau
+  // (toISOString() donnerait la veille à l'est de Greenwich).
+  function calendarDateKey(d) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
   // ─── Formatage ─────────────────────────────────────────────────────────────
 
   function formatBytes(bytes, byteUnit = 'binary') {
@@ -3506,7 +3527,7 @@
   };
   let betaHistory = [];
   let betaSelectedTrackerId = null;
-  let betaSelectedCalendarDay = new Date().toISOString().slice(0, 10);
+  let betaSelectedCalendarDay = dashboardDayKey(new Date());
   let betaTableSort = { key: 'name', dir: 'asc' };
   let betaTorrentSort = { key: null, dir: 'asc' };
   const betaTorrentOptionalColumns = [
@@ -5361,6 +5382,20 @@
     });
   }
 
+  // « Aujourd'hui » dépend du fuseau du dashboard, connu seulement après
+  // /api/config : on recale le jour et le mois par défaut tant que
+  // l'utilisateur n'a choisi ni un jour ni un autre mois.
+  let betaCalendarTouched = false;
+  function alignBetaCalendarToday() {
+    if (betaCalendarTouched) return;
+    const today = dashboardDayKey(new Date());
+    if (today === betaSelectedCalendarDay) return;
+    const [year, month] = today.split('-').map(Number);
+    betaSelectedCalendarDay = today;
+    betaCalendarMonth = new Date(year, month - 1, 1);
+    if (currentView === 'calendar') renderBetaCalendar();
+  }
+
   function renderBetaCalendar() {
     const container = document.getElementById('beta-calendar');
     if (!container) return;
@@ -5372,7 +5407,7 @@
     if (title) title.textContent = month.toLocaleDateString(tdLocale(), { month: 'long', year: 'numeric' });
     const byDay = new Map();
     rows.forEach(row => {
-      const day = String(row.capturedAt || '').slice(0, 10);
+      const day = dashboardDayKey(row.capturedAt);
       const item = byDay.get(day) || new Map();
       const previous = item.get(row.trackerId);
       if (!previous || String(row.capturedAt || '') > String(previous.capturedAt || '')) item.set(row.trackerId, row);
@@ -5385,7 +5420,7 @@
     for (let i = 0; i < 42; i++) {
       const d = new Date(start);
       d.setDate(start.getDate() + i);
-      const key = d.toISOString().slice(0, 10);
+      const key = calendarDateKey(d);
       const dayRows = [...(byDay.get(key)?.values() || [])];
       const item = {
         ok: dayRows.filter(row => row.status === 'ok').length,
@@ -5414,7 +5449,7 @@
   function latestBetaRowsForDay(day) {
     const byTracker = new Map();
     betaHistory
-      .filter(row => !isUnconfigured(row) && String(row.capturedAt || '').slice(0, 10) === day)
+      .filter(row => !isUnconfigured(row) && dashboardDayKey(row.capturedAt) === day)
       .forEach(row => {
         const previous = byTracker.get(row.trackerId);
         if (!previous || String(row.capturedAt || '') > String(previous.capturedAt || '')) byTracker.set(row.trackerId, row);
@@ -5459,11 +5494,13 @@
   }
 
   function selectBetaCalendarDay(day) {
+    betaCalendarTouched = true;
     betaSelectedCalendarDay = day;
     renderBetaCalendar();
   }
 
   function shiftBetaCalendar(delta) {
+    betaCalendarTouched = true;
     betaCalendarMonth = new Date(betaCalendarMonth.getFullYear(), betaCalendarMonth.getMonth() + delta, 1);
     renderBetaCalendar();
   }
@@ -7417,6 +7454,7 @@
       const r = await fetch('/api/config');
       const d = await r.json();
       setDashboardTimeZone(d.timeZone);
+      alignBetaCalendarToday();
       trackerConfig = d.trackers || [];
       trackerCount = d.trackers.filter(t => t.enabled).length;
       renderSchedulePanel(trackerConfig);
