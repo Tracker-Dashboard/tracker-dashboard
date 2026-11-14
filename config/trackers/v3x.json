@@ -15,7 +15,7 @@
       "Nom d'utilisateur ou email",
       "Mot de passe oublié"
     ],
-    "cookieInstructions": "V3X nécessite un cookie de session valide. Connecte-toi sur v3x.club avec la même IP de sortie que ce tracker. Le cookie est posé sur api.v3x.club, pas sur v3x.club : ouvre https://api.v3x.club, puis copie le cookie v3x_sid (Firefox : Outils de développement → Stockage → Cookies → https://api.v3x.club ; Chrome : Application → Cookies) sous la forme v3x_sid=VALEUR. Ne partage jamais cette valeur : elle donne accès à ta session. Renouvelle-la si le message « session navigateur non authentifiée » apparaît."
+    "cookieInstructions": "Cookie facultatif : avec l'identifiant et le mot de passe, la connexion passe par api.v3x.club. En dépannage seulement, connecte-toi sur v3x.club avec la même IP de sortie que ce tracker. Le cookie est posé sur api.v3x.club, pas sur v3x.club : ouvre https://api.v3x.club, puis copie le cookie v3x_sid (Firefox : Outils de développement → Stockage → Cookies → https://api.v3x.club ; Chrome : Application → Cookies) sous la forme v3x_sid=VALEUR. Ne partage jamais cette valeur : elle donne accès à ta session. Renouvelle-la si le message « session navigateur non authentifiée » apparaît."
   },
   "fetch": {
     "url": "/activity",
@@ -84,6 +84,46 @@
         }
       }
     }
+  },
+  "api": {
+    "url": "https://api.v3x.club/api/me",
+    "authHeader": "Authorization",
+    "authFormat": "Bearer {{apiKey}}",
+    "fields": {
+      "uploadedBytes": {
+        "path": "uploaded",
+        "transform": "bytes"
+      },
+      "downloadedBytes": {
+        "path": "downloaded",
+        "transform": "bytes"
+      },
+      "bufferBytes": {
+        "path": "buffer",
+        "transform": "bytes"
+      },
+      "ratio": {
+        "path": "ratio",
+        "transform": "number"
+      },
+      "seedBonus": {
+        "path": "bonusPoints",
+        "transform": "string"
+      },
+      "seeding": {
+        "path": "seeding",
+        "transform": "integer"
+      },
+      "tokens": {
+        "path": "freeleechTokens",
+        "transform": "integer"
+      },
+      "hitAndRuns": {
+        "path": "hitAndRun",
+        "transform": "integer"
+      }
+    },
+    "keyInstructions": "Sur V3X : Réglages → Intégrations → Clés API à droits limités. Crée une clé avec le seul droit « Mon profil (lecture) » : elle ne lit que tes chiffres (30 appels par minute au plus)."
   },
   "dashboard": {
     "byteUnit": "binary"
