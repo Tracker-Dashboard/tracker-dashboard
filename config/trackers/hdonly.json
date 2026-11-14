@@ -11,6 +11,7 @@
       "keeplogged": "1",
       "login": "Se connecter"
     },
+    "otpField": "twofa",
     "failurePatterns": [
       "Identifiant ou mot de passe incorrect",
       "type=\"password\"",
