@@ -182,7 +182,7 @@ La colonne **API** signale les définitions qui proposent une lecture par clé A
 | [TribalMixes](https://www.tribalmixes.com) | Définition dédiée |  |
 | [UBits](https://ubits.club) | Définition dédiée |  |
 | [UniOtaku](https://tracker.uniotaku.com) | Définition dédiée |  |
-| [V3X](https://v3x.club) | Définition dédiée |  |
+| [V3X](https://v3x.club) | Définition dédiée | ✓ |
 | [YGGReborn](https://www.yggreborn.org) | Définition dédiée |  |
 | [YUSCENE](https://yu-scene.net) | UNIT3D |  |
 | [ZXX CLUB](https://zxxclub.com) | Définition dédiée |  |
