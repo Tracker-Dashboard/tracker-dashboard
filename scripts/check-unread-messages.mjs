@@ -67,4 +67,19 @@ assert.equal(uiContext.mpBadge({ fields: { unreadMessages: 3 } }).includes('MP :
 assert.equal(uiContext.mpBadge({ fields: { unreadMessages: 0 } }), '');
 assert.equal(uiContext.mpBadge({ fields: {} }), '');
 
-console.log('Unread message checks OK: authenticated requests, best-effort failures and badge visibility.');
+// Vue lignes : badge MP juste apres le nom, dans les memes cas que les cartes
+// (lecture OK, login KO avec stats API, donnees perimees), jamais en erreur.
+vm.runInNewContext(sourceBetween('  function rowMpBadge', '  function renderRow'), uiContext);
+assert.equal(uiContext.rowMpBadge({ status: 'ok', fields: { unreadMessages: 2 } }).includes('MP : 2'), true);
+assert.equal(uiContext.rowMpBadge({ status: 'ok', fields: {} }), '');
+assert.equal(uiContext.rowMpBadge({ status: 'ok', loginError: 'refus', fields: { unreadMessages: 'un' } }).includes('MP : 1'), true);
+assert.equal(uiContext.rowMpBadge({ status: 'ok', stale: { error: 'timeout' }, fields: { unreadMessages: 4 } }).includes('MP : 4'), true);
+assert.equal(uiContext.rowMpBadge({ status: 'error', fields: { unreadMessages: 4 } }), '');
+assert.match(indexHtml, /<td class="cell-name">\$\{trackerName\(stat\)\}\$\{rowMpBadge\(stat\)\}/);
+
+// Badge MP clignotant (cartes et lignes), sans animation si l'OS demande moins de mouvement.
+assert.match(indexHtml, /\.badge-mp \{[^}]*animation: mp-blink /);
+assert.match(indexHtml, /@keyframes mp-blink \{/);
+assert.match(indexHtml, /@media \(prefers-reduced-motion: reduce\) \{ \.badge-mp \{ animation: none; \} \}/);
+
+console.log('Unread message checks OK: authenticated requests, best-effort failures, badge visibility in cards and rows, blinking style.');
