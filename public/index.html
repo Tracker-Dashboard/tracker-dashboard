@@ -1100,6 +1100,7 @@
       font-size: 11px; font-weight: 600; cursor: pointer; padding: 0; text-decoration: none;
     }
     .rows-table .row-fiche-btn:hover { text-decoration: underline; text-underline-offset: 2px; }
+    .rows-table .cell-name .badge-mp { margin-left: 8px; white-space: nowrap; }
     .rows-table .row-sched { display: flex; align-items: center; gap: 6px; }
     .rows-table .row-sched select { font-size: 11px; padding: 2px 4px; }
     .rows-table .cell-status { cursor: pointer; }
@@ -1288,7 +1289,10 @@
     .badge-loading { background: color-mix(in srgb, var(--blue) 14%, transparent); color: var(--blue); }
     .badge-ratioless { background: color-mix(in srgb, var(--purple) 16%, transparent); color: var(--purple); }
     .badge-incident { background: color-mix(in srgb, var(--muted) 18%, transparent); color: var(--muted); }
-    .badge-mp { background: color-mix(in srgb, var(--blue) 22%, transparent); color: var(--blue); }
+    .badge-mp { background: color-mix(in srgb, var(--blue) 22%, transparent); color: var(--blue); animation: mp-blink 1.1s ease-in-out infinite; }
+    /* MP non lus : clignotement doux de l'opacite, coupe si l'OS demande moins d'animations. */
+    @keyframes mp-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+    @media (prefers-reduced-motion: reduce) { .badge-mp { animation: none; } }
     .badge-api { background: color-mix(in srgb, var(--green) 16%, transparent); color: var(--green); }
     .badge-api-ko { background: color-mix(in srgb, var(--yellow) 16%, transparent); color: var(--yellow); }
     .badge-hnr { background: color-mix(in srgb, var(--red) 16%, transparent); color: var(--red); }
@@ -6803,6 +6807,12 @@
     return apiBadge(stat) + ' ' + ratioless;
   }
 
+  // Vue lignes : badge MP juste apres le nom, dans les memes cas que les cartes
+  // (lecture OK, login KO avec stats API, donnees perimees), jamais en erreur.
+  function rowMpBadge(stat) {
+    return stat.status === 'error' ? '' : mpBadge(stat);
+  }
+
   function renderRow(stat) {
     const f = stat.fields;
     const id = escapeHtml(stat.id);
@@ -6837,7 +6847,7 @@
     const mainRow = `
       <tr class="row-main ${isOpen ? 'is-open' : ''}">
         <td><button class="row-refresh" data-tracker="${id}" onclick="refreshTracker(this.dataset.tracker, this)" title="Rafraichir ce tracker">MàJ</button></td>
-        <td class="cell-name">${trackerName(stat)}<a class="row-fiche-btn" href="${escapeHtml(routeHash('fiche', stat.id))}" title="Ouvrir la fiche du tracker" aria-label="Ouvrir la fiche">Fiche</a></td>
+        <td class="cell-name">${trackerName(stat)}${rowMpBadge(stat)}<a class="row-fiche-btn" href="${escapeHtml(routeHash('fiche', stat.id))}" title="Ouvrir la fiche du tracker" aria-label="Ouvrir la fiche">Fiche</a></td>
         <td class="cell-muted">${formatDateTime(stat.lastLoginAt || stat.lastUpdated)}</td>
         <td>${rowScheduleCell(stat)}</td>
         <td class="num">${dl}</td>
