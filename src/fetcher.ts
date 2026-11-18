@@ -52,8 +52,8 @@ export function normalizeNumberString(input: unknown): string {
 
 function parseBytes(raw: unknown, binary = false): number {
   if (typeof raw === 'number') return raw;
-  // Normaliser les espaces insecables encodes en entites HTML (&nbsp; &#160; &#xa0;)
-  // et le caractere   -> espace, sinon le nombre et l'unite restent colles.
+  // Normaliser les espaces insécables encodes en entités HTML (&nbsp; &#160; &#xa0;)
+  // et le caractère   -> espace, sinon le nombre et l'unité restent collés.
   const s = String(raw)
     .replace(/&nbsp;|&#160;|&#xa0;/gi, ' ')
     .replace(/\u00a0/g, ' ')
@@ -299,7 +299,7 @@ function missingExtractedFields(
       return false;
     }
     // L'absence de MP non lu est le cas normal : pas de regex match attendu quand 0 message.
-    // On ne le compte donc jamais comme champ manquant (sinon log + dump 'partial' a chaque refresh).
+    // On ne le compte donc jamais comme champ manquant (sinon log + dump 'partial' à chaque refresh).
     if (key === 'unreadMessages') {
       return false;
     }
@@ -632,9 +632,9 @@ function isAnubisChallenge(html: string): boolean {
     html.includes("Verification que vous n&#39;etes pas un robot");
 }
 
-// ─── 2FA en deux etapes (Laravel Fortify / UNIT3D) ─────────────────────────────
-// Apres le login user+password, certains trackers redirigent vers une page dediee
-// "two-factor-challenge" ou il faut soumettre le code TOTP avec un nouveau CSRF.
+// ─── 2FA en deux étapes (Laravel Fortify / UNIT3D) ─────────────────────────────
+// Après le login user+password, certains trackers redirigent vers une page dédiée
+// "two-factor-challenge" où il faut soumettre le code TOTP avec un nouveau CSRF.
 export function isTwoFactorPage(html: string): boolean {
   return /two-factor-challenge/i.test(html) ||
     /Two[\s-]?Factor Authentication/i.test(html) ||
@@ -675,8 +675,8 @@ function isOtpStepPage(html: string, landedUrl: string, otpStep: NonNullable<Log
   return action ? /(?:^|[?&])act=otp(?:&|$)/i.test(action) : false;
 }
 
-// Page anti-bot / challenge JS (Cloudflare & co) : signaux frequents quand l'IP du
-// client est filtree -> la vraie page (avec le token CSRF) n'est jamais servie.
+// Page anti-bot / challenge JS (Cloudflare & co) : signaux fréquents quand l'IP du
+// client est filtrée -> la vraie page (avec le token CSRF) n'est jamais servie.
 export function isAntiBotPage(html: string): boolean {
   const h = html.toLowerCase();
   return h.includes('cf-turnstile') ||
@@ -695,7 +695,7 @@ interface Session {
   client: AxiosInstance;
   jar: CookieJar;
   loggedInAt: number;
-  /** Jeton "Authorization: Bearer" recupere au login (cf. login.tokenField) */
+  /** Jeton "Authorization: Bearer" récupéré au login (cf. login.tokenField) */
   bearerToken?: string;
 }
 
@@ -714,9 +714,9 @@ function requestUrl(config: InternalAxiosRequestConfig): string | null {
   }
 }
 
-// Injecte le cookie de session colle (mode cookie-only) dans le jar axios. Sans
-// ca, le login etant saute et le jar cree vide, le GET des stats en mode http part
-// SANS cookie -> page deconnectee. Le mode browser, lui, envoie deja ce cookie via
+// Injecte le cookie de session collé (mode cookie-only) dans le jar axios. Sans
+// ça, le login étant saute et le jar créé vide, le GET des stats en mode http part
+// SANS cookie -> page déconnectée. Le mode browser, lui, envoie déjà ce cookie via
 // le fast-path curl-impersonate.
 export async function injectStoredCookieIntoJar(tracker: TrackerConfig, jar: CookieJar): Promise<void> {
   const header = buildCookieHeader(tracker);
@@ -730,9 +730,9 @@ export async function injectStoredCookieIntoJar(tracker: TrackerConfig, jar: Coo
   }
 }
 
-// URL qui a reellement emis la reponse. Apres une redirection suivie par axios
+// URL qui a réellement émis la réponse. Après une redirection suivie par axios
 // (ex. ancien domaine yggrasil.xyz -> draupnirr.xyz), config.url reste l'URL de
-// depart : y rattacher les Set-Cookie les rangeait sous le mauvais domaine, et le
+// départ : y rattacher les Set-Cookie les rangeait sous le mauvais domaine, et le
 // POST de login suivant partait sans cookie de session (HTTP 419 Laravel).
 function responseUrl(response: AxiosResponse): string | null {
   const finalUrl = (response.request as { res?: { responseUrl?: unknown } } | undefined)?.res?.responseUrl;
@@ -832,9 +832,9 @@ async function doLogin(
     username: creds.username,
     password: creds.password,
   };
-  // 2FA : si un secret TOTP est enregistre pour ce tracker, on genere le code
+  // 2FA : si un secret TOTP est enregistré pour ce tracker, on génère le code
   // courant. Disponible via le placeholder {{otp}} dans le body, et injecte
-  // automatiquement dans login.otpField si defini.
+  // automatiquement dans login.otpField si défini.
   const totpSecret = getTrackerTotpSecret(tracker.id);
   if (totpSecret) {
     const code = generateTotp(totpSecret);
@@ -858,18 +858,18 @@ async function doLogin(
         // La page de pre-login ne contient pas le token attendu. Quasi toujours :
         // ce n'est PAS la vraie page de login mais une page anti-bot / challenge /
         // blocage (selon l'IP), ou une page d'erreur. On dump pour diagnostic et on
-        // donne un message actionnable plutot qu'un cryptique "impossible d'extraire".
+        // donné un message actionnable plutôt qu'un cryptique "impossible d'extraire".
         const dumpPath = writeDebugDump(tracker, preUrl, preRes.data, {}, 'prelogin');
         const suffix = dumpPath ? ` - dump: ${dumpPath}` : '';
         if (isAnubisChallenge(preRes.data) || isAntiBotPage(preRes.data)) {
-          throw new Error(`Pre-login : page de login non servie (challenge anti-bot / Cloudflare ou IP bloquee) — fournir un cookie de session pour ce tracker${suffix}`);
+          throw new Error(`Pre-login : page de login non servie (challenge anti-bot / Cloudflare ou IP bloquée) — fournir un cookie de session pour ce tracker${suffix}`);
         }
         throw new Error(`Pre-login : token "${key}" introuvable sur ${preUrl} (page de login inattendue : anti-bot, redirection, ou site indisponible)${suffix}`);
       }
     }
   }
 
-  // ── 1bis. GET preliminaires (cookies anti-bot/session, best-effort) ─────────
+  // ── 1bis. GET préliminaires (cookies anti-bot/session, best-effort) ─────────
   for (const preVisitUrl of cfg.preVisitUrls ?? []) {
     try {
       const r = await client.get<string>(resolveUrl(base, preVisitUrl), { responseType: 'text' });
@@ -885,7 +885,7 @@ async function doLogin(
   for (const [k, v] of Object.entries(cfg.body)) {
     bodyObj[k] = interpolate(v, vars);
   }
-  // Injection auto du code 2FA dans le champ configure (si pas deja present)
+  // Injection auto du code 2FA dans le champ configuré (si pas déjà présent)
   if (vars.otp && cfg.otpField && !(cfg.otpField in bodyObj)) {
     bodyObj[cfg.otpField] = vars.otp;
   }
@@ -910,8 +910,8 @@ async function doLogin(
     });
     await storeResponseCookies(jar, loginRes);
 
-    // ── 2bis. Login API JSON (C411/Torr9-style) : MFA en 2 etapes, champ de
-    // succes, et jeton Bearer eventuel — flux entierement distinct du HTML.
+    // ── 2bis. Login API JSON (C411/Torr9-style) : MFA en 2 étapes, champ de
+    // succès, et jeton Bearer éventuel — flux entièrement distinct du HTML.
     let resultJson = parseJsonRecord(loginRes.data);
 
     // Un JSON d'erreur (notamment le rate-limit C411) ne contient naturellement
@@ -930,7 +930,7 @@ async function doLogin(
       if (!vars.otp) {
         const dumpPath = writeLoginDebugDump(tracker, loginUrl, loginRes.data, { reason: 'mfa-no-secret' });
         const suffix = dumpPath ? ` - dump: ${dumpPath}` : '';
-        throw new Error(`2FA requise par le tracker mais aucun secret TOTP enregistre — renseigne le secret 2FA dans Options avancees${suffix}`);
+        throw new Error(`2FA requise par le tracker mais aucun secret TOTP enregistré — renseigne le secret 2FA dans Options avancées${suffix}`);
       }
       const mfaUrl = resolveUrl(base, cfg.mfaStep.url);
       const mfaRes = await client.post<string>(mfaUrl, { [cfg.mfaStep.codeField]: vars.otp }, {
@@ -944,7 +944,7 @@ async function doLogin(
       if (!resultJson?.[mfaSuccessField]) {
         const dumpPath = writeLoginDebugDump(tracker, mfaUrl, mfaRes.data, {
           status: mfaRes.status,
-          reason: `champ JSON "${mfaSuccessField}" absent/false apres MFA`,
+          reason: `champ JSON "${mfaSuccessField}" absent/false après MFA`,
         });
         const suffix = dumpPath ? ` - dump: ${dumpPath}` : '';
         throw new Error(`Login échoué — MFA: champ JSON "${mfaSuccessField}" absent/false${suffix}`);
@@ -1001,12 +1001,12 @@ async function doLogin(
     verificationHtml = redirectedRes.data;
   }
 
-  // ── 3bis. 2FA en deux etapes (Fortify/UNIT3D) ───────────────────────────────
+  // ── 3bis. 2FA en deux étapes (Fortify/UNIT3D) ───────────────────────────────
   if (isTwoFactorPage(verificationHtml)) {
     if (!vars.otp) {
       const dumpPath = writeLoginDebugDump(tracker, landedUrl, verificationHtml, { reason: '2fa-no-secret' });
       const suffix = dumpPath ? ` - dump: ${dumpPath}` : '';
-      throw new Error(`2FA requise par le tracker mais aucun secret TOTP enregistre — renseigne le secret 2FA dans Options avancees${suffix}`);
+      throw new Error(`2FA requise par le tracker mais aucun secret TOTP enregistré — renseigne le secret 2FA dans Options avancées${suffix}`);
     }
     const token = extractCsrfToken(verificationHtml);
     const action = extractFormAction(verificationHtml);
@@ -1032,18 +1032,18 @@ async function doLogin(
       verificationHtml = after2faRes.data;
     }
   } else if (cfg.otpStep && isOtpStepPage(verificationHtml, landedUrl, cfg.otpStep)) {
-    // ── 3ter. 2FA via page dediee apres le login ──────────────────────────────
+    // ── 3ter. 2FA via page dédiée après le login ──────────────────────────────
     if (!vars.otp) {
       const dumpPath = writeLoginDebugDump(tracker, landedUrl, verificationHtml, { reason: 'otpStep-no-secret' });
       const suffix = dumpPath ? ` - dump: ${dumpPath}` : '';
-      throw new Error(`2FA requise par le tracker mais aucun secret TOTP enregistre — renseigne le secret 2FA dans Options avancees${suffix}`);
+      throw new Error(`2FA requise par le tracker mais aucun secret TOTP enregistré — renseigne le secret 2FA dans Options avancées${suffix}`);
     }
     const otpToken = extractCsrfToken(verificationHtml);
     const otpBody: Record<string, string> = { ...extractHiddenInputs(verificationHtml) };
     otpBody[cfg.otpStep.field] = vars.otp;
     if (otpToken) otpBody['_token'] = otpToken;
     if (cfg.otpStep.body) Object.assign(otpBody, cfg.otpStep.body);
-    // Resolution "frere" (semantique HTTP), pas "dossier" : resolveUrl forcerait
+    // Résolution "frère" (sémantique HTTP), pas "dossier" : resolveUrl forcerait
     // un slash final et nicherait l'URL (login.php/act=otp). new URL est correct.
     const otpPostUrl = cfg.otpStep.action ? new URL(cfg.otpStep.action, landedUrl).toString() : landedUrl;
     const otpRes = await client.post<string>(otpPostUrl, new URLSearchParams(otpBody).toString(), {
@@ -1109,13 +1109,13 @@ type SiteReachability = NonNullable<TrackerStats['siteReachability']>;
 
 /**
  * Ping rapide via HEAD (fallback GET) sur baseUrl pour distinguer
- * "site joignable" d'une erreur reseau / proxy / serveur.
+ * "site joignable" d'une erreur réseau / proxy / serveur.
  *
- * Joignable : reponse HTTP 1xx/2xx/3xx ou 4xx hors 403/451.
+ * Joignable : réponse HTTP 1xx/2xx/3xx ou 4xx hors 403/451.
  * Non joignable :
- *  - 'network'       : echec reseau / TLS / proxy / DNS / timeout
- *  - 'http_5xx'      : reponse >= 500 (panne serveur / blocage Cloudflare)
- *  - 'http_forbidden': 403 ou 451 (acces refuse - IP bannie ou geo-block)
+ *  - 'network'       : échec réseau / TLS / proxy / DNS / timeout
+ *  - 'http_5xx'      : réponse >= 500 (panne serveur / blocage Cloudflare)
+ *  - 'http_forbidden': 403 ou 451 (accès refusé - IP bannie ou geo-block)
  */
 export async function pingTracker(tracker: TrackerConfig): Promise<SiteReachability> {
   const url = tracker.baseUrl;
@@ -1145,14 +1145,14 @@ export async function pingTracker(tracker: TrackerConfig): Promise<SiteReachabil
     // Pour un 5xx, on retente en GET car certains serveurs renvoient 5xx sur HEAD mais 200 sur GET.
     if (classified.reachable || classified.reason !== 'http_5xx') return classified;
   } catch {
-    // Echec reseau sur HEAD - on tente GET avant de declarer 'network'
+    // Échec réseau sur HEAD - on tente GET avant de déclarer 'network'
   }
 
   try {
     const res = await axios.get(url, { ...config, responseType: 'text' });
     return classify(res.status);
   } catch {
-    // GET a echoue aussi : si HEAD avait renvoye un 5xx, on garde cette info
+    // GET a échoué aussi : si HEAD avait renvoyé un 5xx, on garde cette info
     if (headStatus !== null && headStatus >= 500) {
       return { reachable: false, reason: 'http_5xx', statusCode: headStatus };
     }
@@ -1174,12 +1174,12 @@ type ApiReadResult =
 function apiFailure(status: number, body: string): string {
   if (status === 401 || status === 403) {
     return isAntiBotPage(body)
-      ? `API bloquee par une protection anti-bot (HTTP ${status})`
-      : `Cle API refusee (HTTP ${status}) - verifier ou regenerer la cle`;
+      ? `API bloquée par une protection anti-bot (HTTP ${status})`
+      : `Clé API refusée (HTTP ${status}) - vérifier ou régénérer la clé`;
   }
   if (status === 404) return 'Endpoint API introuvable (HTTP 404) - version du site sans API utilisateur ?';
-  if (status === 429) return 'Limite de requetes API atteinte (HTTP 429)';
-  return `Reponse API inattendue (HTTP ${status})`;
+  if (status === 429) return 'Limite de requêtes API atteinte (HTTP 429)';
+  return `Réponse API inattendue (HTTP ${status})`;
 }
 
 export async function fetchApiStats(tracker: TrackerConfig, apiKey: string, apiUser = ''): Promise<ApiReadResult> {
@@ -1213,10 +1213,10 @@ export async function fetchApiStats(tracker: TrackerConfig, apiKey: string, apiU
   } catch (err) {
     body = '';
     status = 0;
-    console.log(`  [${tracker.name}] API (axios) en echec : ${friendlyError(err)}`);
+    console.log(`  [${tracker.name}] API (axios) en échec : ${friendlyError(err)}`);
   }
 
-  // Empreinte TLS Node refusee (Cloudflare) : nouvel essai via curl-impersonate.
+  // Empreinte TLS Node refusée (Cloudflare) : nouvel essai via curl-impersonate.
   if (status === 0 || ((status === 403 || status === 503) && isAntiBotPage(body))) {
     const curl = new CurlSession(tracker.id, tracker.curlBinary);
     try {
@@ -1227,16 +1227,16 @@ export async function fetchApiStats(tracker: TrackerConfig, apiKey: string, apiU
     }
   }
 
-  if (status === 0) return { ok: false, error: 'API injoignable (reseau / timeout)' };
+  if (status === 0) return { ok: false, error: 'API injoignable (réseau / timeout)' };
   if (status < 200 || status >= 300) return { ok: false, error: apiFailure(status, body) };
 
   // Page HTML authentifiée par la clé (ex: PTP index.php) : extraction par regex.
   if (isHtml) {
-    if (isAntiBotPage(body)) return { ok: false, error: 'API bloquee par une protection anti-bot' };
+    if (isAntiBotPage(body)) return { ok: false, error: 'API bloquée par une protection anti-bot' };
     const { values, byteUnit } = extractHtml(body, api.fields);
     const fields = Object.fromEntries(Object.entries(values).filter(([, v]) => v !== ''));
     if (!hasExtractedValues(fields)) {
-      return { ok: false, error: 'Page API sans statistiques (cle ou identifiant API refuse ?)' };
+      return { ok: false, error: 'Page API sans statistiques (clé ou identifiant API refusé ?)' };
     }
     return { ok: true, fields, byteUnit };
   }
@@ -1245,12 +1245,12 @@ export async function fetchApiStats(tracker: TrackerConfig, apiKey: string, apiU
   try {
     json = JSON.parse(body);
   } catch {
-    return { ok: false, error: 'Reponse API non JSON (redirection vers le login ?)' };
+    return { ok: false, error: 'Réponse API non JSON (redirection vers le login ?)' };
   }
   // Enveloppe Gazelle : {"status":"failure","error":"..."}
   const env = json as { status?: unknown; error?: unknown };
   if (env && env.status === 'failure') {
-    return { ok: false, error: `API en erreur : ${String(env.error ?? 'reponse failure')}` };
+    return { ok: false, error: `API en erreur : ${String(env.error ?? 'réponse failure')}` };
   }
 
   const { values, byteUnit } = extractJson(json, api.fields);
@@ -1258,7 +1258,7 @@ export async function fetchApiStats(tracker: TrackerConfig, apiKey: string, apiU
   const fields = Object.fromEntries(Object.entries(values).filter(([, v]) => v !== ''));
   // Pas de dump disque ici : certaines réponses (Gazelle) contiennent passkey/authkey.
   if (!hasExtractedValues(fields)) {
-    return { ok: false, error: `Aucune donnee extraite de la reponse API (chemins attendus : ${Object.values(api.fields).map(f => f.path).join(', ')})` };
+    return { ok: false, error: `Aucune donnée extraite de la réponse API (chemins attendus : ${Object.values(api.fields).map(f => f.path).join(', ')})` };
   }
   return { ok: true, fields, byteUnit };
 }
@@ -1266,7 +1266,7 @@ export async function fetchApiStats(tracker: TrackerConfig, apiKey: string, apiU
 /** Fusionne le résultat du scrap et celui de l'API (voir TrackerStats.loginError). */
 function mergeApiStats(tracker: TrackerConfig, scraped: TrackerStats, api: ApiReadResult): TrackerStats {
   if (!api.ok) {
-    console.log(`  [${tracker.name}] API : ${api.error} - stats du scrap conservees`);
+    console.log(`  [${tracker.name}] API : ${api.error} - stats du scrap conservées`);
     return { ...scraped, apiStatus: 'error', apiError: api.error };
   }
   const binary = hasBinaryByteValue(api.fields, tracker.api?.fields ?? {});
@@ -1276,7 +1276,7 @@ function mergeApiStats(tracker: TrackerConfig, scraped: TrackerStats, api: ApiRe
     return { ...scraped, ...(binary ? { byteUnit: 'binary' as const } : {}), fields: { ...scraped.fields, ...api.fields }, apiStatus: 'ok' };
   }
   // Scrap/login en échec mais API OK : stats affichées, login signalé en erreur.
-  console.log(`  [${tracker.name}] Login en echec mais API OK : stats remontees via l'API - ${scraped.error ?? 'erreur inconnue'}`);
+  console.log(`  [${tracker.name}] Login en échec mais API OK : stats remontées via l'API - ${scraped.error ?? 'erreur inconnue'}`);
   const byteUnit = api.byteUnit ?? tracker.dashboard?.byteUnit ?? scraped.byteUnit;
   return {
     id:               scraped.id,
@@ -1293,11 +1293,11 @@ function mergeApiStats(tracker: TrackerConfig, scraped: TrackerStats, api: ApiRe
   };
 }
 
-// Cause affichee quand la session reste refusee apres re-login : un tracker en
+// Cause affichée quand la session reste refusée après re-login : un tracker en
 // cookie seul ne se reconnecte pas avec les credentials, seul un cookie neuf aide.
 function sessionExpiredCause(tracker: TrackerConfig): string {
   return tracker.login.cookieOnly
-    ? 'cookie refuse : le remplacer par un cookie neuf'
+    ? 'cookie refusé : le remplacer par un cookie neuf'
     : 'vérifier les credentials';
 }
 
@@ -1326,7 +1326,7 @@ async function fetchTrackerScrape(
   tracker: TrackerConfig,
   creds: { username: string; password: string },
 ): Promise<TrackerStats> {
-  // Proxy SSH : etablir le tunnel SSH + SOCKS5 local avant tout (HTTP comme navigateur).
+  // Proxy SSH : établir le tunnel SSH + SOCKS5 local avant tout (HTTP comme navigateur).
   await ensureProxyReady(tracker.id);
   let session = getSession(tracker.id);
   const vars: Record<string, string> = {
@@ -1342,13 +1342,13 @@ async function fetchTrackerScrape(
     if (isAntiBotPage(html)) {
       const dumpPath = writeDebugDump(tracker, url, html, {}, 'antibot');
       const suffix = dumpPath ? ` - dump: ${dumpPath}` : '';
-      throw new Error(`Challenge anti-bot/Cloudflare recu depuis ${url} - renouveler les cookies depuis la meme IP de sortie${suffix}`);
+      throw new Error(`Challenge anti-bot/Cloudflare reçu depuis ${url} - renouveler les cookies depuis la même IP de sortie${suffix}`);
     }
 
     if (isAnubisChallenge(html)) {
       const dumpPath = writeDebugDump(tracker, url, html, {}, 'anubis');
       const suffix = dumpPath ? ` - dump: ${dumpPath}` : '';
-      throw new Error(`Challenge Anubis recu depuis ${url} - validation JavaScript navigateur requise${suffix}`);
+      throw new Error(`Challenge Anubis reçu depuis ${url} - validation JavaScript navigateur requise${suffix}`);
     }
 
     let fields: Record<string, string | number>;
@@ -1358,7 +1358,7 @@ async function fetchTrackerScrape(
       try {
         json = JSON.parse(html);
       } catch {
-        throw new Error('Reponse attendue en JSON, recu du HTML (mauvais endpoint ?)');
+        throw new Error('Réponse attendue en JSON, reçu du HTML (mauvais endpoint ?)');
       }
       ({ values: fields, byteUnit: detectedByteUnit } = extractJson(json, tracker.fetch.fields));
     } else {
@@ -1376,7 +1376,7 @@ async function fetchTrackerScrape(
     if (!hasExtractedValues(fields)) {
       const dumpPath = writeDebugDump(tracker, url, html, fields);
       const suffix = dumpPath ? ` - dump: ${dumpPath}` : '';
-      throw new Error(`Aucune donnee extraite depuis ${url} - selecteurs/regex a ajuster${suffix}`);
+      throw new Error(`Aucune donnée extraite depuis ${url} - sélecteurs/regex à ajuster${suffix}`);
     }
 
     const missingFields = missingExtractedFields(tracker.fetch.fields, fields);
@@ -1415,29 +1415,29 @@ async function fetchTrackerScrape(
       const provider = solved.provider === 'trawl' ? 'TRAWL' : 'FlareSolverr';
       const failed = hasBrowserAuthFailure(tracker, solved.url, solved.html);
       if (failed) {
-        console.log(`  [${tracker.name}] ${provider}: page non authentifiee (${failed}), repli navigateur`);
+        console.log(`  [${tracker.name}] ${provider}: page non authentifiée (${failed}), repli navigateur`);
         return null;
       }
       const stats = await buildStatsFromHtml(solved.url, solved.html, () => browserExtra(solved.extraHtml));
       console.log(`  [${tracker.name}] Lecture via ${provider} OK`);
       return stats;
     } catch (error) {
-      console.log(`  [${tracker.name}] Repli anti-bot indisponible/echec, repli navigateur - ${error instanceof Error ? error.message : String(error)}`);
+      console.log(`  [${tracker.name}] Repli anti-bot indisponible/échec, repli navigateur - ${error instanceof Error ? error.message : String(error)}`);
       return null;
     }
   };
 
   // Fast-path curl-impersonate : pour un tracker en mode navigateur disposant d'un
-  // cookie de session, on tente d'abord une requete HTTP impersonee (sans Chromium).
-  // Si la page est rendue cote serveur et la session valide -> stats directes.
+  // cookie de session, on tente d'abord une requête HTTP impersonée (sans Chromium).
+  // Si la page est rendue côté serveur et la session valide -> stats directes.
   // Sinon (SPA, session morte, binaire absent) -> on retombe sur le navigateur.
   const tryCurlFastPath = async (): Promise<TrackerStats | null> => {
     if (!fastFetchEnabled()) return null;
     const cookie = buildCookieHeader(tracker);
     if (!cookie) return null;
     const url = resolveUrl(tracker.baseUrl, interpolate(tracker.fetch.url, vars));
-    // Pas de userAgent ici : le wrapper curl-impersonate pose deja un UA Chrome
-    // coherent avec son empreinte TLS. Le surcharger casserait la coherence.
+    // Pas de userAgent ici : le wrapper curl-impersonate pose déjà un UA Chrome
+    // cohérent avec son empreinte TLS. Le surcharger casserait la cohérence.
     const result = await curlImpersonateGet(tracker.id, url, {
       cookie,
       timeoutMs: 30_000,
@@ -1467,16 +1467,16 @@ async function fetchTrackerScrape(
   // Login + fetch HTTP via curl-impersonate (empreinte TLS de vrai Chrome) : passe
   // le filtrage passif Cloudflare/anti-bot que rejette l'empreinte Node d'axios.
   // Rejoue tout le flux (page CSRF -> POST -> stats) avec un jar de cookies. En cas
-  // d'echec/binaire absent -> null, et la voie axios prouvee prend le relais.
+  // d'échec/binaire absent -> null, et la voie axios prouvée prend le relais.
   const attemptHttpViaCurl = async (): Promise<TrackerStats | null> => {
     if (!fastFetchEnabled()) { console.log(`  [${tracker.name}] curl: fast-fetch désactivé`); return null; }
     const cfg = tracker.login;
-    // V3X accepte le login via son API Next.js, mais /activity reste rendu cote
+    // V3X accepte le login via son API Next.js, mais /activity reste rendu côté
     // client. Le login+fetch curl ne peut donc pas valider les stats et ajoute
     // seulement une tentative bruyante avant le vrai chemin navigateur.
     if (tracker.id === 'v3x') return null;
-    // 2FA via page dediee : non reproduit ici, on laisse la voie axios
-    // (doLogin) gerer ce cas.
+    // 2FA via page dédiée : non reproduit ici, on laisse la voie axios
+    // (doLogin) gérer ce cas.
     if (cfg.otpStep) return null;
     if (cfg.cookieOnly) return null;
     if (!(await CurlSession.available(tracker.curlBinary))) { console.log(`  [${tracker.name}] curl: binaire indisponible`); return null; }
@@ -1564,8 +1564,8 @@ async function fetchTrackerScrape(
         return null;
       }
 
-      // Flux JSON multi-etapes (MFA TOTP / jeton Bearer) : reponse API pure,
-      // pas de page HTML a parser.
+      // Flux JSON multi-etapes (MFA TOTP / jeton Bearer) : réponse API pure,
+      // pas de page HTML à parser.
       if (isJson && (cfg.mfaStep || cfg.successField || cfg.tokenField)) {
         let resultJson = parseJsonRecord(postRes.body);
 
@@ -1631,7 +1631,7 @@ async function fetchTrackerScrape(
         }
       }
 
-      // 2FA en deux etapes (Fortify/UNIT3D) : si on a atterri sur la page de challenge
+      // 2FA en deux étapes (Fortify/UNIT3D) : si on a atterri sur la page de challenge
       if (isTwoFactorPage(postRes.body)) {
         if (!cvars.otp) return null; // pas de secret -> repli axios (message clair)
         const token = extractCsrfToken(postRes.body);
@@ -1701,29 +1701,29 @@ async function fetchTrackerScrape(
       }
       try {
         const browserResult = await fetchWithBrowser(tracker, creds);
-        // Si on a confirme la session via un indicateur DOM specifique (TR4KER : RATIO/UPLOAD/DOWNLOAD
-        // visibles apres hydratation SPA), on ignore les failurePatterns qui peuvent matcher
-        // la coquille initiale "non connectee".
+        // Si on a confirme la session via un indicateur DOM spécifique (TR4KER : RATIO/UPLOAD/DOWNLOAD
+        // visibles après hydratation SPA), on ignore les failurePatterns qui peuvent matcher
+        // la coquille initiale "non connectée".
         const failed = browserResult.authConfirmed
           ? null
           : hasBrowserAuthFailure(tracker, browserResult.url, browserResult.html);
         if (failed) {
           if (!isRetry) {
-            console.log(`  [${tracker.name}] Session navigateur expiree, re-login...`);
-            // Reset complet du contexte navigateur (cookies en memoire) avant retry —
-            // pour les sites ou la session persistante est devenue invalide
+            console.log(`  [${tracker.name}] Session navigateur expirée, re-login...`);
+            // Reset complet du contexte navigateur (cookies en mémoire) avant retry —
+            // pour les sites où la session persistante est devenue invalide
             await closeBrowserSession(tracker.id).catch(() => {});
             await new Promise(resolve => setTimeout(resolve, 3000));
             return attempt(true);
           }
           const dumpPath = writeDebugDump(tracker, browserResult.url, browserResult.html, {}, 'browser-auth');
           const suffix = dumpPath ? ` - dump: ${dumpPath}` : '';
-          throw new Error(`Session navigateur non authentifiee - verifier les credentials ou valider le challenge dans le profil navigateur${suffix}`);
+          throw new Error(`Session navigateur non authentifiée - vérifier les credentials ou valider le challenge dans le profil navigateur${suffix}`);
         }
         return await buildStatsFromHtml(browserResult.url, browserResult.html, () => browserExtra(browserResult.extraHtml));
       } catch (error) {
-        // Repli generique, uniquement pour une signature anti-bot explicite. Les
-        // erreurs de credentials, reseau ou extraction ne lancent pas un second navigateur.
+        // Repli générique, uniquement pour une signature anti-bot explicite. Les
+        // erreurs de credentials, réseau ou extraction ne lancent pas un second navigateur.
         if (tracker.fetch.antiBotFallback !== 'flaresolverr' && isFlareSolverrCandidate(error)) {
           const viaFlareSolverr = await attemptFlareSolverr();
           if (viaFlareSolverr) return viaFlareSolverr;
@@ -1732,15 +1732,15 @@ async function fetchTrackerScrape(
       }
     }
 
-    // Mode HTTP : un cookie colle doit etre tente avant le login automatise. Sans
+    // Mode HTTP : un cookie collé doit être tenté avant le login automatisé. Sans
     // cela, les trackers comme C411 ignorent une session navigateur valide et
-    // rejouent inutilement un POST de login bloque par Cloudflare.
+    // rejouent inutilement un POST de login bloqué par Cloudflare.
     if (!isRetry) {
       const viaCookie = await tryCurlFastPath();
       if (viaCookie) return viaCookie;
 
       // Sans cookie valide, tenter le login+fetch via curl-impersonate. Si cette
-      // voie echoue, poursuivre avec la session Axios historique ci-dessous.
+      // voie échoue, poursuivre avec la session Axios historique ci-dessous.
       const viaCurl = await attemptHttpViaCurl();
       if (viaCurl) return viaCurl;
     }
@@ -1756,8 +1756,8 @@ async function fetchTrackerScrape(
       await doLogin(tracker, creds, session);
     }
 
-    // Cookie-only : le login est saute, la session vient uniquement du cookie colle.
-    // On l'injecte dans le jar avant le GET (sinon requete non authentifiee).
+    // Cookie-only : le login est saute, la session vient uniquement du cookie collé.
+    // On l'injecte dans le jar avant le GET (sinon requête non authentifiée).
     if (tracker.login.cookieOnly) {
       await injectStoredCookieIntoJar(tracker, session.jar);
     }
@@ -1775,8 +1775,8 @@ async function fetchTrackerScrape(
       throw new Error(`HTTP ${res.status} lors du fetch de ${url}`);
     }
 
-    // Pour les logins API JSON multi-etapes (C411) : le champ de succes
-    // ("authenticated") se verifie sur la reponse du fetch, pas sur celle du login.
+    // Pour les logins API JSON multi-etapes (C411) : le champ de succès
+    // ("authenticated") se vérifie sur la réponse du fetch, pas sur celle du login.
     if (tracker.login.mfaStep && tracker.login.successField) {
       const fetchJson = parseJsonRecord(res.data);
       if (!fetchJson?.[tracker.login.successField]) {
@@ -1809,7 +1809,7 @@ async function fetchTrackerScrape(
     if (isAnubisChallenge(res.data)) {
       const dumpPath = writeDebugDump(tracker, url, res.data, {}, 'anubis');
       const suffix = dumpPath ? ` - dump: ${dumpPath}` : '';
-      throw new Error(`Challenge Anubis recu depuis ${url} - validation JavaScript navigateur requise${suffix}`);
+      throw new Error(`Challenge Anubis reçu depuis ${url} - validation JavaScript navigateur requise${suffix}`);
     }
 
     const stats = await buildStatsFromHtml(url, res.data,

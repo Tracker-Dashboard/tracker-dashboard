@@ -160,7 +160,7 @@ try {
   invalidateSession(localTracker.id);
   const rejected = await fetchTracker(localTracker, credentials);
   assert.equal(rejected.status, 'error');
-  assert.match(rejected.error, /cookie refuse/);
+  assert.match(rejected.error, /cookie refusé/);
   assert.deepEqual(rejected.fields, {});
   assert.ok(requests.every(request => ['GET', 'HEAD'].includes(request.method)), 'Cookie-only must never POST credentials');
   assert.ok(requests.every(request => !request.url.includes('login.php')), 'Cookie-only must never request either login endpoint');

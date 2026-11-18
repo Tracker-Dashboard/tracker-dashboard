@@ -140,7 +140,7 @@ async function solve(
   }, timeoutMs);
   const solution = result.solution;
   if (!solution || typeof solution.response !== 'string' || (solution.status ?? 500) >= 400) {
-    throw new Error(`reponse invalide pour ${url}`);
+    throw new Error(`réponse invalide pour ${url}`);
   }
   return solution;
 }
@@ -158,7 +158,7 @@ export async function fetchWithFlareSolverr(
       } catch (secondaryError) {
         const primaryMessage = primaryError instanceof Error ? primaryError.message : String(primaryError);
         const secondaryMessage = secondaryError instanceof Error ? secondaryError.message : String(secondaryError);
-        throw new Error(`FlareSolverr indisponible/echec (${primaryMessage}); TRAWL indisponible/echec (${secondaryMessage})`);
+        throw new Error(`FlareSolverr indisponible/échec (${primaryMessage}); TRAWL indisponible/échec (${secondaryMessage})`);
       }
     });
 }
@@ -209,7 +209,7 @@ async function fetchWithSolver(
           const solvedExtra = await solve(baseUrl, activeSession, extraUrl, [], timeoutMs);
           extraHtml = solvedExtra.response;
         } catch {
-          // Comme les autres implementations extraFetch : le champ secondaire
+          // Comme les autres implémentations extraFetch : le champ secondaire
           // reste best-effort et ne doit jamais invalider les statistiques principales.
         }
       }

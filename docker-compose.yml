@@ -6,11 +6,11 @@ services:
     ports:
       - "3000:3000"
     environment:
-      # Token pour proteger l'endpoint /metrics (Prometheus)
-      # Laisser vide ou retirer la ligne pour desactiver l'export (l'endpoint renverra une erreur 503)
+      # Token pour protéger l'endpoint /metrics (Prometheus)
+      # Laisser vide ou retirer la ligne pour désactiver l'export (l'endpoint renverra une erreur 503)
       METRICS_TOKEN: ""
       # Pour un test ponctuel sans token : METRICS_PUBLIC=true
-      # Ne pas laisser actif si l'instance est exposee hors reseau local.
+      # Ne pas laisser actif si l'instance est exposée hors réseau local.
       # METRICS_PUBLIC: "true"
     volumes:
       - ./config:/app/config
@@ -35,7 +35,7 @@ services:
     network_mode: "service:tracker-dashboard"
     environment:
       HOST: 127.0.0.1
-      # Evite de journaliser les corps de requete, qui contiennent les cookies de session.
+      # Évite de journaliser les corps de requête, qui contiennent les cookies de session.
       LOG_LEVEL: warning
       TZ: Europe/Paris
 

@@ -42,7 +42,7 @@ const trackerCardActionsUseAccessibleIcons = (
   && html.includes('${CARD_ICON_FICHE}')
   && html.includes('${CARD_ICON_REFRESH}')
   && html.includes('aria-label="Ouvrir la fiche du tracker"')
-  && html.includes('aria-label="Rafraichir ce tracker"')
+  && html.includes('aria-label="Rafraîchir ce tracker"')
 );
 if (!trackerCardActionsUseAccessibleIcons) {
   errors.push('Tracker card details and refresh actions must use accessible icons');
@@ -113,7 +113,7 @@ if (!supportsAffectedTrackerLogins) {
 }
 
 const httpModePrefersStoredCookie = (() => {
-  const start = fetcher.indexOf('// Mode HTTP : un cookie colle doit etre tente avant le login automatise.');
+  const start = fetcher.indexOf('// Mode HTTP : un cookie collé doit être tenté avant le login automatisé.');
   const end = fetcher.indexOf('// Login si nécessaire.', start);
   if (start < 0 || end < 0) return false;
   const block = fetcher.slice(start, end);
@@ -223,7 +223,7 @@ if (extractExtraFieldResponse({ field: 'points', ...astratorrent.fetch.fields.po
   errors.push('AstraTorrent mobile cockpit must preserve zero values');
 }
 
-// Nostradamus : pages compte deplacees sous /user/profile/ (fragment synthetique).
+// Nostradamus : pages compte déplacées sous /user/profile/ (fragment synthétique).
 const nostradamus = JSON.parse(fs.readFileSync(path.join(root, 'config', 'trackers', 'nostradamus.json'), 'utf8'));
 const nostraFixture = `<span class="hero-banknotes size-3"></span> Points </span>
 <strong class="sidebar-account-stat__value">
@@ -246,14 +246,14 @@ if (nostradamus.fetch.url !== 'user/profile/activity'
   errors.push('Nostradamus must read /user/profile/activity (upload, download, active torrents, points)');
 }
 
-// Memphis : la page de connexion porte desormais class="dark auth-locked".
+// Memphis : la page de connexion porte désormais class="dark auth-locked".
 const memphisLoginDetected = (html) => memphis.login.failurePatterns.some(pattern => html.includes(pattern));
 if (!memphisLoginDetected('<html class="dark auth-locked">') || !memphisLoginDetected('<html class="auth-locked">')
     || memphisLoginDetected('<html class="dark"><main class="login-shell">Mon compte</main>')) {
   errors.push('Memphis login page must be detected with or without the dark theme class, never on the account page');
 }
 
-// Synthetic Memphis account panels: both generations must use the production transforms.
+// Synthetic Memphis account panels: both générations must use the production transforms.
 const memphisFixture = (label, uploaded, downloaded, ratio, seeding) => `
   <section id="account-health-panel"><div class="account-health-grid">
     <article><strong>${ratio}</strong><span>Ratio ${label}</span></article>
@@ -323,7 +323,7 @@ if (unrelatedMemphisValues.seedBonus !== undefined || unrelatedMemphisValues.mem
 }
 
 // Tigers-DL V3 : login.php, champ identity et jeton CSRF du formulaire de connexion
-// (pas celui des formulaires de theme, qui ajouteraient theme/return_to).
+// (pas celui des formulaires de thème, qui ajouteraient theme/return_to).
 const tigersdl = JSON.parse(fs.readFileSync(path.join(root, 'config', 'trackers', 'tigersdl.json'), 'utf8'));
 const tigersLoginFixture = `<form method="post" action="/theme-set.php"><input type="hidden" name="csrf_token" value="theme-token">
 <input type="hidden" name="theme" value="tgsd-orange"></form>
@@ -359,7 +359,7 @@ for (const html of [tigersLoginFixture, '<title>404 Not Found</title>', '<input 
   }
 }
 
-// Synthetic SpeedApp fragment : profil Vue, stats serialisees dans data-app-user-value.
+// Synthetic SpeedApp fragment : profil Vue, stats sérialisées dans data-app-user-value.
 const speedappFixture = `<body data-controller="app" data-app-user-value="{&quot;id&quot;:1,&quot;username&quot;:&quot;demo&quot;,&quot;uploaded&quot;:220689089304,&quot;downloaded&quot;:9721129246,&quot;credits&quot;:&quot;4.124&quot;}">`;
 const speedappValues = Object.fromEntries(Object.entries(speedapp.fetch.fields).map(([field, extractor]) => [
   field, extractExtraFieldResponse({ field, ...extractor }, speedappFixture)?.value,
@@ -625,7 +625,7 @@ const lesRescapesUsesBrowserLogin = (
   && browserFetcher.includes("text.includes('Sessions tracker actives')")
 );
 if (!lesRescapesUsesBrowserLogin) {
-  errors.push('Les Rescapes de Ygg must submit its browser login form when the session expires');
+  errors.push('Les Rescapés de Ygg must submit its browser login form when the session expires');
 }
 
 const preservesRateLimitErrors = (

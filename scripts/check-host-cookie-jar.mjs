@@ -15,7 +15,7 @@ try {
   const fetcher = await import(`${pathToFileURL(path.join(root, 'dist', 'fetcher.js')).href}?host-cookie=${Date.now()}`);
   sqlite = db.getDb();
 
-  // Les prefixes __Host- et __Secure- exigent l'attribut Secure : sans lui, le jar
+  // Les préfixes __Host- et __Secure- exigent l'attribut Secure : sans lui, le jar
   // les ignorait et le fallback axios partait sans cookie de session.
   db.setTrackerCookie('https-site', '__Host-site_session=abc; __Secure-token=def; __csrf=ghi');
   const jar = new CookieJar();

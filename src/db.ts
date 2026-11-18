@@ -133,9 +133,9 @@ export function getJsonSetting<T>(key: string, fallback: T): T {
   try {
     const parsed = JSON.parse(String(row.value));
     // Si fallback est un array : on renvoie parsed tel quel (un spread sur array
-    // donne {0:..., 1:...} et casse Array.isArray cote appelant)
+    // donné {0:..., 1:...} et casse Array.isArray côté appelant)
     if (Array.isArray(fallback)) return Array.isArray(parsed) ? (parsed as T) : fallback;
-    // Si fallback est un objet plain : on merge (preserve les cles par defaut)
+    // Si fallback est un objet plain : on merge (préserve les clés par défaut)
     if (fallback && typeof fallback === 'object') return { ...(fallback as object), ...parsed } as T;
     // Sinon (primitif) : on renvoie parsed
     return parsed as T;
@@ -156,8 +156,8 @@ export function setJsonSetting(key: string, value: unknown): void {
     .run(key, JSON.stringify(value));
 }
 
-// ─── Cookies de session manuels (pour sites a CAPTCHA / Cloudflare Turnstile) ──
-// On stocke la chaine de cookie brute fournie par l'utilisateur, par tracker.
+// ─── Cookies de session manuels (pour sites à CAPTCHA / Cloudflare Turnstile) ──
+// On stocke la chaîne de cookie brute fournie par l'utilisateur, par tracker.
 type TrackerCookieMap = Record<string, string>;
 
 export function getTrackerCookie(trackerId: string): string {
@@ -297,7 +297,7 @@ export function importLegacyCredentialsIfNeeded(): void {
       saveTrackerCredentials(trackerId, creds.username, creds.password);
     }
   } catch {
-    // Keep startup tolerant; missing credentials are reported per tracker later.
+    // Keep startup tolérant; missing credentials are reported per tracker later.
   }
 }
 
@@ -429,12 +429,12 @@ export function removeRetiredBundledTrackers(): void {
 
 // Migration corrective unique. L'import legacy (importLegacyTrackersIfNeeded) inscrit en
 // base TOUS les fichiers de trackers livres avec l'image, avec enabled=true, y compris ceux
-// que l'utilisateur n'a jamais configures. Resultat : des trackers sans aucun identifiant
+// que l'utilisateur n'a jamais configurés. Résultat : des trackers sans aucun identifiant
 // apparaissaient comme « actifs » dans le menu « Configurer les actifs » et dans les
 // tableaux de graphiques, et manquaient dans « Ajouter un tracker ». On les remet une seule
 // fois en « disponibles » (enabled=false). On ne touche jamais :
 //   - un tracker perso (non livre dans l'image, isDefaultTracker === false) ;
-//   - un tracker reellement configure (mot de passe, cookie de session ou secret 2FA).
+//   - un tracker réellement configuré (mot de passe, cookie de session ou secret 2FA).
 const DISABLE_UNCREDENTIALED_DEFAULTS_KEY = 'migration_disable_uncredentialed_default_trackers_v1';
 
 export function disableUncredentialedDefaultTrackersOnce(): void {
@@ -451,9 +451,9 @@ export function disableUncredentialedDefaultTrackersOnce(): void {
     || hasTrackerTotpSecret(trackerId);
 
   for (const config of loadTrackerConfigsFromDb()) {
-    if (config.enabled === false) continue;        // deja disponible
+    if (config.enabled === false) continue;        // déjà disponible
     if (!isDefaultTracker(config.id)) continue;    // tracker perso : on n'y touche pas
-    if (hasAnyCredential(config.id)) continue;     // reellement configure : reste actif
+    if (hasAnyCredential(config.id)) continue;     // réellement configuré : reste actif
     saveTrackerConfig({ ...config, enabled: false });
   }
 
@@ -545,10 +545,10 @@ export function loadTrackerDefinitionFile(trackerId: string): TrackerConfig | nu
   return entry ? structuredClone(entry.config) : null;
 }
 
-// Lit la definition par defaut EMBARQUEE DANS L'IMAGE (default-trackers/), donc toujours
-// a jour avec la version deployee — contrairement a loadTrackerDefinitionFile qui lit la
-// copie sur le volume (config/trackers/), jamais rafraichie une fois ecrite. A utiliser
-// pour les trackers embarques dont la definition fait autorite cote application.
+// Lit la définition par défaut EMBARQUÉE DANS L'IMAGE (default-trackers/), donc toujours
+// à jour avec la version déployée — contrairement à loadTrackerDefinitionFile qui lit la
+// copie sur le volume (config/trackers/), jamais rafraîchie une fois écrite. À utiliser
+// pour les trackers embarques dont la définition fait autorité côté application.
 export function loadDefaultTrackerDefinition(trackerId: string): TrackerConfig | null {
   if (!fs.existsSync(DEFAULT_TRACKERS_DIR)) return null;
   const target = path.join(DEFAULT_TRACKERS_DIR, `${trackerId}.json`);
@@ -668,10 +668,10 @@ export function deleteTrackerCredentials(trackerId: string): void {
 }
 
 /**
- * Supprime entierement un tracker custom : config, identifiants, planning et
- * historique de snapshots. Cookie/TOTP (stockes dans la table settings sous forme
- * de map JSON) sont nettoyes par l'appelant via setTrackerCookie/setTrackerTotpSecret.
- * A reserver aux trackers ajoutes par l'utilisateur (absents de default-trackers/),
+ * Supprime entièrement un tracker custom : config, identifiants, planning et
+ * historique de snapshots. Cookie/TOTP (stockés dans la table settings sous forme
+ * de map JSON) sont nettoyés par l'appelant via setTrackerCookie/setTrackerTotpSecret.
+ * À réserver aux trackers ajoutes par l'utilisateur (absents de default-trackers/),
  * car syncDefaultTrackerDefinitions() reseederait un tracker embarque au prochain boot.
  */
 export function deleteTrackerConfig(trackerId: string): void {
@@ -689,7 +689,7 @@ export function deleteTrackerConfig(trackerId: string): void {
   }
 }
 
-/** True si une definition embarquee (default-trackers/) existe pour cet id. */
+/** True si une définition embarquée (default-trackers/) existe pour cet id. */
 export function isDefaultTracker(trackerId: string): boolean {
   if (!fs.existsSync(DEFAULT_TRACKERS_DIR)) return false;
   return fs.existsSync(path.join(DEFAULT_TRACKERS_DIR, `${trackerId}.json`));
@@ -770,8 +770,10 @@ export function markTrackerScheduleRun(trackerId: string, nextRunAt: string): vo
     .run(nextRunAt, trackerId);
 }
 
-// Prefixe de la colonne error pour un login en echec dont les stats viennent de l'API.
-const LOGIN_ERROR_SNAPSHOT_PREFIX = 'Login en echec (stats lues via API) : ';
+// Préfixe de la colonne error pour un login en échec dont les stats viennent de l'API.
+const LOGIN_ERROR_SNAPSHOT_PREFIX = 'Login en échec (stats lues via API) : ';
+// Forme sans accent écrite par les versions précédentes, encore présente en base.
+const LEGACY_LOGIN_ERROR_SNAPSHOT_PREFIX = 'Login en echec (stats lues via API) : ';
 
 export function saveStatSnapshots(stats: TrackerStats[]): void {
   const stmt = getDb().prepare(`
@@ -810,13 +812,13 @@ export function getLatestOkStatSnapshot(tracker: TrackerConfig): TrackerStats | 
   if (!row) return null;
   try {
     const fields = JSON.parse(String(row.fields_json)) as Record<string, string | number>;
-    // Un login en echec avec stats lues via l'API est enregistre en status 'ok'
-    // avec ce prefixe dans error (voir saveStatSnapshots) : on le restaure pour
-    // que la carte reste en erreur apres un redemarrage.
+    // Un login en échec avec stats lues via l'API est enregistré en status 'ok'
+    // avec ce préfixe dans error (voir saveStatSnapshots) : on le restaure pour
+    // que la carte reste en erreur après un redémarrage.
     const storedError = typeof row.error === 'string' ? row.error : '';
-    const loginError = storedError.startsWith(LOGIN_ERROR_SNAPSHOT_PREFIX)
-      ? storedError.slice(LOGIN_ERROR_SNAPSHOT_PREFIX.length)
-      : undefined;
+    const prefix = [LOGIN_ERROR_SNAPSHOT_PREFIX, LEGACY_LOGIN_ERROR_SNAPSHOT_PREFIX]
+      .find(candidate => storedError.startsWith(candidate));
+    const loginError = prefix ? storedError.slice(prefix.length) : undefined;
     return {
       id: tracker.id,
       name: String(row.tracker_name || tracker.name),

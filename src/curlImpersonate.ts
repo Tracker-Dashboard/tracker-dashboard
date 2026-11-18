@@ -9,17 +9,17 @@ import { getJsonSetting } from './db.js';
 // ─── Fast-path curl-impersonate ─────────────────────────────────────────────────
 // curl-impersonate usurpe l'empreinte TLS/HTTP2 d'un vrai navigateur. Pour les
 // trackers en mode navigateur disposant d'un cookie de session valide et dont la
-// page de stats est rendue cote serveur, on tente d'abord une simple requete HTTP
-// impersonee (legere, pas de Chromium). En cas d'echec on retombe sur le navigateur.
+// page de stats est rendue côté serveur, on tente d'abord une simple requête HTTP
+// impersonee (légère, pas de Chromium). En cas d'échec on retombe sur le navigateur.
 
 const STATUS_MARKER = '\n__CURL_HTTP_STATUS__:';
 
 function binaryName(override?: string): string {
-  // Wrapper par defaut fourni par curl-impersonate (positionne ciphers + en-tetes).
+  // Wrapper par défaut fourni par curl-impersonate (positionne ciphers + en-têtes).
   return override || process.env.CURL_IMPERSONATE_BIN || 'curl_chrome116';
 }
 
-/** Fast-path actif ? (reglage global, defaut: actif) */
+/** Fast-path actif ? (réglage global, défaut: actif) */
 export function fastFetchEnabled(): boolean {
   return getJsonSetting('fast_fetch', true as boolean) !== false;
 }
@@ -37,18 +37,18 @@ function checkAvailable(binary?: string): Promise<boolean> {
   return promise;
 }
 
-/** Reinitialise le cache de disponibilite (ex: apres changement d'env). */
+/** Réinitialise le cache de disponibilité (ex: après changement d'env). */
 export function resetCurlAvailability(): void {
   availablePromises.clear();
 }
 
 function curlProxyArg(trackerId: string): string | null {
   const p = resolveProxyForTracker(trackerId);
-  if (!p.enabled || !p.host || !p.port) return null; // direct / desactive
+  if (!p.enabled || !p.host || !p.port) return null; // direct / désactivé
   if (p.type === 'ssh') {
     const ssh = toSshConfig(p);
     const ep = ssh ? getSshLocalEndpoint(ssh) : null;
-    return ep ? `socks5h://${ep.host}:${ep.port}` : null; // tunnel pas pret -> pas de fast-path
+    return ep ? `socks5h://${ep.host}:${ep.port}` : null; // tunnel pas prêt -> pas de fast-path
   }
   const auth = p.username && p.password
     ? `${encodeURIComponent(p.username)}:${encodeURIComponent(p.password)}@`
@@ -66,10 +66,10 @@ export interface CurlGetOptions {
 
 /**
  * GET impersone. Renvoie { status, body } ou null si le binaire est absent /
- * l'appel a echoue (l'appelant retombe alors sur le navigateur).
+ * l'appel a échoué (l'appelant retombe alors sur le navigateur).
  */
-// Execute curl-impersonate avec une liste d'arguments deja construite (sans le
-// marqueur de status ni le binaire). Renvoie { status, body } ou null si echec.
+// Exécute curl-impersonate avec une liste d'arguments déjà construite (sans le
+// marqueur de status ni le binaire). Renvoie { status, body } ou null si échec.
 function execCurl(
   args: string[],
   timeoutMs: number,
@@ -114,15 +114,15 @@ export async function curlImpersonateGet(
 export interface CurlRequestOptions {
   method?: 'GET' | 'POST';
   headers?: Record<string, string>;
-  /** Corps brut (deja encode : form-urlencoded ou JSON selon Content-Type). */
+  /** Corps brut (déjà encode : form-urlencoded ou JSON selon Content-Type). */
   data?: string;
   timeoutMs?: number;
-  /** 0 = ne pas suivre les redirections (equivalent maxRedirects:0 axios). Par defaut, suit (-L). */
+  /** 0 = ne pas suivre les redirections (équivalent maxRedirects:0 axios). Par défaut, suit (-L). */
   maxRedirects?: number;
 }
 
 /**
- * Session curl-impersonate avec jar de cookies persistant entre les requetes
+ * Session curl-impersonate avec jar de cookies persistant entre les requêtes
  * (-c/-b sur un fichier temporaire). Permet de rejouer un login complet
  * (page CSRF -> POST -> fetch) avec une empreinte TLS de vrai navigateur.
  * Appeler dispose() en fin de session pour supprimer le jar.
@@ -162,6 +162,6 @@ export class CurlSession {
   }
 
   dispose(): void {
-    try { fs.unlinkSync(this.jarPath); } catch { /* deja absent */ }
+    try { fs.unlinkSync(this.jarPath); } catch { /* déjà absent */ }
   }
 }

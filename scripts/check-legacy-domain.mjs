@@ -16,7 +16,7 @@ try {
   const fetcher = await import(`${pathToFileURL(path.join(root, 'dist', 'fetcher.js')).href}?legacy=${Date.now()}`);
   const migrations = await import(`${pathToFileURL(path.join(root, 'dist', 'catalogMigrations.js')).href}?legacy=${Date.now()}`);
 
-  // 1. Un Set-Cookie recu apres une redirection inter-domaines doit etre range sous
+  // 1. Un Set-Cookie reçu après une redirection inter-domaines doit être rangé sous
   //    le domaine final : 127.0.0.1 (ancien domaine) redirige vers localhost.
   server = http.createServer((req, res) => {
     const host = (req.headers.host ?? '').split(':')[0];
@@ -42,7 +42,7 @@ try {
   const post = await client.post(`http://localhost:${port}/login`, '_token=t', { maxRedirects: 0 });
   assert.equal(post.status, 302, 'the login POST on the new domain must carry the session cookie set after the redirect');
 
-  // 2. L'ancien domaine Yggrasil est migre vers le domaine de la definition integree.
+  // 2. L'ancien domaine Yggrasil est migré vers le domaine de la définition intégrée.
   const definition = { baseUrl: 'https://draupnirr.xyz' };
   const legacy = { id: 'yggrasil', baseUrl: 'https://yggrasil.xyz' };
   assert.equal(migrations.migrateLegacyBaseUrl(legacy, definition), true);

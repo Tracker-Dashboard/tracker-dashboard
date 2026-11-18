@@ -141,13 +141,20 @@ assert.equal(engine.tdT('Supprimer définitivement le tracker « Demo » et tout
   'Permanently delete the tracker “Demo” and all its data (credentials, history)?');
 assert.equal(engine.tdT('Generation-Free'), 'Generation-Free');
 assert.equal(engine.tdLocale(), 'en-GB');
+// Messages enregistrés avant la correction des accents : toujours traduits.
+assert.equal(engine.tdT('Filtrer les trackers affiches...'), engine.tdT('Filtrer les trackers affichés...'));
+assert.notEqual(engine.tdT('Filtrer les trackers affiches...'), 'Filtrer les trackers affiches...');
+assert.equal(engine.tdT("LOGIN EN ECHEC (stats lues via l'API) : Login échoué — HTTP 403"),
+  'LOGIN FAILED (stats read via the API): Login failed — HTTP 403');
+assert.equal(engine.tdT('Session navigateur non authentifiee - verifier les credentials ou valider le challenge dans le profil navigateur - dump: /x.html'),
+  engine.tdT('Session navigateur non authentifiée - vérifier les credentials ou valider le challenge dans le profil navigateur - dump: /x.html'));
 
 // Textes assemblés par le serveur : erreurs avec détails, valeurs insérées, journaux.
 assert.equal(engine.tdT('Login échoué — HTTP 403 - dump: /data/x.html'), 'Login failed — HTTP 403 - dump: /data/x.html');
-assert.equal(engine.tdT('LOGIN EN ECHEC (stats lues via l\'API) : Login échoué — HTTP 403'),
+assert.equal(engine.tdT('LOGIN EN ÉCHEC (stats lues via l\'API) : Login échoué — HTTP 403'),
   'LOGIN FAILED (stats read via the API): Login failed — HTTP 403');
 assert.equal(engine.tdT('  [Demo] Unité d\'affichage alignée sur le site : GB (décimal)'), '  [Demo] Display unit aligned with the site: GB (decimal)');
-assert.equal(engine.tdT('✅ 3 ok ❌ 1 erreur(s) ⚙️ 2 non configure(s)'), '✅ 3 ok ❌ 1 error(s) ⚙️ 2 not configured');
+assert.equal(engine.tdT('✅ 3 ok ❌ 1 erreur(s) ⚙️ 2 non configuré(s)'), '✅ 3 ok ❌ 1 error(s) ⚙️ 2 not configured');
 assert.equal(engine.tdT('2 échecs'), '2 failures');
 // L'unité du buffer est déjà traduite par formatBytesForNotif, le seuil par le motif.
 assert.equal(engine.tdT('Demo : buffer 1.50 GiB < 5 Go'), 'Demo: buffer 1.50 GiB < 5 GB');
@@ -173,7 +180,7 @@ const notificationPieces = new Map([
   ['Demo : ratio 0.80 < 1', 'Demo: ratio 0.80 < 1'],
   ['Demo : session ancienne (40 j, seuil 30 j)', 'Demo: old session (40 d, threshold 30 d)'],
   ['erreur inconnue', 'unknown error'],
-  ['Test Tracker Dashboard Beta : notification recue.', 'Tracker Dashboard Beta test: notification received.'],
+  ['Test Tracker Dashboard Beta : notification reçue.', 'Tracker Dashboard Beta test: notification received.'],
 ]);
 for (const [fr, en] of notificationPieces) assert.equal(server.t(fr), en);
 server.setServerLanguage('fr');

@@ -62,8 +62,8 @@ jobs:
 
       # Les CVE de l'image de base peuvent casser toutes les PR Dependabot sans
       # rapport avec le changement teste. Sur PR on garde donc le scan visible
-      # dans les logs, mais non bloquant. Le scan planifie publie le rapport
-      # SARIF dans l'onglet Security pour le suivi securite.
+      # dans les logs, mais non bloquant. Le scan planifié publie le rapport
+      # SARIF dans l'onglet Security pour le suivi sécurité.
       - name: Scan image for high and critical CVEs
         uses: aquasecurity/trivy-action@v0.36.0
         env:

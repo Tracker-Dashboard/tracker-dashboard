@@ -35,8 +35,8 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # Scan planifie = MONITORING : on genere le rapport et on l'envoie dans
-      # l'onglet Security, mais on NE fait PAS echouer le run (exit-code 0).
+      # Scan planifié = MONITORING : on génère le rapport et on l'envoie dans
+      # l'onglet Security, mais on NE fait PAS échouer le run (exit-code 0).
       # Le hard-fail bloquant vit dans pr-checks.yml (sur les PR vers main).
       - name: Generate Trivy SARIF report
         uses: aquasecurity/trivy-action@v0.36.0
@@ -80,7 +80,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Image reellement distribuee aux utilisateurs (et non un rebuild local).
+      # Image réellement distribuée aux utilisateurs (et non un rebuild local).
       - name: Report Node.js version of published image
         run: |
           IMG="ghcr.io/tracker-dashboard/${{ matrix.image }}:latest"

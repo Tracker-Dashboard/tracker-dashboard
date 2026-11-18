@@ -9,11 +9,11 @@ import { parseCookies } from './cookies.js';
 import { generateTotp } from './totp.js';
 import { type TrackerConfig, extraFetchList } from './types.js';
 
-// ─── Moteur navigateur : Chromium (defaut) ou CloakBrowser (furtif, opt-in) ─────
+// ─── Moteur navigateur : Chromium (défaut) ou CloakBrowser (furtif, opt-in) ─────
 // CloakBrowser est un Chromium patche qui passe mieux les protections anti-bot.
-// Drop-in Playwright : meme API launchPersistentContext / newPage / addCookies.
-// Chargement dynamique + repli automatique sur Chromium si indisponible/echec,
-// pour qu'une install cassee ne bloque jamais l'app.
+// Drop-in Playwright : même API launchPersistentContext / newPage / addCookies.
+// Chargement dynamique + repli automatique sur Chromium si indisponible/échec,
+// pour qu'une install cassée ne bloque jamais l'app.
 interface CloakModule {
   launchPersistentContext: (opts: Record<string, unknown>) => Promise<BrowserContext>;
   ensureBinary?: () => Promise<unknown>;
@@ -23,7 +23,7 @@ async function loadCloak(): Promise<CloakModule | null> {
   if (!cloakModulePromise) {
     cloakModulePromise = (async () => {
       try {
-        const spec = 'cloakbrowser'; // specifier non litteral -> non resolu a la compilation
+        const spec = 'cloakbrowser'; // spécifier non littéral -> non résolu à la compilation
         const mod = await import(spec) as unknown as CloakModule;
         return mod;
       } catch (err) {
@@ -72,16 +72,16 @@ async function injectStoredCookies(tracker: TrackerConfig, context: BrowserConte
   })));
   try {
     await context.addCookies(cookies);
-    console.log(`[Cookies] ${tracker.id} : ${cookies.length} cookie(s) injecte(s) (${parsed.map(c => c.name).join(', ')})`);
+    console.log(`[Cookies] ${tracker.id} : ${cookies.length} cookie(s) injecté(s) (${parsed.map(c => c.name).join(', ')})`);
   } catch (err: unknown) {
-    console.warn(`[Cookies] ${tracker.id} : injection echouee - ${err instanceof Error ? err.message : err}`);
+    console.warn(`[Cookies] ${tracker.id} : injection échouée - ${err instanceof Error ? err.message : err}`);
   }
 }
 
 /**
- * Applique le cookie stocke a un contexte DEJA ouvert (sans le fermer), pour une
- * prise en compte immediate apres enregistrement, sans casser un fetch en cours.
- * Si aucun contexte n'existe, le cookie sera injecte au prochain getContext.
+ * Applique le cookie stocké à un contexte DÉJÀ ouvert (sans le fermer), pour une
+ * prise en compte immédiate après enregistrement, sans casser un fetch en cours.
+ * Si aucun contexte n'existe, le cookie sera injecté au prochain getContext.
  */
 export async function applyStoredCookies(tracker: TrackerConfig): Promise<void> {
   const context = contexts.get(tracker.id);
@@ -131,13 +131,13 @@ function isAnubisChallenge(html: string): boolean {
 }
 
 function playwrightProxy(trackerId: string, overrides?: BrowserFetchOverrides): { server: string; username?: string; password?: string } | undefined {
-  // Runtime externe : le proxy est deja resolu cote app principale (y compris le
+  // Runtime externe : le proxy est déjà résolu côté app principale (y compris le
   // socks du tunnel SSH), on l'utilise tel quel sans relire la DB ni le tunnel local.
   if (overrides) return overrides.proxy ?? undefined;
   const proxy = resolveProxyForTracker(trackerId);
   if (!proxy.enabled || !proxy.host || !proxy.port) return undefined;
-  // Proxy SSH : on pointe vers le SOCKS5 local du tunnel (etabli par ensureProxyReady
-  // avant le fetch). Sans tunnel pret, on sort sans proxy.
+  // Proxy SSH : on pointe vers le SOCKS5 local du tunnel (établi par ensureProxyReady
+  // avant le fetch). Sans tunnel prêt, on sort sans proxy.
   if (proxy.type === 'ssh') {
     const ssh = toSshConfig(proxy);
     const endpoint = ssh ? getSshLocalEndpoint(ssh) : null;
@@ -172,9 +172,9 @@ async function getContext(tracker: TrackerConfig, overrides?: BrowserFetchOverri
     if (cloak) {
       try {
         context = await cloak.launchPersistentContext({ userDataDir, ...launchOptions });
-        console.log(`[CloakBrowser] Contexte furtif lance pour ${tracker.id}`);
+        console.log(`[CloakBrowser] Contexte furtif lancé pour ${tracker.id}`);
       } catch (err) {
-        console.error(`[CloakBrowser] Echec lancement (${tracker.id}), repli Chromium :`, err instanceof Error ? err.message : err);
+        console.error(`[CloakBrowser] Échec lancement (${tracker.id}), repli Chromium :`, err instanceof Error ? err.message : err);
         context = null;
       }
     }
@@ -188,7 +188,7 @@ async function getContext(tracker: TrackerConfig, overrides?: BrowserFetchOverri
 }
 
 /**
- * V3X : les libelles de « Mon activite » s'affichent avant les valeurs chargees par
+ * V3X : les libellés de « Mon activité » s'affichent avant les valeurs chargées par
  * l'API (points, nombre de seeds). On attend ces valeurs, sans bloquer la lecture
  * si elles n'arrivent pas (ex. aucun seed en cours : pas de badge).
  */
@@ -217,7 +217,7 @@ async function waitForAnubis(page: Page): Promise<void> {
     await page.waitForTimeout(1000);
   }
   if (isAnubisChallenge(lastHtml)) {
-    throw new Error('Challenge Anubis encore present apres 45s dans Chromium');
+    throw new Error('Challenge Anubis encore présent après 45s dans Chromium');
   }
 }
 
@@ -277,9 +277,9 @@ async function waitForTurnstile(page: Page, tracker?: TrackerConfig): Promise<'n
 }
 
 /**
- * Renvoie true si on a detecte un indicateur DOM de session authentifiee pour le tracker.
- * Permet de court-circuiter la detection de failurePatterns sur les SPAs qui affichent
- * une coquille "non connecte" avant hydratation (cas TR4KER).
+ * Renvoie true si on a détecté un indicateur DOM de session authentifiée pour le tracker.
+ * Permet de court-circuiter la détection de failurePatterns sur les SPAs qui affichent
+ * une coquille "non connecté" avant hydratation (cas TR4KER).
  */
 async function waitForTrackerContent(tracker: TrackerConfig, page: Page): Promise<boolean> {
   if ((tracker.baseId ?? tracker.id) === 'digitalcore') {
@@ -484,9 +484,9 @@ async function revealMilkieStats(page: Page): Promise<void> {
   }
 }
 
-// Page anti-bot / challenge JS (Cloudflare, DDoS-Guard...) affichee a la place du
+// Page anti-bot / challenge JS (Cloudflare, DDoS-Guard...) affichée à la place du
 // contenu attendu — typiquement quand il manque un cookie cf_clearance ou que l'IP
-// de sortie ne correspond pas a celle ayant cree la session.
+// de sortie ne correspond pas à celle ayant créé la session.
 function looksAntiBot(html: string): boolean {
   const h = html.toLowerCase();
   return h.includes('cf-turnstile') ||
@@ -574,7 +574,7 @@ async function submitV3xApiLogin(
     const detail = result.error || result.details
       ? ` : ${[result.error, result.details].filter(Boolean).join(' - ')}`
       : ` : API login status ${result.status}`;
-    throw new Error(`Login V3X echoue${detail}${suffix}`);
+    throw new Error(`Login V3X échoué${detail}${suffix}`);
   }
 
   await page.goto(resolveUrl(tracker.baseUrl, tracker.fetch.url), { waitUntil: 'commit', timeout: 45_000 });
@@ -587,8 +587,8 @@ async function submitV3xApiLogin(
     const dump = writeBrowserDump(tracker, currentUrl, html, 'login-refused');
     const suffix = dump ? ` - dump: ${dump}` : '';
     const loginError = extractV3xLoginError(html);
-    const detail = loginError ? ` : ${loginError}` : ' : session API acceptee mais activite non authentifiee';
-    throw new Error(`Login V3X echoue${detail}${suffix}`);
+    const detail = loginError ? ` : ${loginError}` : ' : session API acceptée mais activité non authentifiée';
+    throw new Error(`Login V3X échoué${detail}${suffix}`);
   }
 }
 
@@ -604,7 +604,7 @@ async function waitForAntiBotChallenge(page: Page): Promise<void> {
   }
 }
 
-// Dump leger d'une page navigateur pour diagnostic (meme dossier que les autres dumps).
+// Dump léger d'une page navigateur pour diagnostic (même dossier que les autres dumps).
 function writeBrowserDump(tracker: TrackerConfig, url: string, html: string, reason: string): string | null {
   try {
     const dir = path.join(process.cwd(), 'config', 'debug');
@@ -650,28 +650,28 @@ async function ensureLoggedIn(
   trace(tracker, page, 'login page detected, logging in');
 
   // Mode cookie uniquement : on ne soumet JAMAIS le formulaire (sinon, sur des sites
-  // comme MyAnonamouse, chaque tentative cree une session et finit par bloquer le compte).
-  // Le cookie injecte ne suffit pas (page de login detectee) -> on ECHOUE TOUT DE SUITE
+  // comme MyAnonamouse, chaque tentative crée une session et finit par bloquer le compte).
+  // Le cookie injecté ne suffit pas (page de login détectée) -> on ÉCHOUE TOUT DE SUITE
   // avec un message clair + un dump pour diagnostic, au lieu de poursuivre.
   if (tracker.login.cookieOnly) {
     const currentUrl = page.url();
     const dump = writeBrowserDump(tracker, currentUrl, html, 'cookieonly');
     const suffix = dump ? ` - dump: ${dump}` : '';
     if (looksAntiBot(html)) {
-      throw new Error(`Session non authentifiee : challenge anti-bot/Cloudflare affiche malgre le cookie (il manque sans doute un cookie cf_clearance, ou l'IP de sortie differe de celle qui a cree la session)${suffix}`);
+      throw new Error(`Session non authentifiée : challenge anti-bot/Cloudflare affiché malgré le cookie (il manque sans doute un cookie cf_clearance, ou l'IP de sortie diffère de celle qui a créé la session)${suffix}`);
     }
     const matched = tracker.login.failurePatterns.find(p => html.includes(p));
-    throw new Error(`Session non authentifiee : page de login detectee (motif "${matched ?? '?'}") malgre le cookie injecte. Causes frequentes : session liee a l'IP (sortir par la meme IP via proxy/SSH), cookie incomplet, ou expire${suffix}`);
+    throw new Error(`Session non authentifiée : page de login détectée (motif "${matched ?? '?'}") malgré le cookie injecté. Causes fréquentes : session liée à l'IP (sortir par la même IP via proxy/SSH), cookie incomplet, ou expiré${suffix}`);
   }
 
-  // Mode dual cookie + credentials : si un cookie a ete fourni sans identifiants,
-  // on ne tente pas un formulaire vide si cette session est refusee/expiree.
+  // Mode dual cookie + credentials : si un cookie a été fourni sans identifiants,
+  // on ne tente pas un formulaire vide si cette session est refusée/expirée.
   const storedCookie = overrides ? (overrides.cookie ?? '') : getTrackerCookie(tracker.id);
   if (storedCookie && !credentials.username && !credentials.password) {
     const currentUrl = page.url();
     const dump = writeBrowserDump(tracker, currentUrl, html, 'cookie-session');
     const suffix = dump ? ` - dump: ${dump}` : '';
-    throw new Error(`Cookie de session refuse ou expire ; renseigner username/password ou remplacer le cookie${suffix}`);
+    throw new Error(`Cookie de session refusé ou expiré ; renseigner username/password ou remplacer le cookie${suffix}`);
   }
 
   const loginUrl = resolveUrl(tracker.baseUrl, tracker.login.url);
@@ -714,13 +714,13 @@ async function ensureLoggedIn(
       const target = input.first();
       const type = ((await target.getAttribute('type')) ?? 'text').toLowerCase();
       if (type === 'hidden') continue;
-      if (type === 'submit' || type === 'button') break; // ex: cle "login" designe le bouton submit (Gazelle classique), pas un champ a remplir
+      if (type === 'submit' || type === 'button') break; // ex: clé "login" désigne le bouton submit (Gazelle classique), pas un champ à remplir
       if (type === 'checkbox') {
         if (value === 'true' || value === 'on' || value === '1') {
           // Une checkbox de login (ex: "remember me") est souvent stylisee/masquee par
-          // du CSS : le clic natif echoue. On ne doit JAMAIS bloquer le login pour ca.
+          // du CSS : le clic natif échoue. On ne doit JAMAIS bloquer le login pour ça.
           await target.check({ timeout: 2500 }).catch(async () => {
-            // Fallback : cocher directement via le DOM, meme si l'element est invisible.
+            // Fallback : cocher directement via le DOM, même si l'élément est invisible.
             await target.evaluate(el => {
               if (el instanceof HTMLInputElement) {
                 el.checked = true;
@@ -736,7 +736,7 @@ async function ensureLoggedIn(
     }
   }
 
-  // 2FA : si un secret TOTP est enregistre, on remplit le champ du code avant submit.
+  // 2FA : si un secret TOTP est enregistré, on remplit le champ du code avant submit.
   const totpSecret = overrides ? (overrides.totpSecret ?? '') : getTrackerTotpSecret(tracker.id);
   if (totpSecret) {
     const code = generateTotp(totpSecret);
@@ -775,7 +775,7 @@ async function ensureLoggedIn(
     // tentatives de soumission. On échoue tout de suite avec un dump.
     const dump = writeBrowserDump(tracker, page.url(), await safeContent(page), 'turnstile');
     const suffix = dump ? ` - dump: ${dump}` : '';
-    throw new Error(`Verification Cloudflare Turnstile non validee par le navigateur (pas de jeton apres 30 s)${suffix}`);
+    throw new Error(`Vérification Cloudflare Turnstile non validée par le navigateur (pas de jeton après 30 s)${suffix}`);
   }
   if (['kufirc', 'happyfappy', 'empornium'].includes(tracker.id)) {
     await page.waitForFunction(
@@ -805,7 +805,7 @@ async function ensureLoggedIn(
       return el.name || el.id || el.type || 'input';
     }), loginFieldNames).catch(() => []);
   if (invalidFields.length > 0) {
-    throw new Error(`Formulaire login invalide (${invalidFields.join(', ')}) - verifier le format des identifiants`);
+    throw new Error(`Formulaire login invalide (${invalidFields.join(', ')}) - vérifier le format des identifiants`);
   }
 
   const submit = page.locator('form button[type="submit"]:visible, form input[type="submit"]:visible, button[type="submit"]:visible, input[type="submit"]:visible');
@@ -850,12 +850,12 @@ async function ensureLoggedIn(
       const dump = writeBrowserDump(tracker, currentUrl, postHtml, 'login-refused');
       const suffix = dump ? ` - dump: ${dump}` : '';
       const loginError = extractV3xLoginError(postHtml);
-      const detail = loginError ? ` : ${loginError}` : ' : formulaire de connexion toujours affiche';
-      throw new Error(`Login V3X echoue${detail}${suffix}`);
+      const detail = loginError ? ` : ${loginError}` : ' : formulaire de connexion toujours affiché';
+      throw new Error(`Login V3X échoué${detail}${suffix}`);
     }
   }
 
-  // ── 2FA en deux etapes : page de challenge apres le mot de passe ────────────
+  // ── 2FA en deux étapes : page de challenge après le mot de passe ────────────
   if (totpSecret) {
     const postHtml = await safeContent(page);
     const otpFieldName = tracker.login.otpField || tracker.login.otpStep?.field;
@@ -911,7 +911,7 @@ export async function fetchWithBrowser(
     await waitForAnubis(page);
     await waitForAntiBotChallenge(page);
     await waitForLiveView(page);
-    trace(tracker, page, 'premiere page chargee');
+    trace(tracker, page, 'première page chargée');
     await ensureLoggedIn(tracker, credentials, page, overrides);
     await page.goto(url, { waitUntil: 'commit', timeout: 45_000 });
     await page.waitForLoadState('domcontentloaded', { timeout: 30_000 }).catch(() => {});
@@ -920,8 +920,8 @@ export async function fetchWithBrowser(
     await waitForLiveView(page);
     await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
     if (tracker.id === 'nostradamus') {
-      // Activity est rendu cote client via Phoenix LiveView - on attend que
-      // l'ecran "Chargement de l'activite..." disparaisse avant de lire le HTML
+      // Activity est rendu côté client via Phoenix LiveView - on attend que
+      // l'écran "Chargement de l'activité..." disparaisse avant de lire le HTML
       await page.waitForFunction(
         () => !document.getElementById('activity-loading-state'),
         null,
@@ -969,26 +969,26 @@ export async function fetchWithBrowser(
         }
       } catch {
         // Best-effort : la page secondaire (ex. classe de membre) ne doit jamais
-        // invalider le fetch principal, deja capture dans `html`.
+        // invalider le fetch principal, déjà capture dans `html`.
       }
     }
 
     return { html, url: primaryUrl, authConfirmed, extraHtml };
   } finally {
     await page.close().catch(() => {});
-    // Fermer le contexte (= le process Chromium) apres chaque fetch. Sinon, avec
-    // beaucoup de trackers en mode navigateur, les contextes s'accumulent en memoire
+    // Fermer le contexte (= le process Chromium) après chaque fetch. Sinon, avec
+    // beaucoup de trackers en mode navigateur, les contextes s'accumulent en mémoire
     // (1 Chromium par tracker) et l'app rame. Le profil persiste sur disque (cookies
-    // conserves), on le relance juste au prochain cycle. Max simultane = REFRESH_CONCURRENCY.
+    // conserves), on le relance juste au prochain cycle. Max simultané = REFRESH_CONCURRENCY.
     await closeBrowserSession(tracker.id).catch(() => {});
   }
 }
 
 /**
- * Recupere le HTML brut d'une URL via un navigateur EPHEMERE (contexte non
- * persistant, sans profil ni cookies), pour la detection de moteur quand le GET
- * HTTP echoue (Cloudflare/JS). Aucun login, aucune session : usage strictement
- * lecture-seule d'une page publique (ex: page de login). Best-effort : renvoie '' en cas d'echec.
+ * Récupère le HTML brut d'une URL via un navigateur ÉPHÉMÈRE (contexte non
+ * persistant, sans profil ni cookies), pour la détection de moteur quand le GET
+ * HTTP échoue (Cloudflare/JS). Aucun login, aucune session : usage strictement
+ * lecture-seule d'une page publique (ex: page de login). Best-effort : renvoie '' en cas d'échec.
  */
 export async function fetchRawHtmlWithBrowser(url: string, trackerId = '__detect__', overrides?: BrowserFetchOverrides): Promise<string> {
   const contextOptions = {
@@ -1026,8 +1026,8 @@ export async function closeBrowserSession(trackerId: string): Promise<void> {
 }
 
 /**
- * Reset complet du profil navigateur d'un tracker : ferme le contexte en memoire
- * PUIS supprime le profil persistant sur disque (cookies, localStorage, cache).
+ * Reset complet du profil navigateur d'un tracker : ferme le contexte en mémoire
+ * PUIS supprimé le profil persistant sur disque (cookies, localStorage, cache).
  * Le prochain fetch repartira d'une session navigateur vierge.
  */
 export async function resetBrowserProfile(trackerId: string): Promise<void> {

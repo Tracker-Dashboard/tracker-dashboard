@@ -25,10 +25,10 @@ ENV APP_IMAGE_SOURCE=$APP_IMAGE_SOURCE \
     APP_IMAGE_REVISION=$APP_IMAGE_REVISION \
     APP_IMAGE_REF=$APP_IMAGE_REF
 COPY package*.json ./
-# Image principale allegee : aucun navigateur embarque. Playwright/Chromium et
+# Image principale allégée : aucun navigateur embarque. Playwright/Chromium et
 # CloakBrowser vivent dans l'image tracker-dashboard-browser (service optionnel).
-# On retire meme le paquet npm playwright : les trackers mode:browser affichent
-# alors un message clair tant qu'aucun runtime navigateur n'est configure.
+# On retire même le paquet npm playwright : les trackers mode:browser affichent
+# alors un message clair tant qu'aucun runtime navigateur n'est configuré.
 RUN npm ci --omit=dev \
   && rm -rf node_modules/playwright node_modules/playwright-core
 RUN apt-get update \
@@ -37,8 +37,8 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 # ── curl-impersonate (fast-path : lecture HTTP avec empreinte navigateur) ────
-# Telecharge le binaire pour l'arch cible. Etape NON bloquante : si indisponible,
-# le fast-path est simplement desactive et l'app utilise le navigateur.
+# Télécharge le binaire pour l'arch cible. Étape NON bloquante : si indisponible,
+# le fast-path est simplement désactivé et l'app utilise le navigateur.
 ARG TARGETARCH
 ENV CURL_IMPERSONATE_BIN=curl_impersonate \
     PATH="/opt/curl-impersonate:${PATH}" \
@@ -59,11 +59,11 @@ RUN set -u; \
       && ln -sf "$(ls /opt/curl-impersonate/curl_chrome* | sort | tail -1)" /opt/curl-impersonate/curl_impersonate \
       && /opt/curl-impersonate/curl_impersonate --version >/dev/null \
       && echo "curl-impersonate installe ($CI_ARCH)" ) \
-    || echo "::warning:: curl-impersonate non installe — fast-path desactive, navigateur utilise."; \
+    || echo "::warning:: curl-impersonate non installé — fast-path désactivé, navigateur utilisé."; \
   fi
 
-# npm/npx ne sont necessaires qu'a la construction. Les retirer du runtime evite
-# d'embarquer les dependances internes de npm dans l'image finale.
+# npm/npx ne sont nécessaires qu'à la construction. Les retirer du runtime évite
+# d'embarquer les dépendances internes de npm dans l'image finale.
 RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx \
   && node -e "const fs=require('fs'); for (const p of ['/usr/local/lib/node_modules/npm','/usr/local/bin/npm','/usr/local/bin/npx']) if (fs.existsSync(p)) throw new Error('Artefact npm encore present: '+p); console.log('npm retire de l image runtime');"
 

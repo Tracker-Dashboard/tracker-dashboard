@@ -2,8 +2,8 @@ import { getJsonSetting, setJsonSetting } from './db.js';
 
 /**
  * Incident "connu" sur un tracker : signal manuel de l'utilisateur pour dire
- * "ce site a un souci cote admin, c'est pas mes credentials".
- * - Le refresh continue normalement -> retour a OK = clear auto
+ * "ce site a un souci côté admin, c'est pas mes credentials".
+ * - Le refresh continue normalement -> retour à OK = clear auto
  * - Sur le frontend, change le badge "Erreur" rouge en "Incident connu" neutre
  */
 export interface TrackerIncident {
@@ -36,7 +36,7 @@ export function setIncident(trackerId: string, acknowledged: boolean, note: stri
     updatedAt: new Date().toISOString(),
   };
   if (!acknowledged && !incident.note) {
-    // Pas d'ack et pas de note -> on supprime carrement l'entree
+    // Pas d'ack et pas de note -> on supprime carrément l'entrée
     delete incidents[trackerId];
   } else {
     incidents[trackerId] = incident;

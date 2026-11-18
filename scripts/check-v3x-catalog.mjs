@@ -19,7 +19,7 @@ try {
   fs.mkdirSync(path.join(temp, 'config', 'trackers'), { recursive: true });
   fs.mkdirSync(path.join(temp, 'default-trackers'), { recursive: true });
 
-  // Definition actuellement correcte, embarquee dans l'image.
+  // Définition actuellement correcte, embarquée dans l'image.
   const bundledV3x = {
     id: 'v3x',
     name: 'V3X',
@@ -36,8 +36,8 @@ try {
     JSON.stringify(bundledV3x),
   );
 
-  // Reproduction exacte de l'installation cassee : une ancienne ligne SQLite
-  // issue de la premiere version de V3X est restee enabled=true.
+  // Reproduction exacte de l'installation cassée : une ancienne ligne SQLite
+  // issue de la première version de V3X est restée enabled=true.
   const oldV3x = { ...bundledV3x, enabled: true };
   fs.writeFileSync(
     path.join(temp, 'config', 'trackers', 'v3x.json'),
@@ -50,7 +50,7 @@ try {
   const migrations = await import(`${pathToFileURL(path.join(root, 'dist', 'catalogMigrations.js')).href}?v3x-migration=${nonce}`);
 
   db.saveTrackerConfig(oldV3x);
-  // Simule les installations qui avaient DEJA passe l'ancienne migration generale.
+  // Simule les installations qui avaient DÉJÀ passe l'ancienne migration generale.
   db.setJsonSetting('migration_disable_uncredentialed_default_trackers_v1', { done: true });
 
   migrations.migrateV3xCatalogAvailability();
@@ -65,11 +65,11 @@ try {
   assert.equal(
     db.getJsonSetting('migration_v3x_catalog_availability_v1', { done: false }).done,
     true,
-    'La migration V3X doit etre marquee comme terminee',
+    'La migration V3X doit être marquée comme terminée',
   );
 
-  // Garde de securite : si l'utilisateur a reellement configure V3X, ne jamais
-  // le desactiver lors de cette migration.
+  // Garde de sécurité : si l'utilisateur a réellement configuré V3X, ne jamais
+  // le désactiver lors de cette migration.
   db.saveTrackerConfig({ ...stored, enabled: true });
   db.setTrackerCookie('v3x', 'session=fixture');
   db.setJsonSetting('migration_v3x_catalog_availability_v1', { done: false });
@@ -79,7 +79,7 @@ try {
   assert.equal(
     stored.enabled,
     true,
-    'Un V3X configure avec un cookie doit rester actif',
+    'Un V3X configuré avec un cookie doit rester actif',
   );
 
   sqlite = db.getDb();

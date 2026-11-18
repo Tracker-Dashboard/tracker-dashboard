@@ -54,21 +54,28 @@
 
   const normalize = text => String(text).replace(/\s+/g, ' ').trim();
   const escapeRegex = text => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  // Les messages enregistrés avant la correction des accents (historique, journaux)
+  // restent traduits : la recherche retombe sur une comparaison sans accents.
+  // fold() garde la longueur d'un texte NFC, ce qui permet de reprendre les valeurs
+  // variables dans le texte d'origine.
+  const fold = text => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
   let compiled = null;
   function dictionary() {
     if (compiled) return compiled;
     const source = window.TD_I18N?.[current] || { exact: {}, patterns: [] };
-    compiled = { exact: new Map(), patterns: [], outputs: new Set() };
+    compiled = { exact: new Map(), folded: new Map(), patterns: [], outputs: new Set() };
     for (const [fr, translated] of Object.entries(source.exact || {})) {
       compiled.exact.set(normalize(fr), translated);
+      if (!compiled.folded.has(fold(normalize(fr)))) compiled.folded.set(fold(normalize(fr)), translated);
       compiled.outputs.add(translated);
     }
     for (const [fr, translated] of source.patterns || []) {
       // « {} » marque une valeur variable, éventuellement vide ; la traduction la
       // reprend par {1}, {2}… Groupes paresseux : avec « {}{} », le premier reste vide.
       const regex = new RegExp(`^${normalize(fr).split('{}').map(escapeRegex).join('(.*?)')}$`, 's');
-      compiled.patterns.push({ regex, translated });
+      const foldedRegex = new RegExp(`^${fold(normalize(fr)).split('{}').map(escapeRegex).join('(.*?)')}$`, 'sd');
+      compiled.patterns.push({ regex, foldedRegex, translated });
     }
     return compiled;
   }
@@ -77,7 +84,7 @@
     if (!translating || text == null) return text;
     const raw = String(text);
     const key = normalize(raw);
-    const { exact, patterns, outputs } = dictionary();
+    const { exact, folded, patterns, outputs } = dictionary();
     if (!key || !/[A-Za-zÀ-ÿ]{2}/.test(key) || outputs.has(key)) return text;
     let result = exact.get(key);
     if (result === undefined) {
@@ -86,6 +93,21 @@
         if (match) {
           result = translated.replace(/\{(\d+)\}/g, (_, index) => translate(match[Number(index)] ?? ''));
           break;
+        }
+      }
+    }
+    if (result === undefined) {
+      const foldedKey = fold(key);
+      result = folded.get(foldedKey);
+      if (result === undefined && foldedKey.length === key.length) {
+        for (const { foldedRegex, translated } of patterns) {
+          const match = foldedRegex.exec(foldedKey);
+          if (match) {
+            // Valeurs variables reprises dans le texte d'origine (accents conservés).
+            const value = index => (match.indices[index] ? key.slice(match.indices[index][0], match.indices[index][1]) : '');
+            result = translated.replace(/\{(\d+)\}/g, (_, index) => translate(value(Number(index))));
+            break;
+          }
         }
       }
     }

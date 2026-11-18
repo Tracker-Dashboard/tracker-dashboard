@@ -2,7 +2,7 @@ name: Build & Publish Browser Runtime
 
 on:
   schedule:
-    # Rebuild hebdo de latest sur la base node:22 a jour (correctifs Node/Debian)
+    # Rebuild hebdo de latest sur la base node:22 à jour (correctifs Node/Debian)
     - cron: '17 4 * * 1'
   workflow_dispatch:
   push:
@@ -80,9 +80,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Rebuild hebdo : ne republier latest que si la base node:22 a change.
+      # Rebuild hebdo : ne republier latest que si la base node:22 a changé.
       # L'empreinte de la base est inscrite dans l'image (label OCI) puis
-      # comparee a la base actuelle. Les autres evenements publient toujours.
+      # comparée à la base actuelle. Les autres événements publient toujours.
       - name: Check base image
         id: base
         env:

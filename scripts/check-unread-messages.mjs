@@ -67,8 +67,8 @@ assert.equal(uiContext.mpBadge({ fields: { unreadMessages: 3 } }).includes('MP :
 assert.equal(uiContext.mpBadge({ fields: { unreadMessages: 0 } }), '');
 assert.equal(uiContext.mpBadge({ fields: {} }), '');
 
-// Vue lignes : badge MP juste apres le nom, dans les memes cas que les cartes
-// (lecture OK, login KO avec stats API, donnees perimees), jamais en erreur.
+// Vue lignes : badge MP juste après le nom, dans les mêmes cas que les cartes
+// (lecture OK, login KO avec stats API, données périmées), jamais en erreur.
 vm.runInNewContext(sourceBetween('  function rowMpBadge', '  function renderRow'), uiContext);
 assert.equal(uiContext.rowMpBadge({ status: 'ok', fields: { unreadMessages: 2 } }).includes('MP : 2'), true);
 assert.equal(uiContext.rowMpBadge({ status: 'ok', fields: {} }), '');
