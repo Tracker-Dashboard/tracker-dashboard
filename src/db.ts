@@ -460,7 +460,51 @@ export function disableUncredentialedDefaultTrackersOnce(): void {
   setJsonSetting(DISABLE_UNCREDENTIALED_DEFAULTS_KEY, { done: true });
 }
 
+// Les définitions embarquées ne changent pas pendant la vie du process : les recopier
+// une seule fois suffit. Avant ce garde-fou, chaque lecture de définition recopiait
+// toutes les définitions puis relisait tout config/trackers. Une page de config
+// pouvait déclencher plusieurs dizaines de milliers d'opérations fichier synchrones.
+// Sur un bind mount Docker Desktop (Windows/macOS), ça bloquait le serveur près
+// d'une minute.
+let defaultDefinitionsSynced = false;
+
+// Cache des définitions lues dans config/trackers, invalidé quand le dossier
+// change (ajout, suppression ou renommage d'un fichier). Seul ce module écrit dans
+// ce dossier pendant l'exécution.
+interface DefinitionFileEntry { file: string; config: TrackerConfig }
+let definitionFilesCache: { mtimeMs: number; entries: DefinitionFileEntry[] } | null = null;
+
+function readTrackerDefinitionEntries(): DefinitionFileEntry[] {
+  syncDefaultTrackerDefinitions();
+  const trackersDir = path.join(CONFIG_DIR, 'trackers');
+  let mtimeMs: number;
+  try {
+    mtimeMs = fs.statSync(trackersDir).mtimeMs;
+  } catch {
+    definitionFilesCache = null;
+    return [];
+  }
+  if (definitionFilesCache && definitionFilesCache.mtimeMs === mtimeMs) {
+    return definitionFilesCache.entries;
+  }
+  const entries: DefinitionFileEntry[] = [];
+  for (const file of fs.readdirSync(trackersDir)) {
+    if (!file.endsWith('.json') || file.endsWith('.example.json')) continue;
+    try {
+      const config = JSON.parse(
+        fs.readFileSync(path.join(trackersDir, file), 'utf-8'),
+      ) as TrackerConfig;
+      entries.push({ file, config });
+    } catch {
+      // Ignore invalid definition files.
+    }
+  }
+  definitionFilesCache = { mtimeMs, entries };
+  return entries;
+}
+
 export function syncDefaultTrackerDefinitions(): void {
+  if (defaultDefinitionsSynced) return;
   if (!fs.existsSync(DEFAULT_TRACKERS_DIR)) return;
   const trackersDir = path.join(CONFIG_DIR, 'trackers');
   fs.mkdirSync(trackersDir, { recursive: true });
@@ -479,52 +523,26 @@ export function syncDefaultTrackerDefinitions(): void {
     // présents dans DEFAULT_TRACKERS_DIR sont synchronisés ici.
     fs.copyFileSync(source, target);
   }
+  defaultDefinitionsSynced = true;
+  definitionFilesCache = null;
 }
 
 export function listTrackerDefinitionFiles(): TrackerDefinitionSummary[] {
-  syncDefaultTrackerDefinitions();
-  const trackersDir = path.join(CONFIG_DIR, 'trackers');
-  if (!fs.existsSync(trackersDir)) return [];
-
-  return fs.readdirSync(trackersDir)
-    .filter(file => file.endsWith('.json') && !file.endsWith('.example.json'))
-    .map(file => {
-      try {
-        const config = JSON.parse(
-          fs.readFileSync(path.join(trackersDir, file), 'utf-8'),
-        ) as TrackerConfig;
-        return {
-          id: config.id,
-          name: config.name,
-          baseUrl: config.baseUrl,
-          file,
-          enabled: config.enabled !== false,
-        };
-      } catch {
-        return null;
-      }
-    })
-    .filter((item): item is TrackerDefinitionSummary => Boolean(item?.id));
+  return readTrackerDefinitionEntries()
+    .filter(({ config }) => Boolean(config?.id))
+    .map(({ file, config }) => ({
+      id: config.id,
+      name: config.name,
+      baseUrl: config.baseUrl,
+      file,
+      enabled: config.enabled !== false,
+    }));
 }
 
 export function loadTrackerDefinitionFile(trackerId: string): TrackerConfig | null {
-  syncDefaultTrackerDefinitions();
-  const trackersDir = path.join(CONFIG_DIR, 'trackers');
-  if (!fs.existsSync(trackersDir)) return null;
-
-  const files = fs.readdirSync(trackersDir)
-    .filter(file => file.endsWith('.json') && !file.endsWith('.example.json'));
-  for (const file of files) {
-    try {
-      const config = JSON.parse(
-        fs.readFileSync(path.join(trackersDir, file), 'utf-8'),
-      ) as TrackerConfig;
-      if (config.id === trackerId) return config;
-    } catch {
-      // Ignore invalid definition files.
-    }
-  }
-  return null;
+  const entry = readTrackerDefinitionEntries().find(({ config }) => config?.id === trackerId);
+  // Copie : les appelants peuvent modifier l'objet sans altérer le cache.
+  return entry ? structuredClone(entry.config) : null;
 }
 
 // Lit la definition par defaut EMBARQUEE DANS L'IMAGE (default-trackers/), donc toujours
