@@ -1,16 +1,16 @@
 // Abstraction du runtime navigateur.
 //
 // Objectif : permettre d'externaliser Playwright/Chromium/CloakBrowser dans un
-// service separe `tracker-dashboard-browser` sans casser les installations
+// service séparé `tracker-dashboard-browser` sans casser les installations
 // existantes.
 //
-// - Par defaut -> backend DISTANT sur http://127.0.0.1:3001, lance en conteneur
-//   parallele avec `--network container:tracker-dashboard`.
-// - Si `BROWSER_RUNTIME_URL` est defini, il remplace cette URL.
+// - Par défaut -> backend DISTANT sur http://127.0.0.1:3001, lancé en conteneur
+//   parallèle avec `--network container:tracker-dashboard`.
+// - Si `BROWSER_RUNTIME_URL` est défini, il remplace cette URL.
 //   L'app principale
-//   resout cookie/TOTP/moteur/proxy depuis la DB, les envoie dans le payload, et
-//   le runtime execute le navigateur (il ne touche jamais la DB).
-// - L'image principale reste allegee : Playwright/Chromium/CloakBrowser vivent
+//   résout cookie/TOTP/moteur/proxy depuis la DB, les envoie dans le payload, et
+//   le runtime exécute le navigateur (il ne touche jamais la DB).
+// - L'image principale reste allégée : Playwright/Chromium/CloakBrowser vivent
 //   dans l'image tracker-dashboard-browser.
 
 import { resolveProxyForTracker, toSshConfig } from './proxy.js';
@@ -51,7 +51,7 @@ const DEFAULT_RUNTIME_URL = 'http://127.0.0.1:3001';
 const RUNTIME_URL = (process.env.BROWSER_RUNTIME_URL || DEFAULT_RUNTIME_URL).replace(/\/+$/, '');
 const RUNTIME_TOKEN = process.env.BROWSER_RUNTIME_TOKEN || '';
 const EXPECTED_REVISION = process.env.APP_IMAGE_REVISION?.trim() || '';
-// Hote sous lequel le runtime peut joindre le tunnel SSH local de l'app principale
+// Hôte sous lequel le runtime peut joindre le tunnel SSH local de l'app principale
 // (le runtime tourne dans un autre conteneur, 127.0.0.1 ne conviendrait pas).
 const SELF_HOST_FOR_RUNTIME = process.env.SSH_TUNNEL_ADVERTISE_HOST || '';
 
@@ -60,7 +60,7 @@ export function isRemoteRuntimeConfigured(): boolean {
 }
 
 export const BROWSER_RUNTIME_UNAVAILABLE =
-  'Runtime navigateur indisponible. Lancez le conteneur tracker-dashboard-browser en parallele de tracker-dashboard.';
+  'Runtime navigateur indisponible. Lancez le conteneur tracker-dashboard-browser en parallèle de tracker-dashboard.';
 
 function runtimeHeaders(): Record<string, string> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -68,8 +68,8 @@ function runtimeHeaders(): Record<string, string> {
   return headers;
 }
 
-// Resout le proxy au format Playwright pour le payload distant. Pour SSH, on pointe
-// vers le SOCKS local du tunnel etabli par l'app principale ; son hote doit etre
+// Résout le proxy au format Playwright pour le payload distant. Pour SSH, on pointe
+// vers le SOCKS local du tunnel établi par l'app principale ; son hôte doit être
 // joignable par le runtime (SSH_TUNNEL_ADVERTISE_HOST), sinon le proxy est omis.
 function resolveProxyPayload(trackerId: string): ProxyPayload {
   const proxy = resolveProxyForTracker(trackerId);
@@ -97,8 +97,8 @@ function buildOverrides(tracker: TrackerConfig) {
   };
 }
 
-// Fallback de developpement local : utile uniquement si Playwright est present
-// dans node_modules. L'image publiee utilise le runtime navigateur separe.
+// Fallback de développement local : utile uniquement si Playwright est présent
+// dans node_modules. L'image publiée utilise le runtime navigateur séparé.
 async function loadLocalBackend(): Promise<typeof import('./browserFetcher.js')> {
   try {
     return await import('./browserFetcher.js');
@@ -127,7 +127,7 @@ async function remotePost<T>(path: string, body: unknown, timeoutMs = 120_000): 
   }
 }
 
-// ── API consommee par fetcher.ts / server.ts ────────────────────────────────
+// ── API consommée par fetcher.ts / server.ts ────────────────────────────────
 
 export async function fetchWithBrowser(
   tracker: TrackerConfig,
@@ -142,7 +142,7 @@ export async function fetchWithBrowser(
       });
     } catch (err) {
       // Erreur de connexion au runtime (absent/injoignable) -> message clair ;
-      // une erreur applicative renvoyee par le runtime est propagee telle quelle.
+      // une erreur applicative renvoyée par le runtime est propagée telle quelle.
       const msg = err instanceof Error ? err.message : String(err);
       if (/fetch failed|aborted|ECONNREFUSED|ENOTFOUND|EAI_AGAIN|network/i.test(msg)) {
         throw new Error(BROWSER_RUNTIME_UNAVAILABLE);
@@ -227,7 +227,7 @@ export async function getBrowserRuntimeStatus(): Promise<BrowserRuntimeStatus> {
       compatible,
       revision,
       expectedRevision: EXPECTED_REVISION || undefined,
-      // Compatibilite de protocole uniquement : la revision reste informative.
+      // Compatibilité de protocole uniquement : la révision reste informative.
       upToDate: compatible,
       cloakbrowser: (data.cloakbrowser && typeof data.cloakbrowser === 'object')
         ? data.cloakbrowser as { available: boolean; version?: string }

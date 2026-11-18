@@ -8,14 +8,14 @@
   <Privileged>false</Privileged>
   <Support>https://github.com/Tracker-Dashboard/tracker-dashboard/issues</Support>
   <Project>https://github.com/germondai/trawl</Project>
-  <Overview>Sidecar TRAWL facultatif pour Tracker Dashboard. Il sert de repli anti-bot apres FlareSolverr et utilise l'image baseline pour les vieux CPU et NAS Synology.</Overview>
+  <Overview>Sidecar TRAWL facultatif pour Tracker Dashboard. Il sert de repli anti-bot après FlareSolverr et utilise l'image baseline pour les vieux CPU et NAS Synology.</Overview>
   <Category>Tools:</Category>
   <WebUI/>
   <TemplateURL>https://raw.githubusercontent.com/Tracker-Dashboard/tracker-dashboard/main/unraid/tracker-dashboard-trawl.xml</TemplateURL>
   <Icon>https://raw.githubusercontent.com/Tracker-Dashboard/tracker-dashboard/main/public/logo.png</Icon>
   <ExtraParams>--restart=unless-stopped</ExtraParams>
   <PostArgs/>
-  <Config Name="Port interne" Target="PORT" Default="8192" Mode="" Description="Conserver 8192 : FlareSolverr utilise deja 8191 dans le reseau partage de Tracker Dashboard." Type="Variable" Display="always-hide" Required="true" Mask="false">8192</Config>
+  <Config Name="Port interne" Target="PORT" Default="8192" Mode="" Description="Conserver 8192 : FlareSolverr utilise déjà 8191 dans le réseau partagé de Tracker Dashboard." Type="Variable" Display="always-hide" Required="true" Mask="false">8192</Config>
   <Config Name="Niveau de journalisation" Target="LOG_LEVEL" Default="warn" Mode="" Description="Niveau de logs TRAWL." Type="Variable" Display="advanced" Required="true" Mask="false">warn</Config>
   <Config Name="Fuseau horaire" Target="TZ" Default="Europe/Paris" Mode="" Description="Fuseau IANA utilise par TRAWL." Type="Variable" Display="always" Required="true" Mask="false">Europe/Paris</Config>
 </Container>

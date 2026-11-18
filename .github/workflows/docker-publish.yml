@@ -2,7 +2,7 @@ name: Build & Publish Docker Image
 
 on:
   schedule:
-    # Rebuild hebdo de latest sur la base node:22 a jour (correctifs Node/Debian)
+    # Rebuild hebdo de latest sur la base node:22 à jour (correctifs Node/Debian)
     - cron: '17 4 * * 1'
   workflow_dispatch:
   push:
@@ -44,9 +44,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Rebuild hebdo : ne republier latest que si la base node:22 a change.
+      # Rebuild hebdo : ne republier latest que si la base node:22 a changé.
       # L'empreinte de la base est inscrite dans l'image (label OCI) puis
-      # comparee a la base actuelle. Les autres evenements publient toujours.
+      # comparée à la base actuelle. Les autres événements publient toujours.
       - name: Check base image
         id: base
         env:
@@ -75,9 +75,9 @@ jobs:
             org.opencontainers.image.base.name=docker.io/library/node:22-bookworm-slim
             org.opencontainers.image.base.digest=${{ steps.base.outputs.digest }}
           tags: |
-            # latest sur push main, relance manuelle ou PR fusionnee. Le dernier cas
-            # couvre les fusions automatiques au GITHUB_TOKEN qui ne recreent pas
-            # toujours un evenement push exploitable par Actions.
+            # latest sur push main, relance manuelle ou PR fusionnée. Le dernier cas
+            # couvre les fusions automatiques au GITHUB_TOKEN qui ne recréent pas
+            # toujours un événement push exploitable par Actions.
             type=raw,value=latest,enable=${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true) }}
             # tag semver si push d'un tag v*
             type=semver,pattern={{version}}

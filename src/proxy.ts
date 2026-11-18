@@ -13,9 +13,9 @@ export interface ProxySettings {
   port: string;
   username: string;
   password: string;
-  /** SSH uniquement : cle privee PEM (alternative au mot de passe) */
+  /** SSH uniquement : clé privée PEM (alternative au mot de passe) */
   privateKey?: string;
-  /** SSH uniquement : passphrase de la cle privee (optionnel) */
+  /** SSH uniquement : passphrase de la clé privée (optionnel) */
   passphrase?: string;
 }
 
@@ -28,7 +28,7 @@ export interface ProxyOverride {
   id: string;
   label: string;
   enabled: boolean;
-  /** Si true, ce tracker sort sans proxy meme si un proxy global est actif. */
+  /** Si true, ce tracker sort sans proxy même si un proxy global est actif. */
   direct: boolean;
   /** Liste des ids de trackers qui passent par ce proxy */
   trackers: string[];
@@ -37,9 +37,9 @@ export interface ProxyOverride {
   port: string;
   username: string;
   password: string;
-  /** SSH uniquement : cle privee PEM (alternative au mot de passe) */
+  /** SSH uniquement : clé privée PEM (alternative au mot de passe) */
   privateKey?: string;
-  /** SSH uniquement : passphrase de la cle privee (optionnel) */
+  /** SSH uniquement : passphrase de la clé privée (optionnel) */
   passphrase?: string;
 }
 
@@ -48,7 +48,7 @@ export interface ProxyAxiosConfig {
   httpsAgent?: unknown;
 }
 
-// ─── Lecture / ecriture settings ──────────────────────────────────────────────
+// ─── Lecture / écriture settings ──────────────────────────────────────────────
 
 export function loadProxySettings(): ProxySettings {
   return getJsonSetting('proxy', defaultProxy());
@@ -78,14 +78,14 @@ function defaultProxy(): ProxySettings {
   };
 }
 
-// ─── Resolution proxy pour un tracker donne ───────────────────────────────────
+// ─── Résolution proxy pour un tracker donné ───────────────────────────────────
 
 /**
  * Renvoie le proxy effectif pour un tracker :
- *  - s'il existe un override active qui liste ce trackerId, on l'utilise
+ *  - s'il existe un override activé qui liste ce trackerId, on l'utilise
  *  - sinon, on retombe sur le proxy global
  *
- * Le retour est un ProxySettings (meme forme) pour que les callers s'en
+ * Le retour est un ProxySettings (même forme) pour que les callers s'en
  * fichent : ils ne savent pas si c'est l'override ou le global.
  */
 export function resolveProxyForTracker(trackerId?: string): ProxySettings {
@@ -137,8 +137,8 @@ export function toSshConfig(proxy: ProxySettings): SshProxyConfig | null {
 }
 
 /**
- * Prepare le proxy d'un tracker avant fetch : pour un proxy SSH, etablit (ou
- * reutilise) le tunnel SSH + SOCKS5 local. A appeler AVANT getProxyConfig, qui
+ * Prépare le proxy d'un tracker avant fetch : pour un proxy SSH, établit (ou
+ * réutilise) le tunnel SSH + SOCKS5 local. À appeler AVANT getProxyConfig, qui
  * est synchrone et lit l'endpoint local en cache.
  */
 export async function ensureProxyReady(trackerId?: string): Promise<void> {
@@ -155,8 +155,8 @@ export async function ensureProxyReady(trackerId?: string): Promise<void> {
 export function buildProxyConfig(proxy: ProxySettings): ProxyAxiosConfig {
   if (!proxy.enabled || !proxy.host || !proxy.port) return {};
 
-  // Proxy SSH : on relaie via le SOCKS5 local adosse au tunnel SSH (deja etabli
-  // par ensureProxyReady). S'il n'est pas pret, pas de proxy (echec propre cote fetch).
+  // Proxy SSH : on relaie via le SOCKS5 local adossé au tunnel SSH (déjà établi
+  // par ensureProxyReady). S'il n'est pas prêt, pas de proxy (échec propre côté fetch).
   if (proxy.type === 'ssh') {
     const ssh = toSshConfig(proxy);
     const endpoint = ssh ? getSshLocalEndpoint(ssh) : null;
@@ -195,7 +195,7 @@ export function logProxyStatus(): void {
   if (p.enabled && p.host && p.port) {
     console.log(`Proxy global : ${p.type}://${p.host}:${p.port}`);
   } else {
-    console.log('Proxy global desactive, connexion directe');
+    console.log('Proxy global désactivé, connexion directe');
   }
   const overrides = loadProxyOverrides().filter(o => o.enabled);
   if (overrides.length > 0) {

@@ -1,8 +1,8 @@
 import crypto from 'crypto';
 
 // ─── TOTP (RFC 6238) ───────────────────────────────────────────────────────────
-// Generation de code 2FA a partir d'un secret base32 (type Google Authenticator),
-// en pur Node (crypto), sans dependance. Idee inspiree de github.com/Gusdezup/Autovisit.
+// Génération de code 2FA à partir d'un secret base32 (type Google Authenticator),
+// en pur Node (crypto), sans dépendance. Idée inspirée de github.com/Gusdezup/Autovisit.
 
 function base32Decode(input: string): Buffer {
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
@@ -12,7 +12,7 @@ function base32Decode(input: string): Buffer {
   const out: number[] = [];
   for (const ch of clean) {
     const idx = alphabet.indexOf(ch);
-    if (idx === -1) continue; // ignore les caracteres non-base32
+    if (idx === -1) continue; // ignore les caractères non-base32
     value = (value << 5) | idx;
     bits += 5;
     if (bits >= 8) {
@@ -24,7 +24,7 @@ function base32Decode(input: string): Buffer {
 }
 
 /**
- * Genere le code TOTP courant pour un secret base32.
+ * Génère le code TOTP courant pour un secret base32.
  * Renvoie '' si le secret est vide/invalide.
  */
 export function generateTotp(
@@ -50,7 +50,7 @@ export function generateTotp(
   return (code % 10 ** digits).toString().padStart(digits, '0');
 }
 
-/** Vrai si la chaine ressemble a un secret base32 exploitable. */
+/** Vrai si la chaîne ressemble à un secret base32 exploitable. */
 export function looksLikeTotpSecret(secret: string): boolean {
   return base32Decode(secret).length >= 10; // >= 80 bits
 }

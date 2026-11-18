@@ -103,12 +103,12 @@ try {
   const zeroOnly = await run(trackerFor('zero-only'));
   assert.equal(zeroOnly.status, 'ok', zeroOnly.error);
   assert.deepEqual(zeroOnly.fields, { uploadedBytes: 0, downloadedBytes: '', memberClass: '' },
-    'A genuine zero is sufficient; absent fields must not become invented stats');
+    'A génuine zero is sufficient; absent fields must not become invented stats');
 
   for (const scenario of ['missing-id', 'empty', 'unavailable', 'network', 'private', 'challenge']) {
     const result = await run(trackerFor(scenario));
     assert.equal(result.status, 'error', scenario);
-    assert.match(result.error, /Aucune donnee extraite/, scenario);
+    assert.match(result.error, /Aucune donnée extraite/, scenario);
     assert.deepEqual(result.fields, {}, scenario);
   }
   assert.equal(requests.filter(request => request.scenario === 'missing-id' && request.path === '/userdetails.php').length, 0,
@@ -129,13 +129,13 @@ try {
   assert.equal(requests.filter(request => request.path === '/unread').length, 0);
   const primaryLogin = await run(trackerFor('primary-login'));
   assert.equal(primaryLogin.status, 'error');
-  assert.match(primaryLogin.error, /cookie refuse/);
+  assert.match(primaryLogin.error, /cookie refusé/);
   assert.equal(requests.filter(request => request.scenario === 'primary-login' && request.path === '/userdetails.php').length, 0,
     'A rejected primary session must never be rescued by a profile');
   assert.ok(requests.every(request => ['GET', 'HEAD'].includes(request.method)), 'No login should be submitted');
   assert.ok(requests.filter(request => ['/my.php', '/userdetails.php'].includes(request.path))
     .every(request => request.cookie === 'fixture_session=synthetic'), 'Both pages must use the same synthetic session');
-  console.log('Profile-only stats OK: authenticated profile ID, zero bytes, absent data, redirects/challenges, failed secondary requests and main-stat regressions.');
+  console.log('Profile-only stats OK: authenticated profile ID, zero bytes, absent data, redirects/challenges, failed secondary requests and main-stat régressions.');
 } finally {
   if (server?.listening) await new Promise(resolve => server.close(resolve));
   sqlite?.close();

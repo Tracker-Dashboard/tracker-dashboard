@@ -1,14 +1,14 @@
 // Parsing des cookies de session fournis par l'utilisateur — module SANS Playwright.
 // Extrait de browserFetcher pour que l'app principale (chemin HTTP / fast-path
-// curl-impersonate) n'ait aucune dependance statique vers Playwright : l'image
-// principale peut ainsi etre allegee (navigateur externalise) tout en continuant
-// a rejouer les cookies pour les trackers HTTP.
+// curl-impersonate) n'ait aucune dépendance statique vers Playwright : l'image
+// principale peut ainsi être allégée (navigateur externalisé) tout en continuant
+// à rejouer les cookies pour les trackers HTTP.
 
 import { getTrackerCookie } from './db.js';
 import type { TrackerConfig } from './types.js';
 
 // Cookie minimal : on garde juste name+value (+ flags), et on injecte via `url`
-// (Playwright derive domaine/chemin) -> bien plus robuste que domain/path manuels.
+// (Playwright dérive domaine/chemin) -> bien plus robuste que domain/path manuels.
 export interface ParsedCookie {
   name: string;
   value: string;
@@ -73,7 +73,7 @@ function parseJsonCookies(parsed: unknown): ParsedCookie[] {
 /**
  * Format Netscape (cookies.txt) : 7 champs
  * domain  includeSubdomains  path  secure  expiry  name  value
- * Separes par TAB normalement ; on tolere aussi les espaces multiples au cas ou
+ * Séparés par TAB normalement ; on tolère aussi les espaces multiples au cas où
  * le copier-coller aurait converti les tabulations.
  */
 function parseNetscapeCookies(raw: string): ParsedCookie[] {
@@ -85,7 +85,7 @@ function parseNetscapeCookies(raw: string): ParsedCookie[] {
     if (l.startsWith('#HttpOnly_')) { httpOnly = true; l = l.slice('#HttpOnly_'.length); }
     else if (l.startsWith('#')) continue;
     let p = l.split('\t');
-    if (p.length < 7) p = l.split(/\s+/); // tolerance : tabs convertis en espaces
+    if (p.length < 7) p = l.split(/\s+/); // tolérance : tabs convertis en espaces
     if (p.length < 7) continue;
     const name = p[5];
     const value = p.slice(6).join(' ');
@@ -182,7 +182,7 @@ function parseSetCookieLines(raw: string): ParsedCookie[] {
  * Convertit le cookie fourni par l'utilisateur. Trois formats acceptes :
  *  - export JSON (Cookie-Editor : name/value/secure/httpOnly/expirationDate)
  *  - fichier Netscape cookies.txt
- *  - chaine d'en-tete "name=value; name2=value2"
+ *  - chaîne d'en-tete "name=value; name2=value2"
  */
 export function parseCookies(raw: string): ParsedCookie[] {
   const trimmed = raw.trim();
@@ -211,13 +211,13 @@ export function parseCookies(raw: string): ParsedCookie[] {
     if (setCookie.length > 0) return setCookie;
   }
 
-  // En-tete "Cookie: name=value; name2=value2" ou "name=value; name2=value2"
+  // En-tête "Cookie: name=value; name2=value2" ou "name=value; name2=value2"
   return parseCookieHeader(trimmed);
 }
 
 /**
- * Construit l'en-tete "Cookie: name=value; ..." a partir du cookie stocke pour ce
- * tracker (tous formats supportes). Vide si aucun cookie. Utilise par le fast-path
+ * Construit l'en-tete "Cookie: name=value; ..." à partir du cookie stocké pour ce
+ * tracker (tous formats supportés). Vide si aucun cookie. Utilisé par le fast-path
  * curl-impersonate pour rejouer la session sans lancer de navigateur.
  */
 export function buildCookieHeader(tracker: Pick<TrackerConfig, 'id' | 'baseId'>): string {

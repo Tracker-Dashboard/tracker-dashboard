@@ -172,15 +172,15 @@ interface BetaNotificationTarget {
   id: string;
   type: 'discord' | 'apprise' | 'mail';
   label: string;
-  url: string;       // webhook Discord ou URL serveur Apprise ; vide pour mail (resolu auto)
+  url: string;       // webhook Discord ou URL serveur Apprise ; vide pour mail (résolu auto)
   urls?: string[];   // URLs Apprise (type apprise)
   enabled: boolean;
-  // Champs specifiques au type mail (construits en mailtos:// au moment de l'envoi)
+  // Champs spécifiques au type mail (construits en mailtos:// au moment de l'envoi)
   mailFrom?: string;    // ex. user@gmail.com ou user1@example.com
   mailPass?: string;    // mot de passe / app password
-  mailTo?: string;      // destinataire (defaut = mailFrom)
+  mailTo?: string;      // destinataire (défaut = mailFrom)
   mailSmtp?: string;    // serveur SMTP custom (optionnel, ex. mail.example.com)
-  mailPort?: number;    // port custom (optionnel, defaut 587)
+  mailPort?: number;    // port custom (optionnel, défaut 587)
 }
 
 interface BetaScheduleSettings {
@@ -216,11 +216,11 @@ interface BetaTrackerScheduleOverride {
   lastRunAt: string | null;
 }
 
-// Alertes par tracker : memes options que les reglages globaux (Echec/Succes/Stats/MP
-// en mode auto+manuel, + seuils ratio/buffer/session). Systeme ADDITIF et INDEPENDANT
-// du global : un tracker present ici declenche sa propre notification, en plus de la
+// Alertes par tracker : mêmes options que les réglages globaux (Echec/Succes/Stats/MP
+// en mode auto+manuel, + seuils ratio/buffer/session). Système ADDITIF et INDÉPENDANT
+// du global : un tracker présent ici déclenche sa propre notification, en plus de là
 // notif globale. Pas d'override. Stockage : Record<trackerId, BetaTrackerAlert>.
-// Un tracker est "specifique" des qu'au moins une option est active.
+// Un tracker est "spécifique" dès qu'au moins une option est active.
 interface BetaTrackerAlert {
   notifyError: boolean;
   notifyManualError: boolean;
@@ -238,8 +238,8 @@ interface BetaTrackerAlert {
   sessionDays: number;
 }
 
-// Alertes globales numeriques communes aux deux modes (auto et manuel).
-// Echec et MP sont geres par les preferences (notifyError/notifyMp).
+// Alertes globales numériques communes aux deux modes (auto et manuel).
+// Échec et MP sont gérés par les préférences (notifyError/notifyMp).
 interface BetaGlobalAlerts {
   ratioEnabled: boolean;
   ratioThreshold: number;
@@ -254,8 +254,8 @@ interface BetaAnnounceMapping {
   trackerId: string;
 }
 
-// Attribution d'une annonce precise (identifiee par sa passkey, via un hash stable)
-// a un compte, pour ventiler les torrents entre plusieurs comptes d'un meme site.
+// Attribution d'une annonce précise (identifiée par sa passkey, via un hash stable)
+// à un compte, pour ventiler les torrents entre plusieurs comptes d'un même site.
 interface BetaAccountAnnounceMapping {
   key: string;
   trackerId: string;
@@ -328,20 +328,20 @@ const qbitClientLastScan = new Map<string, number>();
 
 function normalizeTrackerConfigs(): TrackerConfig[] {
   // Synchro base/image sur les configs BRUTES (sans preset moteur). Le preset moteur
-  // est applique ensuite, a la lecture finale (loadTrackerConfigsFromDb).
+  // est appliqué ensuite, à la lecture finale (loadTrackerConfigsFromDb).
   const trackers = loadRawTrackerConfigsFromDb();
   for (const tracker of trackers) {
     let changed = false;
-    // Les champs techniques (login, fetch, curlBinary) font autorite cote image :
-    // on les relit depuis la definition embarquee dans l'image (default-trackers/,
-    // toujours a jour avec la version deployee) et on reinjecte en base si differents.
-    // La copie sur le volume (config/trackers/) n'est jamais rafraichie apres la 1re
-    // ecriture, donc on ne s'y fie pas. Un tracker absent de l'image (purement local)
-    // n'est pas touche : loadDefaultTrackerDefinition renvoie null.
-    // Sans ce mecanisme, une install deployee garde eternellement les vieilles
-    // definitions en base, meme apres une mise a jour d'image qui les corrige.
-    // Un duplicata (baseId defini) herite de la definition de son tracker source,
-    // donc des memes corrections de login que l'original.
+    // Les champs techniques (login, fetch, curlBinary) font autorité côté image :
+    // on les relit depuis la définition embarquée dans l'image (default-trackers/,
+    // toujours à jour avec la version déployée) et on réinjecte en base si différents.
+    // La copie sur le volume (config/trackers/) n'est jamais rafraîchie après la 1re
+    // écriture, donc on ne s'y fie pas. Un tracker absent de l'image (purement local)
+    // n'est pas touché : loadDefaultTrackerDefinition renvoie null.
+    // Sans ce mécanisme, une install déployée garde éternellement les vieilles
+    // définitions en base, même après une mise à jour d'image qui les corrige.
+    // Un duplicata (baseId défini) hérite de la définition de son tracker source,
+    // donc des mêmes corrections de login que l'original.
     const definition = loadDefaultTrackerDefinition(tracker.baseId ?? tracker.id);
     if (definition) {
       if (migrateLegacyBaseUrl(tracker, definition)) changed = true;
@@ -357,19 +357,19 @@ function normalizeTrackerConfigs(): TrackerConfig[] {
         tracker.curlBinary = definition.curlBinary;
         changed = true;
       }
-      // `engine` fait aussi autorite cote image : sans cette synchro, une base
-      // existante ne recevrait jamais la bascule vers le mecanisme engine (le tracker
-      // resterait sans engine, donc sans preset applique, fetch/login incomplets).
+      // `engine` fait aussi autorité côté image : sans cette synchro, une base
+      // existante ne recevrait jamais la bascule vers le mécanisme engine (le tracker
+      // resterait sans engine, donc sans preset appliqué, fetch/login incomplets).
       if (tracker.engine !== definition.engine) {
         tracker.engine = definition.engine;
         changed = true;
       }
-      // dashboard / ratioless : surcharges declarees dans le JSON image, a refleter.
+      // dashboard / ratioless : surcharges déclarées dans le JSON image, à refléter.
       if (JSON.stringify(tracker.dashboard) !== JSON.stringify(definition.dashboard)) {
         tracker.dashboard = definition.dashboard;
         changed = true;
       }
-      // api : bloc technique (endpoint + chemins JSON), fait autorite cote image.
+      // api : bloc technique (endpoint + chemins JSON), fait autorité cote image.
       if (JSON.stringify(tracker.api) !== JSON.stringify(definition.api)) {
         if (definition.api) tracker.api = definition.api;
         else delete tracker.api;
@@ -391,10 +391,10 @@ function loadEffectiveTrackerDefinition(trackerId: string): TrackerConfig | null
 }
 
 /**
- * Valide et normalise une definition de tracker recue depuis le formulaire UI
- * (ou /api/trackers). Renvoie une config typee propre, ou un message d'erreur FR.
- * Tolere les champs optionnels absents ; rejette les formes manifestement cassees
- * (id invalide, body de login vide, aucun champ a extraire, regex/path manquant).
+ * Valide et normalise une définition de tracker reçue depuis le formulaire UI
+ * (ou /api/trackers). Renvoie une config typée propre, ou un message d'erreur FR.
+ * Tolère les champs optionnels absents ; rejette les formes manifestement cassées
+ * (id invalide, body de login vide, aucun champ à extraire, regex/path manquant).
  */
 export function sanitizeTrackerConfigInput(
   raw: unknown,
@@ -406,7 +406,7 @@ export function sanitizeTrackerConfigInput(
 
   const id = String(input.id ?? '').trim().toLowerCase();
   if (!/^[a-z0-9][a-z0-9_-]{1,39}$/.test(id)) {
-    return fail('Identifiant invalide : 2 a 40 caracteres, minuscules/chiffres/tiret/underscore, commencant par une lettre ou un chiffre.');
+    return fail('Identifiant invalide : 2 à 40 caractères, minuscules/chiffres/tiret/underscore, commençant par une lettre ou un chiffre.');
   }
   const name = String(input.name ?? '').trim();
   if (!name) return fail('Nom du tracker requis.');
@@ -465,7 +465,7 @@ export function sanitizeTrackerConfigInput(
       ...(login.preStep.includeHiddenInputs ? { includeHiddenInputs: true } : {}),
     };
   }
-  // otpStep (2FA via une page dediee apres le formulaire principal).
+  // otpStep (2FA via une page dédiée après le formulaire principal).
   if (login.otpStep && typeof login.otpStep === 'object'
       && String(login.otpStep.urlContains ?? '').trim() && String(login.otpStep.field ?? '').trim()) {
     loginOut.otpStep = {
@@ -473,7 +473,7 @@ export function sanitizeTrackerConfigInput(
       field: String(login.otpStep.field).trim(),
     };
   }
-  // mfaStep (login API JSON en 2 etapes, ex: C411).
+  // mfaStep (login API JSON en 2 étapes, ex: C411).
   if (login.mfaStep && typeof login.mfaStep === 'object'
       && String(login.mfaStep.url ?? '').trim()
       && String(login.mfaStep.triggerField ?? '').trim()
@@ -512,7 +512,7 @@ export function sanitizeTrackerConfigInput(
     if (regex) {
       try { new RegExp(regex); } catch { return fail(`Champ « ${name} » : regex invalide.`); }
       if (!/\(\?<value>/.test(regex)) {
-        return fail(`Champ « ${name} » : la regex doit capturer un groupe nomme (?<value>...).`);
+        return fail(`Champ « ${name} » : la regex doit capturer un groupe nommé (?<value>...).`);
       }
     }
     const extractor: FieldExtractor = {};
@@ -522,7 +522,7 @@ export function sanitizeTrackerConfigInput(
     fields[name] = extractor;
   }
   if (Object.keys(fields).length === 0) {
-    return fail('Ajoute au moins un champ a extraire (ex: uploadedBytes, ratio...).');
+    return fail('Ajoute au moins un champ à extraire (ex: uploadedBytes, ratio...).');
   }
 
   const fetchOut: TrackerConfig['fetch'] = {
@@ -576,15 +576,15 @@ export function sanitizeTrackerConfigInput(
     config.dashboard = { ...(config.dashboard ?? {}), bonusUnit };
   }
 
-  void opts; // isNew reserve pour de futures regles differenciees creation/edition
+  void opts; // isNew réservé pour de futures règles différenciées creation/edition
   return { config };
 }
 
 /**
- * Liste de toutes les definitions visibles dans l'UI : celles posees en fichier
+ * Liste de toutes les définitions visibles dans l'UI : celles posées en fichier
  * (default-trackers seedees dans config/trackers/) PLUS les trackers custom qui
  * n'existent qu'en base (ajoutes via le formulaire, sans fichier sur le volume).
- * Sans ce merge, un tracker perso enregistre via /api/trackers serait invisible
+ * Sans ce merge, un tracker perso enregistré via /api/trackers serait invisible
  * dans « Configurer les actifs » et n'aurait jamais d'identifiants.
  */
 function listAllTrackerSummaries(): Array<{ id: string; name: string; baseUrl: string; file: string; enabled: boolean; baseId?: string }> {
@@ -604,10 +604,10 @@ function listAllTrackerSummaries(): Array<{ id: string; name: string; baseUrl: s
 }
 
 
-// Compteur de OK consecutifs par tracker (en memoire) pour l'auto-lever d'incident.
-// Reset au redemarrage = conservateur (on garde l'incident plus longtemps), ce qui est voulu.
+// Compteur de OK consécutifs par tracker (en mémoire) pour l'auto-lever d'incident.
+// Reset au redémarrage = conservateur (on garde l'incident plus longtemps), ce qui est voulu.
 const incidentOkStreaks = new Map<string, number>();
-const INCIDENT_AUTO_CLEAR_AFTER = 2; // nb de fetchs OK consecutifs avant auto-lever
+const INCIDENT_AUTO_CLEAR_AFTER = 2; // nb de fetchs OK consécutifs avant auto-lever
 
 interface RetryState {
   attempts: number;
@@ -625,10 +625,10 @@ const RETRY_DELAYS_MS = [
 ];
 
 /**
- * Effet de bord : gere le compteur de OK consecutifs et leve l'incident apres
- * INCIDENT_AUTO_CLEAR_AFTER fetchs OK d'affilee. Toute erreur remet le compteur a zero.
- * A appeler EXACTEMENT UNE FOIS par tracker et par cycle de refresh (sinon le compteur
- * monte trop vite et leve un incident sur un seul vrai OK).
+ * Effet de bord : gère le compteur de OK consécutifs et lève l'incident après
+ * INCIDENT_AUTO_CLEAR_AFTER fetchs OK d'affilée. Toute erreur remet le compteur à zero.
+ * À appeler EXACTEMENT UNE FOIS par tracker et par cycle de refresh (sinon le compteur
+ * monte trop vite et lève un incident sur un seul vrai OK).
  */
 function processIncidentStreak(stat: TrackerStats): void {
   const incident = getIncident(stat.id);
@@ -641,18 +641,18 @@ function processIncidentStreak(stat: TrackerStats): void {
     if (streak >= INCIDENT_AUTO_CLEAR_AFTER) {
       clearIncident(stat.id);
       incidentOkStreaks.delete(stat.id);
-      console.log(`[Incident] ${stat.name} : ${INCIDENT_AUTO_CLEAR_AFTER} OK consecutifs -> incident leve automatiquement`);
+      console.log(`[Incident] ${stat.name} : ${INCIDENT_AUTO_CLEAR_AFTER} OK consécutifs -> incident leve automatiquement`);
     } else {
       incidentOkStreaks.set(stat.id, streak);
     }
   } else {
-    // Une erreur casse la serie : on repart de zero
+    // Une erreur casse la série : on repart de zero
     incidentOkStreaks.delete(stat.id);
   }
 }
 
 /**
- * Pur (aucun effet de bord) : attache l'incident a la stat pour l'affichage.
+ * Pur (aucun effet de bord) : attache l'incident à la stat pour l'affichage.
  * Sur une stat OK, on n'attache rien (la carte verte n'affiche pas de badge incident).
  */
 function attachIncident(stat: TrackerStats): TrackerStats {
@@ -727,9 +727,9 @@ function upsertCachedStat(stat: TrackerStats): void {
   lastRefresh = new Date().toISOString();
 }
 
-// Applique l'ordre de tuiles personnalise par l'utilisateur (drag & drop sur le
-// dashboard). Les trackers absents de l'ordre enregistre conservent leur position
-// relative et sont places apres ceux presents dans l'ordre.
+// Applique l'ordre de tuiles personnalisé par l'utilisateur (drag & drop sur le
+// dashboard). Les trackers absents de l'ordre enregistré conservent leur position
+// relative et sont places après ceux présents dans l'ordre.
 function applyTrackerOrder(stats: TrackerStats[]): TrackerStats[] {
   const order = getJsonSetting<string[]>(TRACKER_ORDER_KEY, []);
   if (!order.length) return stats;
@@ -763,7 +763,7 @@ function visibleStats(trackers: TrackerConfig[]): TrackerStats[] {
       name:        tracker.name,
       trackerUrl:  tracker.baseUrl,
       status:      'error',
-      error:       'En attente du premier rafraichissement',
+      error:       'En attente du premier rafraîchissement',
       lastUpdated: new Date().toISOString(),
       byteUnit:    tracker.dashboard?.byteUnit ?? 'binary',
       fields:      {},
@@ -772,7 +772,7 @@ function visibleStats(trackers: TrackerConfig[]): TrackerStats[] {
       - (order.get(b.id) ?? Number.MAX_SAFE_INTEGER));
 }
 
-// Un tracker "non configure" = aucun credential en base : ce n'est pas un suivi
+// Un tracker "non configuré" = aucun credential en base : ce n'est pas un suivi
 // actif, juste un tracker du catalogue auquel on n'a pas (encore) de compte. On ne
 // le persiste pas en historique, on ne le compte pas en erreur et on ne notifie pas.
 function isUnconfiguredStat(stat: TrackerStats): boolean {
@@ -780,21 +780,21 @@ function isUnconfiguredStat(stat: TrackerStats): boolean {
     && stat.error.startsWith('Credentials manquants');
 }
 
-// Tracker a signaler en echec : erreur franche, OU login/scrap en echec alors que
-// l'API a fourni les stats (status 'ok' + loginError). Le login garantit l'activite
-// sur le site : son echec doit toujours remonter (notif, incident, relance).
+// Tracker à signaler en échec : erreur franche, OU login/scrap en échec alors que
+// l'API a fourni les stats (status 'ok' + loginError). Le login garantit l'activité
+// sur le site : son échec doit toujours remonter (notif, incident, relance).
 function isFailedStat(stat: TrackerStats): boolean {
   return stat.status === 'error' || Boolean(stat.loginError);
 }
 
 function failureMessage(stat: TrackerStats): string {
-  if (stat.loginError) return `LOGIN EN ECHEC (stats lues via l'API) : ${stat.loginError}`;
+  if (stat.loginError) return `LOGIN EN ÉCHEC (stats lues via l'API) : ${stat.loginError}`;
   return stat.error || 'erreur inconnue';
 }
 
 function logStatResult(stat: TrackerStats): void {
   if (stat.stale) {
-    console.log(`  [${stat.name}] Stats anciennes conservees - ${stat.stale.error}`);
+    console.log(`  [${stat.name}] Stats anciennes conservées - ${stat.stale.error}`);
     return;
   }
   if (stat.loginError) {
@@ -805,7 +805,7 @@ function logStatResult(stat: TrackerStats): void {
     const fields = Object.entries(stat.fields)
       .filter(([, value]) => value !== '' && value !== undefined && value !== null)
       .map(([key, value]) => `${key}=${value}`);
-    console.log(`  [${stat.name}] Stats OK${fields.length ? ` (${fields.join(', ')})` : ' (aucune donnee extraite)'}`);
+    console.log(`  [${stat.name}] Stats OK${fields.length ? ` (${fields.join(', ')})` : ' (aucune donnée extraite)'}`);
     return;
   }
 
@@ -866,14 +866,14 @@ function fakeStatsForPresentation(): TrackerStats[] {
     });
 }
 
-// Nombre de trackers rafraichis en parallele. Au-dela, le navigateur headless sature
+// Nombre de trackers rafraîchis en parallèle. Au-delà, le navigateur headless sature
 // (chaque tracker en mode browser lance un Chromium). 3 = bon compromis vitesse/charge.
 // Surchargeable via la variable d'env REFRESH_CONCURRENCY.
 const REFRESH_CONCURRENCY = Math.max(1, Number(process.env.REFRESH_CONCURRENCY) || 3);
 
 /**
- * Applique `fn` a tous les items avec au plus `limit` executions simultanees.
- * Preserve l'ordre des resultats. Ne rejette jamais (fn doit gerer ses erreurs).
+ * Applique `fn` à tous les items avec au plus `limit` exécutions simultanées.
+ * Préserve l'ordre des résultats. Ne rejette jamais (fn doit gérer ses erreurs).
  */
 async function mapWithConcurrency<T, R>(
   items: T[],
@@ -895,8 +895,8 @@ async function mapWithConcurrency<T, R>(
   return results;
 }
 
-// Timeout dur par tracker : au-dela, on libere le slot de concurrence et on TUE le
-// contexte Chromium bloque (sinon un seul tracker qui pendouille fige tout le refresh).
+// Timeout dur par tracker : au-delà, on libère le slot de concurrence et on TUE le
+// contexte Chromium bloqué (sinon un seul tracker qui pendouille fige tout le refresh).
 const TRACKER_FETCH_TIMEOUT_MS = Math.max(30_000, Number(process.env.TRACKER_FETCH_TIMEOUT_MS) || 90_000);
 const trackerFetchSingleFlight = new SingleFlight<TrackerStats>();
 
@@ -907,7 +907,7 @@ async function fetchTrackerBoundedOnce(
   let timer: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<TrackerStats>(resolve => {
     timer = setTimeout(() => {
-      // Tuer le Chromium reste bloque pour liberer CPU/RAM immediatement
+      // Tuer le Chromium reste bloqué pour libérer CPU/RAM immédiatement
       closeBrowserSession(tracker.id).catch(() => {});
       invalidateSession(tracker.id);
       resolve({
@@ -934,13 +934,13 @@ async function fetchTrackerBounded(
   creds: { username: string; password: string },
 ): Promise<TrackerStats> {
   // Une sauvegarde de cookie, un refresh individuel et une synchronisation globale
-  // peuvent viser le meme tracker au meme moment. Un seul navigateur persistant peut
-  // utiliser son profil : partager la lecture evite qu'un timeout ferme le contexte
-  // encore utilise par un autre appel.
+  // peuvent viser le même tracker au même moment. Un seul navigateur persistant peut
+  // utiliser son profil : partager la lecture évite qu'un timeout ferme le contexte
+  // encore utilisé par un autre appel.
   return trackerFetchSingleFlight.run(tracker.id, () => fetchTrackerBoundedOnce(tracker, creds));
 }
 
-// Fenetre de fraicheur au boot : en dessous, on ressert la base sans re-scraper.
+// Fenêtre de fraîcheur au boot : en dessous, on ressert la base sans re-scraper.
 const BOOT_FRESH_HOURS = Math.max(0, Number(process.env.BOOT_FRESH_HOURS) || 24);
 const browserBootWaitValue = Number(process.env.BROWSER_RUNTIME_BOOT_WAIT_MS ?? 30_000);
 const BROWSER_RUNTIME_BOOT_WAIT_MS = Number.isFinite(browserBootWaitValue)
@@ -962,12 +962,12 @@ async function waitForBrowserRuntimeAtBoot(): Promise<boolean> {
 }
 
 /**
- * Au demarrage : remplit cachedStats avec le dernier snapshot OK de chaque tracker
- * (s'il a moins de BOOT_FRESH_HOURS). Renvoie la liste des trackers a rafraichir
- * (pas de snapshot, ou snapshot trop vieux). Si BOOT_FRESH_HOURS=0, tout est obsolete.
+ * Au démarrage : remplit cachedStats avec le dernier snapshot OK de chaque tracker
+ * (s'il a moins de BOOT_FRESH_HOURS). Renvoie la liste des trackers à rafraîchir
+ * (pas de snapshot, ou snapshot trop vieux). Si BOOT_FRESH_HOURS=0, tout est obsolète.
  */
 function hydrateFromSnapshots(trackers: TrackerConfig[]): TrackerConfig[] {
-  if (isPresentationMode()) return []; // mode demo : pas d'hydratation, donnees factices
+  if (isPresentationMode()) return []; // mode démo : pas d'hydratation, données factices
   const now = Date.now();
   const freshMs = BOOT_FRESH_HOURS * 3600_000;
   const hydrated: TrackerStats[] = [];
@@ -989,9 +989,9 @@ function hydrateFromSnapshots(trackers: TrackerConfig[]): TrackerConfig[] {
   return stale;
 }
 
-// Un cookie de session valide peut authentifier un tracker meme lorsque le tracker
+// Un cookie de session valide peut authentifier un tracker même lorsque le tracker
 // accepte aussi username/password. Cela permet un vrai mode dual : credentials OU
-// cookie manuel, sans forcer `cookieOnly: true` dans la definition.
+// cookie manuel, sans forcer `cookieOnly: true` dans la définition.
 function storedCookieReady(tracker: TrackerConfig): boolean {
   return hasTrackerCookie(tracker.id);
 }
@@ -1006,7 +1006,7 @@ async function refresh(trackers: TrackerConfig[]): Promise<TrackerStats[]> {
     if (isPresentationMode()) {
       cachedStats = fakeStatsForPresentation();
       lastRefresh = new Date().toISOString();
-      console.log('  Mode presentation actif - donnees factices');
+      console.log('  Mode presentation actif - données factices');
       return cachedStats;
     }
 
@@ -1039,7 +1039,7 @@ async function refresh(trackers: TrackerConfig[]): Promise<TrackerStats[]> {
       return stat;
     });
     // Fusion (pas de remplacement global) : on garde en cache les trackers NON
-    // rafraichis dans ce cycle (ex: hydrates depuis la base au boot) et on remplace
+    // rafraîchis dans ce cycle (ex: hydrates depuis la base au boot) et on remplace
     // uniquement ceux qu'on vient de refetcher. Permet refresh(sous-ensemble).
     const refreshedIds = new Set(results.map(r => r.id));
     cachedStats = [
@@ -1051,7 +1051,7 @@ async function refresh(trackers: TrackerConfig[]): Promise<TrackerStats[]> {
     const ok           = results.filter(s => !isFailedStat(s)).length;
     const unconfigured = results.filter(isUnconfiguredStat).length;
     const err          = results.filter(isFailedStat).length - unconfigured;
-    const unconfiguredSuffix = unconfigured ? `  ⚙️  ${unconfigured} non configure(s)` : '';
+    const unconfiguredSuffix = unconfigured ? `  ⚙️  ${unconfigured} non configuré(s)` : '';
     console.log(`  ✅ ${ok} ok  ❌ ${err} erreur(s)${unconfiguredSuffix}`);
     results.filter(s => isFailedStat(s) && !isUnconfiguredStat(s))
       .forEach(s => console.log(`  ⚠️  ${s.name}: ${failureMessage(s)}`));
@@ -1225,9 +1225,9 @@ function computeRatio(stat: TrackerStats): number | null {
   return up / down;
 }
 
-// Construit les lignes d'une notification (echecs + succes/stats/mp + alertes
-// ratio/buffer/session) pour un sous-ensemble de trackers, selon un jeu de reglages
-// donne (global OU specifique a un tracker). Reutilise pour les deux notifications.
+// Construit les lignes d'une notification (échecs + succes/stats/mp + alertes
+// ratio/buffer/session) pour un sous-ensemble de trackers, selon un jeu de réglages
+// donné (global OU spécifique à un tracker). Réutilise pour les deux notifications.
 interface AlertConfig {
   notifyError: boolean; notifyManualError: boolean;
   notifySuccess: boolean; notifyManualSuccess: boolean;
@@ -1238,7 +1238,7 @@ interface AlertConfig {
   sessionEnabled: boolean; sessionDays: number;
 }
 
-// Evalue les seuils ratio/buffer/session d'un tracker selon une config donnee.
+// Évalué les seuils ratio/buffer/session d'un tracker selon une config donnée.
 function evaluateThresholds(stat: TrackerStats, cfg: AlertConfig): string[] {
   const out: string[] = [];
   if (cfg.ratioEnabled && stat.status === 'ok') {
@@ -1265,8 +1265,8 @@ function evaluateThresholds(stat: TrackerStats, cfg: AlertConfig): string[] {
 
 const plural = (n: number, word: string) => t(`${n} ${word}${n > 1 ? 's' : ''}`);
 
-// Construit jusqu'a 3 notifications (echecs / succes / alertes) a partir d'une liste
-// de trackers et d'une config. Le titre est partage : "TD : X succes - Y echecs - Z MP".
+// Construit jusqu'à 3 notifications (échecs / succès / alertes) à partir d'une liste
+// de trackers et d'une config. Le titre est partagé : "TD : X succès - Y échecs - Z MP".
 function buildNotifications(
   relevant: TrackerStats[],
   cfg: AlertConfig,
@@ -1349,7 +1349,7 @@ async function notifyScheduledResult(
   const g = settings.globalAlerts;
   const trackerAlerts = settings.trackerAlerts || {};
 
-  // 1) NOTIF GLOBALE : tous les trackers, selon les reglages globaux.
+  // 1) NOTIF GLOBALE : tous les trackers, selon les réglages globaux.
   const globalCfg: AlertConfig = {
     notifyError: p.notifyError, notifyManualError: p.notifyManualError,
     notifySuccess: p.notifySuccess, notifyManualSuccess: p.notifyManualSuccess,
@@ -1361,11 +1361,11 @@ async function notifyScheduledResult(
   };
   const notifications = buildNotifications(relevant, globalCfg, previousFailures, manual);
 
-  // 2) NOTIF PAR TRACKER : conserver uniquement les informations supplementaires
-  // par rapport a la notification globale de ce meme rafraichissement.
+  // 2) NOTIF PAR TRACKER : conserver uniquement les informations supplémentaires
+  // par rapport à la notification globale de ce même rafraîchissement.
   const specificStats = relevant.filter(stat => trackerAlerts[stat.id]);
   if (specificStats.length > 0) {
-    // Regrouper les complements par categorie : echecs, succes et seuils.
+    // Regrouper les compléments par catégorie : échecs, succès et seuils.
     const errLines: string[] = [];
     const okLines: string[] = [];
     const alertLines: string[] = [];
@@ -2005,9 +2005,9 @@ function betaTrackerIdForAnnounceHost(announceHost: string, trackerHosts: Map<st
   return best && best.score >= 45 ? best.tracker.id : null;
 }
 
-// Identifiant stable (hash) + libelle masque derives d'une URL d'annonce. Sert a
-// distinguer plusieurs comptes d'un meme site par leur passkey, sans exposer la
-// passkey en clair cote client (seul le hash et un libelle tronque transitent).
+// Identifiant stable (hash) + libellé masqué dérivés d'une URL d'annonce. Sert à
+// distinguer plusieurs comptes d'un même site par leur passkey, sans exposer la
+// passkey en clair côté client (seul le hash et un libellé tronqué transitent).
 function announceAccountKey(announce: string): { key: string; label: string } {
   const raw = String(announce || '').trim();
   if (!raw) return { key: '', label: '' };
@@ -2030,7 +2030,7 @@ function announceAccountKey(announce: string): { key: string; label: string } {
   }
   const basis = token || raw;
   const key = crypto.createHash('sha1').update(basis).digest('hex').slice(0, 16);
-  // Libelle masque : on revele juste assez de la passkey pour l'identifier. Sans
+  // Libellé masqué : on révèle juste assez de la passkey pour l'identifier. Sans
   // passkey reconnue, on suffixe un fragment du hash pour rester distinct entre comptes.
   const masked = token
     ? (token.length <= 8 ? token : `${token.slice(0, 4)}…${token.slice(-4)}`)
@@ -2038,8 +2038,8 @@ function announceAccountKey(announce: string): { key: string; label: string } {
   return { key, label: `${host} · ${masked}` };
 }
 
-// Resout le compte (trackerId) d'un agregat de torrents : d'abord par attribution
-// manuelle de la passkey a un compte, sinon par l'heuristique host -> tracker.
+// Résout le compte (trackerId) d'un agrégat de torrents : d'abord par attribution
+// manuelle de la passkey à un compte, sinon par l'heuristique host -> tracker.
 function resolveTorrentTrackerId(
   item: QbitTrackerAggregate,
   trackerHosts: Map<string, string>,
@@ -2081,11 +2081,11 @@ function betaClientLogName(client: BetaQbitClient): string {
   return `${client.label || client.id || 'Client BitTorrent'} (${client.type === 'rutorrent' ? 'ruTorrent/rTorrent' : 'qBittorrent'})`;
 }
 
-// Agrege le nombre de torrents en seed remonte par les clients BitTorrent, par trackerId, en
+// Agrège le nombre de torrents en seed remonté par les clients BitTorrent, par trackerId, en
 // sommant tous les clients (qBittorrent et/ou rTorrent). On collecte aussi l'ensemble des types
-// de clients ayant contribue, pour l'etiquette (qBit / Rto / qBit Rto). On reutilise le meme
+// de clients ayant contribue, pour l'étiquette (qBit / Rto / qBit Rto). On réutilise le même
 // matching host d'annonce -> tracker que l'onglet beta (mappings manuels + heuristique).
-// Retourne une map vide si aucune synchro BitTorrent n'a encore tourne (betaQbitStats en memoire).
+// Retourne une map vide si aucune synchro BitTorrent n'a encore tourne (betaQbitStats en mémoire).
 function qbitSeedingByTrackerId(trackers: TrackerConfig[]): Map<string, { count: number; types: Set<string> }> {
   const result = new Map<string, { count: number; types: Set<string> }>();
   if (betaQbitStats.length === 0) return result;
@@ -2173,10 +2173,10 @@ function finiteSeconds(value: unknown): number | null {
 function qbitHttpError(endpoint: string, status: number, data: unknown, authState: 'none' | 'attempted' | 'authenticated'): Error {
   const preview = responsePreview(data);
   const authHint = authState === 'authenticated'
-    ? 'auth effectuee, verifier droits WebUI, Host header / reverse proxy ou IP bannie'
+    ? 'auth effectuée, vérifier droits WebUI, Host header / reverse proxy ou IP bannie'
     : (authState === 'attempted'
-      ? 'identifiants envoyes mais refuses par qBittorrent, verifier username/password WebUI ou IP bannie'
-      : 'aucun identifiant envoye, renseigner utilisateur/mot de passe WebUI qBittorrent');
+      ? 'identifiants envoyés mais refusés par qBittorrent, vérifier username/password WebUI ou IP bannie'
+      : 'aucun identifiant envoyé, renseigner utilisateur/mot de passe WebUI qBittorrent');
   return new Error(`qBittorrent ${endpoint} HTTP ${status}${preview ? ` - ${preview}` : ''} (${authHint})`);
 }
 
@@ -2188,7 +2188,7 @@ async function fetchQbitClient(client: BetaQbitClient): Promise<QbitTrackerAggre
   let authenticated = false;
   betaLog(`${betaClientLogName(client)}: scan qBittorrent sur ${baseUrl}`);
   if (!client.username && !client.password) {
-    betaWarn(`${betaClientLogName(client)}: aucun identifiant qBittorrent configure; l'API peut repondre 403 meme si VueTorrent est connecte dans le navigateur`);
+    betaWarn(`${betaClientLogName(client)}: aucun identifiant qBittorrent configuré; l'API peut répondre 403 même si VueTorrent est connecté dans le navigateur`);
   }
   if (client.username || client.password) {
     betaLog(`${betaClientLogName(client)}: authentification qBittorrent`);
@@ -2204,7 +2204,7 @@ async function fetchQbitClient(client: BetaQbitClient): Promise<QbitTrackerAggre
     );
     const cookie = login.headers['set-cookie'];
     if (Array.isArray(cookie)) jar.push(...cookie.map(item => item.split(';')[0]));
-    betaLog(`${betaClientLogName(client)}: auth HTTP ${login.status}, cookie(s) ${jar.length}, reponse "${String(login.data).trim().slice(0, 40)}"`);
+    betaLog(`${betaClientLogName(client)}: auth HTTP ${login.status}, cookie(s) ${jar.length}, réponse "${String(login.data).trim().slice(0, 40)}"`);
     const loginBody = String(login.data || '').trim();
     const loginOk = (login.status === 200 && loginBody === 'Ok.') || (login.status === 204 && jar.length > 0);
     if (!loginOk) {
@@ -2236,10 +2236,10 @@ async function fetchQbitClient(client: BetaQbitClient): Promise<QbitTrackerAggre
     throw qbitHttpError('/api/v2/torrents/info', response.status, response.data, authenticated ? 'authenticated' : 'none');
   }
   if (!Array.isArray(response.data)) {
-    betaWarn(`${betaClientLogName(client)}: /torrents/info reponse non attendue: ${responsePreview(response.data)}`);
+    betaWarn(`${betaClientLogName(client)}: /torrents/info réponse non attendue: ${responsePreview(response.data)}`);
   }
   let torrents = Array.isArray(response.data) ? response.data as Array<Record<string, unknown>> : [];
-  betaLog(`${betaClientLogName(client)}: /torrents/info HTTP ${response.status}, ${torrents.length} torrent(s), type reponse ${Array.isArray(response.data) ? 'array' : typeof response.data}`);
+  betaLog(`${betaClientLogName(client)}: /torrents/info HTTP ${response.status}, ${torrents.length} torrent(s), type réponse ${Array.isArray(response.data) ? 'array' : typeof response.data}`);
   if (!torrents.length) {
     try {
       betaLog(`${betaClientLogName(client)}: /torrents/info vide, essai fallback /sync/maindata`);
@@ -2255,7 +2255,7 @@ async function fetchQbitClient(client: BetaQbitClient): Promise<QbitTrackerAggre
       }
       const syncTorrents = (syncResponse.data as { torrents?: Record<string, Record<string, unknown>> })?.torrents;
       if (!syncTorrents || typeof syncTorrents !== 'object') {
-        betaWarn(`${betaClientLogName(client)}: /sync/maindata sans objet torrents, apercu: ${responsePreview(syncResponse.data)}`);
+        betaWarn(`${betaClientLogName(client)}: /sync/maindata sans objet torrents, aperçu: ${responsePreview(syncResponse.data)}`);
       }
       torrents = syncTorrents && typeof syncTorrents === 'object'
         ? Object.entries(syncTorrents).map(([hash, torrent]) => ({ hash, ...torrent }))
@@ -2307,8 +2307,8 @@ async function fetchQbitClient(client: BetaQbitClient): Promise<QbitTrackerAggre
       unknownSkipped += 1;
       continue;
     }
-    // Groupe par hote + passkey : deux comptes d'un meme site (memes hote mais
-    // passkeys differentes) forment deux agregats distincts, ventilables par compte.
+    // Groupe par hôte + passkey : deux comptes d'un même site (mêmes hôte mais
+    // passkeys différentes) forment deux agrégats distincts, ventilables par compte.
     const account = announceAccountKey(announce);
     const groupKey = account.key ? `${host}|${account.key}` : host;
     const existing = groups.get(groupKey) ?? {
@@ -2356,7 +2356,7 @@ async function fetchQbitClient(client: BetaQbitClient): Promise<QbitTrackerAggre
     groups.set(groupKey, existing);
   }
   if (missingAnnounce || trackerDetailCalls || unknownSkipped) {
-    betaLog(`${betaClientLogName(client)}: annonces absentes dans torrents/info ${missingAnnounce}, appels detail trackers ${trackerDetailCalls}, torrents sans hote ${unknownSkipped}`);
+    betaLog(`${betaClientLogName(client)}: annonces absentes dans torrents/info ${missingAnnounce}, appels détail trackers ${trackerDetailCalls}, torrents sans hôte ${unknownSkipped}`);
   }
   for (const item of groups.values()) {
     item.ratio = item.downloadedBytes > 0
@@ -2364,12 +2364,12 @@ async function fetchQbitClient(client: BetaQbitClient): Promise<QbitTrackerAggre
       : (item.uploadedBytes > 0 ? Number.POSITIVE_INFINITY : 0);
   }
   const result = [...groups.values()].sort((a, b) => a.trackerHost.localeCompare(b.trackerHost));
-  betaLog(`${betaClientLogName(client)}: ${result.reduce((sum, item) => sum + item.torrentCount, 0)} torrent(s), ${result.length} hote(s) d'annonce${result.length ? `: ${result.map(item => `${item.trackerHost}=${item.torrentCount}`).join(', ')}` : ''}`);
+  betaLog(`${betaClientLogName(client)}: ${result.reduce((sum, item) => sum + item.torrentCount, 0)} torrent(s), ${result.length} hôte(s) d'annonce${result.length ? `: ${result.map(item => `${item.trackerHost}=${item.torrentCount}`).join(', ')}` : ''}`);
   if (!result.length && torrents.length > 0) {
-    betaWarn(`${betaClientLogName(client)}: ${torrents.length} torrent(s) recus mais aucun hote d'annonce exploitable`);
+    betaWarn(`${betaClientLogName(client)}: ${torrents.length} torrent(s) reçus mais aucun hôte d'annonce exploitable`);
   }
   if (!torrents.length) {
-    betaWarn(`${betaClientLogName(client)}: aucun torrent recupere depuis l'API qBittorrent. Verifier URL API, identifiants, instance cible et droits WebUI.`);
+    betaWarn(`${betaClientLogName(client)}: aucun torrent récupéré depuis l'API qBittorrent. Vérifier URL API, identifiants, instance cible et droits WebUI.`);
   }
   return result;
 }
@@ -2507,7 +2507,7 @@ async function fetchRutorrentClient(client: BetaQbitClient): Promise<QbitTracker
     groups.set(groupKey, existing);
   }
   if (trackerDetailCalls || unknownSkipped) {
-    betaLog(`${betaClientLogName(client)}: appels detail trackers ${trackerDetailCalls}, torrents sans hote ${unknownSkipped}`);
+    betaLog(`${betaClientLogName(client)}: appels détail trackers ${trackerDetailCalls}, torrents sans hôte ${unknownSkipped}`);
   }
   for (const item of groups.values()) {
     item.ratio = item.downloadedBytes > 0
@@ -2515,7 +2515,7 @@ async function fetchRutorrentClient(client: BetaQbitClient): Promise<QbitTracker
       : (item.uploadedBytes > 0 ? Number.POSITIVE_INFINITY : 0);
   }
   const result = [...groups.values()].sort((a, b) => a.trackerHost.localeCompare(b.trackerHost));
-  betaLog(`${betaClientLogName(client)}: ${result.reduce((sum, item) => sum + item.torrentCount, 0)} torrent(s), ${result.length} hote(s) d'annonce${result.length ? `: ${result.map(item => `${item.trackerHost}=${item.torrentCount}`).join(', ')}` : ''}`);
+  betaLog(`${betaClientLogName(client)}: ${result.reduce((sum, item) => sum + item.torrentCount, 0)} torrent(s), ${result.length} hôte(s) d'annonce${result.length ? `: ${result.map(item => `${item.trackerHost}=${item.torrentCount}`).join(', ')}` : ''}`);
   return result;
 }
 
@@ -2553,9 +2553,9 @@ async function refreshBetaQbitStats(settings = loadBetaSettings()): Promise<Qbit
   const now = Date.now();
   for (const client of enabled) qbitClientLastScan.set(client.id, now);
   const torrentCount = results.reduce((sum, item) => sum + item.torrentCount, 0);
-  betaLog(`refresh termine: ${torrentCount} torrent(s), ${results.length} hote(s) d'annonce`);
+  betaLog(`refresh terminé: ${torrentCount} torrent(s), ${results.length} hôte(s) d'annonce`);
   if (enabled.length > 0 && torrentCount === 0) {
-    throw new Error('Aucun torrent recupere depuis les clients BitTorrent actifs. Les logs [Beta BitTorrent] indiquent quel endpoint repond vide ou invalide.');
+    throw new Error('Aucun torrent récupéré depuis les clients BitTorrent actifs. Les logs [Beta BitTorrent] indiquent quel endpoint répond vide ou invalide.');
   }
   return results;
 }
@@ -2570,7 +2570,7 @@ async function refreshSingleQbitClient(client: BetaQbitClient): Promise<void> {
     betaQbitStats = betaQbitStats.filter(stat => stat.clientId !== client.id).concat(clientResults);
     betaQbitLastRefresh = new Date().toISOString();
     const torrentCount = clientResults.reduce((sum, item) => sum + item.torrentCount, 0);
-    betaLog(`auto-refresh ${betaClientLogName(client)}: ${torrentCount} torrent(s), ${clientResults.length} hote(s)`);
+    betaLog(`auto-refresh ${betaClientLogName(client)}: ${torrentCount} torrent(s), ${clientResults.length} hôte(s)`);
   } catch (err: unknown) {
     betaWarn(`auto-refresh ${betaClientLogName(client)} KO - ${err instanceof Error ? err.message : String(err)}`);
   }
@@ -2657,10 +2657,10 @@ export async function start(): Promise<void> {
   });
 
   app.post('/api/auth/setup', (req, res) => {
-    if (isAuthConfigured()) return res.status(409).json({ ok: false, error: 'Compte deja configure' });
+    if (isAuthConfigured()) return res.status(409).json({ ok: false, error: 'Compte déjà configuré' });
     const { username, password } = req.body as { username?: string; password?: string };
     if (!username || !password || password.length < 8) {
-      return res.status(400).json({ ok: false, error: 'Utilisateur et mot de passe de 8 caracteres minimum requis' });
+      return res.status(400).json({ ok: false, error: 'Utilisateur et mot de passe de 8 caractères minimum requis' });
     }
     saveAuthSettings(username, password);
     const session = createSessionCookie(username);
@@ -2703,7 +2703,7 @@ export async function start(): Promise<void> {
   app.use((req, res, next) => {
     if (!isAuthConfigured()) {
       if (req.path.startsWith('/api/')) {
-        return res.status(401).json({ ok: false, error: 'Compte admin non configure' });
+        return res.status(401).json({ ok: false, error: 'Compte admin non configuré' });
       }
       return res.redirect('/login.html');
     }
@@ -2747,7 +2747,7 @@ export async function start(): Promise<void> {
         ...stat,
         qbitSeeding: entry ? entry.count : null,
         qbitSeedingTypes: entry ? [...entry.types] : [],
-        // Prerequis du tracker (badges UI) : cookie de session colle / runtime navigateur.
+        // Prérequis du tracker (badges UI) : cookie de session collé / runtime navigateur.
         requiresCookie: Boolean(config?.login?.cookieOnly),
         requiresBrowser: config?.fetch?.mode === 'browser',
       };
@@ -2869,7 +2869,7 @@ export async function start(): Promise<void> {
   app.post('/api/beta/settings', (req, res) => {
     try {
       const settings = saveBetaSettingsPayload(req.body);
-      console.log(`[Beta BitTorrent] configuration sauvegardee: ${settings.qbitClients.length} client(s), ${settings.qbitClients.filter(client => client.enabled).length} actif(s), ${settings.crossSeedInstances.length} instance(s) cross-seed, ${settings.announceMappings.length} liaison(s) annonce`);
+      console.log(`[Beta BitTorrent] configuration sauvegardée: ${settings.qbitClients.length} client(s), ${settings.qbitClients.filter(client => client.enabled).length} actif(s), ${settings.crossSeedInstances.length} instance(s) cross-seed, ${settings.announceMappings.length} liaison(s) annonce`);
       res.json({ ok: true, settings: sanitizeBetaSettings(settings) });
     } catch (err: unknown) {
       res.status(400).json({ ok: false, error: err instanceof Error ? err.message : String(err) });
@@ -2889,7 +2889,7 @@ export async function start(): Promise<void> {
         password: raw.password === '••••••••' ? (current?.password ?? '') : (raw.password ?? ''),
         enabled: true,
       };
-      betaLog(`test client demande pour ${betaClientLogName(client)}`);
+      betaLog(`test client demandé pour ${betaClientLogName(client)}`);
       const stats = await fetchTorrentClient(client);
       res.json({ ok: true, trackerCount: stats.length, torrentCount: stats.reduce((sum, item) => sum + item.torrentCount, 0) });
     } catch (err: unknown) {
@@ -2920,9 +2920,9 @@ export async function start(): Promise<void> {
 
   app.post('/api/beta/qbit/refresh', async (_req, res) => {
     try {
-      betaLog('endpoint /api/beta/qbit/refresh appele');
+      betaLog('endpoint /api/beta/qbit/refresh appelé');
       const stats = await refreshBetaQbitStats();
-      betaLog(`endpoint refresh OK: ${stats.reduce((sum, item) => sum + item.torrentCount, 0)} torrent(s), ${stats.length} hote(s)`);
+      betaLog(`endpoint refresh OK: ${stats.reduce((sum, item) => sum + item.torrentCount, 0)} torrent(s), ${stats.length} hôte(s)`);
       res.json({ ok: true, stats, lastRefresh: betaQbitLastRefresh });
     } catch (err: unknown) {
       betaWarn(`endpoint refresh KO - ${err instanceof Error ? err.message : String(err)}`);
@@ -2936,7 +2936,7 @@ export async function start(): Promise<void> {
     const target = settings.notificationTargets.find(item => item.id === id);
     if (!target) return res.status(404).json({ ok: false, error: 'Destination introuvable' });
     try {
-      await sendBetaNotification(target, t('Test Tracker Dashboard Beta : notification recue.'), 'Tracker Dashboard Beta', settings.notificationTargets);
+      await sendBetaNotification(target, t('Test Tracker Dashboard Beta : notification reçue.'), 'Tracker Dashboard Beta', settings.notificationTargets);
       res.json({ ok: true });
     } catch (err: unknown) {
       res.json({ ok: false, error: err instanceof Error ? err.message : String(err) });
@@ -2982,13 +2982,13 @@ export async function start(): Promise<void> {
     const definitions = listAllTrackerSummaries()
       .map(definition => {
         const configuredTracker = configured.get(definition.id);
-        // V3X a ete publie initialement avec enabled=true. Certaines installations
-        // conservent donc une ancienne ligne SQLite active, meme apres mise a jour de
-        // la definition embarquee. Le menu "Ajouter un tracker > Tracker integre"
-        // se base sur CE enabled API : tant que cette ligne vaut true, V3X disparait.
+        // V3X a été publié initialement avec enabled=true. Certaines installations
+        // conservent donc une ancienne ligne SQLite active, même après mise à jour de
+        // la définition embarquée. Le menu "Ajouter un tracker > Tracker intégré"
+        // se base sur CE enabled API : tant que cette ligne vaut true, V3X disparaît.
         //
-        // Pour V3X, l'etat "actif" n'est donc considere reel que si le compte a
-        // effectivement une authentification stockee. Sans mot de passe/cookie/TOTP,
+        // Pour V3X, l'état "actif" n'est donc considéré réel que si le compte a
+        // effectivement une authentification stockée. Sans mot de passe/cookie/TOTP,
         // il doit toujours rester disponible dans le catalogue.
         const credential = credentialSummaries.get(definition.id);
         const v3xHasStoredAuth = definition.id === 'v3x' && Boolean(
@@ -3000,8 +3000,8 @@ export async function start(): Promise<void> {
           ? false
           : Boolean(configuredTracker && configuredTracker.enabled !== false);
 
-        // Prerequis affiches dans l'UI (badges) : resolus sur la config effective
-        // (preset moteur applique), car ex. le mode browser de Gazelle vient du preset.
+        // Prérequis affichés dans l'UI (badges) : résolus sur la config effective
+        // (preset moteur appliqué), car ex. le mode browser de Gazelle vient du preset.
         const effective = configuredTracker ?? loadEffectiveTrackerDefinition(definition.id);
         return {
           ...definition,
@@ -3055,7 +3055,7 @@ export async function start(): Promise<void> {
     res.json({ ok: true, tracker });
   });
 
-  // Renomme le libelle d'affichage d'un tracker (utile pour distinguer plusieurs
+  // Renomme le libellé d'affichage d'un tracker (utile pour distinguer plusieurs
   // comptes : « C411 », « C411 Alex »…). Le nom n'est pas synchronise depuis l'image
   // (normalizeTrackerConfigs ne touche que login/fetch), donc il persiste.
   app.post('/api/trackers/:trackerId/name', (req, res) => {
@@ -3063,7 +3063,7 @@ export async function start(): Promise<void> {
     const trackerId = req.params.trackerId;
     const name = String(req.body?.name ?? '').trim();
     if (!name) return res.status(400).json({ ok: false, error: 'Nom requis.' });
-    if (name.length > 80) return res.status(400).json({ ok: false, error: 'Nom trop long (80 caracteres max).' });
+    if (name.length > 80) return res.status(400).json({ ok: false, error: 'Nom trop long (80 caractères max).' });
     const tracker = loadTrackerConfigsFromDb().find(t => t.id === trackerId)
       ?? loadEffectiveTrackerDefinition(trackerId);
     if (!tracker) return res.status(404).json({ ok: false, error: 'Tracker introuvable' });
@@ -3072,10 +3072,10 @@ export async function start(): Promise<void> {
     res.json({ ok: true, tracker: { ...tracker, name } });
   });
 
-  // Duplique un tracker pour gerer plusieurs comptes sur un meme site. Le duplicata
-  // reprend la definition technique de la source (via baseId, donc il herite des
-  // corrections de login amont) mais possede son propre id : identifiants, cookie,
-  // 2FA, profil navigateur, stats, planning et notifications sont independants.
+  // Duplique un tracker pour gérer plusieurs comptes sur un même site. Le duplicata
+  // reprend la définition technique de la source (via baseId, donc il hérite des
+  // corrections de login amont) mais possède son propre id : identifiants, cookie,
+  // 2FA, profil navigateur, stats, planning et notifications sont indépendants.
   app.post('/api/trackers/:trackerId/duplicate', (req, res) => {
     importLegacyTrackersIfNeeded();
     const sourceId = req.params.trackerId;
@@ -3101,7 +3101,7 @@ export async function start(): Promise<void> {
     };
     saveTrackerConfig(duplicate);
 
-    // Inserer dans l'ordre d'affichage juste apres la source.
+    // Insérer dans l'ordre d'affichage juste après la source.
     const order = getJsonSetting(TRACKER_ORDER_KEY, { ids: [] as string[] });
     const ids = (Array.isArray(order.ids) ? order.ids : []).filter(id => id !== newId);
     const at = ids.indexOf(sourceId);
@@ -3118,12 +3118,12 @@ export async function start(): Promise<void> {
       const { config, error } = sanitizeTrackerConfigInput(req.body, { isNew: !isDefaultTracker(String(req.body?.id ?? '')) });
       if (!config) return res.status(400).json({ ok: false, error });
 
-      // Interdit d'ecraser une definition embarquee via ce formulaire : ses champs
-      // techniques (login/fetch/curlBinary) seraient de toute facon reecrits par
-      // normalizeTrackerConfigs() au prochain boot. Les trackers integres se gerent
-      // via « Ajouter / Configurer les actifs », pas via ce formulaire de creation.
+      // Interdit d'écraser une définition embarquée via ce formulaire : ses champs
+      // techniques (login/fetch/curlBinary) seraient de toute façon réécrits par
+      // normalizeTrackerConfigs() au prochain boot. Les trackers intégrés se gèrent
+      // via « Ajouter / Configurer les actifs », pas via ce formulaire de création.
       if (isDefaultTracker(config.id)) {
-        return res.status(409).json({ ok: false, error: `L'identifiant « ${config.id} » est reserve a un tracker integre. Configure-le depuis « Configurer les actifs ».` });
+        return res.status(409).json({ ok: false, error: `L'identifiant « ${config.id} » est réservé à un tracker intégré. Configure-le depuis « Configurer les actifs ».` });
       }
 
       saveTrackerConfig(config);
@@ -3137,11 +3137,11 @@ export async function start(): Promise<void> {
     }
   });
 
-  // Test reel d'une definition de tracker AVANT enregistrement : on tente un
-  // login + fetch complet avec la vraie mecanique (fetchTracker), sans persister
+  // Test réel d'une définition de tracker AVANT enregistrement : on tente un
+  // login + fetch complet avec la vraie mécanique (fetchTracker), sans persister
   // la config. On sauvegarde temporairement la config + identifiants pour que les
   // helpers de session/cookie/TOTP (indexes par tracker.id) fonctionnent, puis on
-  // restaure l'etat anterieur quoi qu'il arrive.
+  // restaure l'état antérieur quoi qu'il arrive.
   app.post('/api/trackers/test', async (req, res) => {
     const body = req.body ?? {};
     const { config, error } = sanitizeTrackerConfigInput(body.config, { isNew: true });
@@ -3159,7 +3159,7 @@ export async function start(): Promise<void> {
       return res.status(400).json({ ok: false, error: 'Mode cookie uniquement : colle un cookie de session pour tester.' });
     }
 
-    // Snapshot de l'etat existant pour restauration.
+    // Snapshot de l'état existant pour restauration.
     const existing = loadTrackerConfigsFromDb().find(t => t.id === config.id) ?? null;
     const prevCookie = getTrackerCookie(config.id);
     const prevTotp = getTrackerTotpSecret(config.id);
@@ -3180,7 +3180,7 @@ export async function start(): Promise<void> {
       if (stat.status !== 'ok' || Object.keys(fields).length === 0) {
         return res.status(200).json({
           ok: false,
-          error: stat.error || 'Aucune donnee extraite — verifie les regex/chemins des champs.',
+          error: stat.error || 'Aucune donnée extraite — vérifie les regex/chemins des champs.',
         });
       }
       res.json({ ok: true, stat: { fields, status: stat.status, byteUnit: stat.byteUnit } });
@@ -3190,7 +3190,7 @@ export async function start(): Promise<void> {
         error: err instanceof Error ? err.message : String(err),
       });
     } finally {
-      // Restauration de l'etat anterieur (la config testee ne doit pas fuiter).
+      // Restauration de l'état antérieur (la config testée ne doit pas fuiter).
       invalidateSession(config.id);
       if (existing) saveTrackerConfig(existing);
       else deleteTrackerConfig(config.id);
@@ -3205,7 +3205,7 @@ export async function start(): Promise<void> {
   app.delete('/api/trackers/:trackerId', (req, res) => {
     const trackerId = req.params.trackerId;
     if (isDefaultTracker(trackerId)) {
-      return res.status(403).json({ ok: false, error: 'Tracker integre : non supprimable (utilise « Retirer » pour le desactiver).' });
+      return res.status(403).json({ ok: false, error: 'Tracker intégré : non supprimable (utilise « Retirer » pour le désactiver).' });
     }
     const exists = loadTrackerConfigsFromDb().some(t => t.id === trackerId);
     if (!exists) return res.status(404).json({ ok: false, error: 'Tracker introuvable' });
@@ -3437,12 +3437,12 @@ export async function start(): Promise<void> {
     }
   });
 
-  // ── Moteur navigateur : chromium (defaut) ou cloak (CloakBrowser furtif) ──
+  // ── Moteur navigateur : chromium (défaut) ou cloak (CloakBrowser furtif) ──
   app.get('/api/settings/browser-engine', (_req, res) => {
     res.json({ engine: getJsonSetting('browser_engine', 'chromium') });
   });
 
-  // Etat du runtime navigateur (local embarque ou service externe) + versions.
+  // État du runtime navigateur (local embarque ou service externe) + versions.
   app.get('/api/browser-runtime/status', async (_req, res) => {
     res.json({ ok: true, status: await getBrowserRuntimeStatus() });
   });
@@ -3478,8 +3478,8 @@ export async function start(): Promise<void> {
 
   // ── Proxies par tracker (overrides) ───────────────────────────────────────
   app.get('/api/settings/proxy-overrides', (_req, res) => {
-    // On masque les passwords par des bullets (cote front on differencie ainsi
-    // "rien" de "deja defini, ne pas reecrire")
+    // On masque les passwords par des bullets (côté front on différencie ainsi
+    // "rien" de "déjà défini, ne pas réécrire")
     const sanitized = loadProxyOverrides().map(o => ({
       ...o,
       password: o.password ? '••••••••' : '',
@@ -3536,7 +3536,7 @@ export async function start(): Promise<void> {
             if (otherLabel !== undefined) {
               return res.status(400).json({
                 ok: false,
-                error: `Le tracker "${tid}" est cible par plusieurs proxys actifs ("${otherLabel}" et "${override.label || override.id}"). Un tracker ne peut etre couvert que par un seul proxy actif a la fois.`,
+                error: `Le tracker "${tid}" est cible par plusieurs proxys actifs ("${otherLabel}" et "${override.label || override.id}"). Un tracker ne peut être couvert que par un seul proxy actif à la fois.`,
               });
             }
             seenInEnabled.set(tid, override.label || override.id);
@@ -3546,7 +3546,7 @@ export async function start(): Promise<void> {
         cleaned.push(override);
       }
 
-      // Calcul des trackers impactes (info pour logs) : union des trackers cibles AVANT et APRES
+      // Calcul des trackers impactes (info pour logs) : union des trackers cibles AVANT et APRÈS
       const affected = new Set<string>();
       for (const o of previous) for (const t of o.trackers) affected.add(t);
       for (const o of cleaned)  for (const t of o.trackers) affected.add(t);
@@ -3555,7 +3555,7 @@ export async function start(): Promise<void> {
       // invalidateAllSessions ferme aussi tous les contextes Playwright -
       // pas besoin de fermer individuellement les overrides
       invalidateAllSessions();
-      console.log(`[Proxy] Overrides sauves (${cleaned.length}) — sessions invalidees (${affected.size} tracker(s) impactes)`);
+      console.log(`[Proxy] Overrides sauves (${cleaned.length}) — sessions invalidées (${affected.size} tracker(s) impactes)`);
       res.json({ ok: true, count: cleaned.length });
     } catch (err: unknown) {
       const error = err instanceof Error ? err.message : String(err);
@@ -3564,7 +3564,7 @@ export async function start(): Promise<void> {
     }
   });
 
-  // ── Cookie de session manuel (sites a CAPTCHA / Cloudflare Turnstile) ──────
+  // ── Cookie de session manuel (sites à CAPTCHA / Cloudflare Turnstile) ──────
   app.post('/api/trackers/:trackerId/cookie', async (req, res) => {
     const id = req.params.trackerId;
     if (!new Set(listAllTrackerSummaries().map(t => t.id)).has(id)) {
@@ -3572,8 +3572,8 @@ export async function start(): Promise<void> {
     }
     const cookie = typeof req.body?.cookie === 'string' ? req.body.cookie : '';
     setTrackerCookie(id, cookie);
-    // Un nouveau cookie colle remplace la valeur stockee. On purge aussi le profil
-    // navigateur persistant pour eviter de conserver d'anciens cookies non presents
+    // Un nouveau cookie collé remplace la valeur stockée. On purge aussi le profil
+    // navigateur persistant pour éviter de conserver d'anciens cookies non présents
     // dans le nouveau collage.
     await resetBrowserProfile(id);
     invalidateSession(id);
@@ -3660,8 +3660,8 @@ export async function start(): Promise<void> {
     }
     try {
       await resetBrowserProfile(id);
-      invalidateSession(id); // reset aussi la session HTTP en memoire
-      console.log(`[Profil] Profil navigateur de ${id} reinitialise`);
+      invalidateSession(id); // reset aussi la session HTTP en mémoire
+      console.log(`[Profil] Profil navigateur de ${id} réinitialisé`);
       res.json({ ok: true });
     } catch (err: unknown) {
       res.status(500).json({ ok: false, error: err instanceof Error ? err.message : String(err) });
@@ -3712,10 +3712,10 @@ export async function start(): Promise<void> {
     const acknowledged = Boolean(req.body?.acknowledged);
     const note = typeof req.body?.note === 'string' ? req.body.note : '';
     const incident = setIncident(trackerId, acknowledged, note);
-    // Nouvel incident marque -> on repart d'un compteur de OK vierge (2 OK requis)
+    // Nouvel incident marqué -> on repart d'un compteur de OK vierge (2 OK requis)
     incidentOkStreaks.delete(trackerId);
     if (acknowledged) retryStates.delete(trackerId);
-    // Re-annoter le cache pour que /api/stats reflete immediatement le changement
+    // Re-annoter le cache pour que /api/stats reflète immédiatement le changement
     const cached = cachedStats.find(s => s.id === trackerId);
     if (cached) upsertCachedStat({ ...cached, incident: undefined });
     res.json({ ok: true, incident });
@@ -3740,7 +3740,7 @@ export async function start(): Promise<void> {
       privateKey: privateKey === '••••••••' ? current.privateKey : (privateKey ?? ''),
       passphrase: passphrase === '••••••••' ? current.passphrase : (passphrase ?? ''),
     };
-    // Proxy SSH : etablir le tunnel avant de construire l'agent SOCKS local.
+    // Proxy SSH : établir le tunnel avant de construire l'agent SOCKS local.
     if (type === 'ssh') {
       const ssh = toSshConfig(effective);
       if (!ssh) return res.json({ ok: false, error: 'Config SSH invalide (hôte/port/utilisateur requis)' });
@@ -3766,15 +3766,15 @@ export async function start(): Promise<void> {
   logProxyStatus();
   app.listen(port, () => console.log(startupBanner(port)));
 
-  // Au demarrage : on sert d'abord les dernieres stats en base. On ne re-scrape que
-  // les trackers dont la derniere donnee OK a plus de BOOT_FRESH_HOURS (defaut 24h),
-  // ou qui n'en ont pas. Evite de relancer 20 navigateurs a chaque restart/MaJ.
+  // Au démarrage : on sert d'abord les dernières stats en base. On ne re-scrape que
+  // les trackers dont la dernière donnée OK a plus de BOOT_FRESH_HOURS (défaut 24h),
+  // ou qui n'en ont pas. Évite de relancer 20 navigateurs à chaque restart/MaJ.
   const staleTrackers = hydrateFromSnapshots(trackers);
   const servedFromCache = trackers.filter(t => t.enabled !== false).length - staleTrackers.length;
   if (staleTrackers.length === 0) {
-    console.log(`Boot: ${servedFromCache} tracker(s) servis depuis la base (< ${BOOT_FRESH_HOURS}h), aucun scraping au demarrage`);
+    console.log(`Boot: ${servedFromCache} tracker(s) servis depuis la base (< ${BOOT_FRESH_HOURS}h), aucun scraping au démarrage`);
   } else {
-    console.log(`Boot: ${servedFromCache} tracker(s) servis depuis la base, ${staleTrackers.length} obsolete(s)/absent(s) a rafraichir`);
+    console.log(`Boot: ${servedFromCache} tracker(s) servis depuis la base, ${staleTrackers.length} obsolète(s)/absent(s) à rafraîchir`);
     const browserTrackers = staleTrackers.filter(tracker => tracker.fetch.mode === 'browser');
     const otherTrackers = staleTrackers.filter(tracker => tracker.fetch.mode !== 'browser');
     if (otherTrackers.length > 0) await refresh(otherTrackers);
@@ -3782,45 +3782,45 @@ export async function start(): Promise<void> {
       console.log(`Boot: attente du runtime navigateur pour ${browserTrackers.length} tracker(s) (maximum ${BROWSER_RUNTIME_BOOT_WAIT_MS} ms)`);
       const runtimeReady = await waitForBrowserRuntimeAtBoot();
       if (runtimeReady) {
-        console.log('Boot: runtime navigateur disponible, rafraichissement des trackers navigateur');
+        console.log('Boot: runtime navigateur disponible, rafraîchissement des trackers navigateur');
       } else {
-        console.warn('Boot: runtime navigateur toujours indisponible apres le delai, tentative de rafraichissement maintenue');
+        console.warn('Boot: runtime navigateur toujours indisponible après le délai, tentative de rafraîchissement maintenue');
       }
       await refresh(browserTrackers);
     }
   }
 
-  // Recuperation des logos au demarrage (non bloquant). NON force : on ne telecharge
-  // que les favicons manquants -> boot leger meme avec beaucoup de trackers. Le bouton
-  // "Rafraichir les logos" permet un refetch force a la demande. On laisse un petit
-  // delai pour ne pas concurrencer le refresh des stats au tout debut.
+  // Récupération des logos au démarrage (non bloquant). NON forcé : on ne télécharge
+  // que les favicons manquants -> boot léger même avec beaucoup de trackers. Le bouton
+  // "Rafraîchir les logos" permet un refetch forcé à la demande. On laisse un petit
+  // délai pour ne pas concurrencer le refresh des stats au tout début.
   setTimeout(() => {
     refreshAllLogos(listAllTrackerSummaries(), false)
       .then(results => {
         const missing = results.filter(r => !r.ok).map(r => r.id);
         if (missing.length > 0) {
-          console.log(`[Logos] Sans favicon auto (deposer un fichier dans config/logos/<id>.png) : ${missing.join(', ')}`);
+          console.log(`[Logos] Sans favicon auto (déposer un fichier dans config/logos/<id>.png) : ${missing.join(', ')}`);
         }
       })
       .catch(() => { /* best-effort */ });
   }, 30_000);
 
-  // Synchro automatique des clients BitTorrent (beta) au demarrage. betaQbitStats etant
-  // en memoire, la liste est vide a chaque restart tant qu'aucune synchro manuelle n'a
+  // Synchro automatique des clients BitTorrent (beta) au démarrage. betaQbitStats étant
+  // en mémoire, la liste est vide à chaque restart tant qu'aucune synchro manuelle n'a
   // tourne. On la repeuple automatiquement, sans bloquer le boot et en best-effort. Petit
-  // delai pour ne pas concurrencer le refresh des stats trackers au tout debut.
+  // délai pour ne pas concurrencer le refresh des stats trackers au tout début.
   setTimeout(() => {
     const enabledClients = loadBetaSettings().qbitClients.filter(client => client.enabled);
     if (enabledClients.length === 0) {
       return;
     }
-    betaLog(`synchro automatique au demarrage: ${enabledClients.length} client(s) actif(s)`);
+    betaLog(`synchro automatique au démarrage: ${enabledClients.length} client(s) actif(s)`);
     refreshBetaQbitStats()
       .then(stats => {
         const torrentCount = stats.reduce((sum, item) => sum + item.torrentCount, 0);
-        betaLog(`synchro automatique terminee: ${torrentCount} torrent(s), ${stats.length} hote(s)`);
+        betaLog(`synchro automatique terminée: ${torrentCount} torrent(s), ${stats.length} hôte(s)`);
       })
-      .catch(err => betaWarn(`synchro automatique au demarrage KO - ${err instanceof Error ? err.message : String(err)}`));
+      .catch(err => betaWarn(`synchro automatique au démarrage KO - ${err instanceof Error ? err.message : String(err)}`));
   }, 15_000);
 
   startScheduler();

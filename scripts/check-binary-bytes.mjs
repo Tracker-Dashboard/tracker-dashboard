@@ -127,7 +127,7 @@ try {
     'binary', { uploadedBytes: 1024 ** 3 });
   const fallback = await runTracker(makeTracker('binary-api-fallback', { url: '/failed' }, api),
     'binary', { uploadedBytes: 1024 ** 3 });
-  assert.match(fallback.loginError, /cookie refuse/);
+  assert.match(fallback.loginError, /cookie refusé/);
   const htmlApi = await fetchApiStats(makeTracker('binary-html-api', {}, { url: '/html', responseType: 'html',
     fields: { uploadedBytes: htmlField } }), 'synthetic-api-key');
   assert.deepEqual(htmlApi, { ok: true, fields: { uploadedBytes: 1024 ** 3 }, byteUnit: 'binary' });
@@ -142,7 +142,7 @@ try {
       assert.equal(sanitized.config.fetch.fields.uploadedBytes.transform, transform);
     }
   }
-  console.log('Binary bytes OK: HTML/JSON/extraFetch/API, raw numeric bytes, units, zero/absent values, saved display units and decimal regression.');
+  console.log('Binary bytes OK: HTML/JSON/extraFetch/API, raw numeric bytes, units, zero/absent values, saved display units and decimal régression.');
 } finally {
   if (server?.listening) await new Promise(resolve => server.close(resolve));
   sqlite?.close();

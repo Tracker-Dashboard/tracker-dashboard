@@ -1,4 +1,4 @@
-/** Regroupe les appels concurrents portant sur la meme cle autour d'une seule promesse. */
+/** Regroupe les appels concurrents portant sur la même clé autour d'une seule promesse. */
 export class SingleFlight<T> {
   private readonly inFlight = new Map<string, Promise<T>>();
 

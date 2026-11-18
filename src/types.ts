@@ -96,7 +96,7 @@ export interface LoginConfig {
   failurePatterns: string[];
   /**
    * Si true : ne JAMAIS soumettre le formulaire de login automatiquement.
-   * On s'appuie uniquement sur le cookie de session injecte. Indispensable pour
+   * On s'appuie uniquement sur le cookie de session injecté. Indispensable pour
    * les sites qui plafonnent/bloquent les logins automatises (ex: MyAnonamouse).
    */
   cookieOnly?: boolean;
@@ -241,16 +241,16 @@ export interface TrackerConfig {
   id: string;
   name: string;
   baseUrl: string;
-  /** Anciens hotes d'annonce encore presents dans les clients BitTorrent. */
+  /** Anciens hôtes d'annonce encore présents dans les clients BitTorrent. */
   announceHosts?: string[];
   enabled?: boolean;
   /**
-   * Duplicata : id du tracker source dont cette entree reprend la definition
-   * technique (login/fetch/engine). Permet d'avoir plusieurs comptes sur un meme
-   * site. Les champs techniques sont rafraichis depuis la definition de `baseId`
-   * (voir normalizeTrackerConfigs), donc un duplicata d'un tracker integre herite
+   * Duplicata : id du tracker source dont cette entrée reprend la définition
+   * technique (login/fetch/engine). Permet d'avoir plusieurs comptes sur un même
+   * site. Les champs techniques sont rafraîchis depuis la définition de `baseId`
+   * (voir normalizeTrackerConfigs), donc un duplicata d'un tracker intégré hérite
    * des corrections de login amont. Identifiants, cookie, 2FA, stats, planning et
-   * notifications restent propres a l'`id` de ce duplicata.
+   * notifications restent propres à l'`id` de ce duplicata.
    */
   baseId?: string;
   /**
@@ -260,7 +260,7 @@ export interface TrackerConfig {
    * fetch.fields est mergé field par field).
    */
   engine?: EngineId;
-  /** Tracker sans systeme de ratio (HD-Only, Nostradamus, etc.) */
+  /** Tracker sans système de ratio (HD-Only, Nostradamus, etc.) */
   ratioless?: boolean;
   /** Profil curl-impersonate autorise pour le login HTTP complet. */
   curlBinary?: 'curl_firefox133' | 'curl_firefox135';
@@ -291,13 +291,13 @@ export interface TrackerStats {
   trackerUrl?: string;
   status: 'ok' | 'error';
   error?: string;
-  /** Resultat d'un ping HTTP sur baseUrl avec motif si injoignable */
+  /** Résultat d'un ping HTTP sur baseUrl avec motif si injoignable */
   siteReachability?: {
     reachable: boolean;
     /**
-     * - 'network'       : echec reseau / TLS / proxy / DNS / timeout
-     * - 'http_5xx'      : serveur a repondu mais avec un 5xx (souvent IP bannie ou panne)
-     * - 'http_forbidden': 403 / 451 (acces refuse - IP bloquee, geo-block, etc.)
+     * - 'network'       : échec réseau / TLS / proxy / DNS / timeout
+     * - 'http_5xx'      : serveur a répondu mais avec un 5xx (souvent IP bannie ou panne)
+     * - 'http_forbidden': 403 / 451 (accès refusé - IP bloquée, geo-block, etc.)
      */
     reason?: 'network' | 'http_5xx' | 'http_forbidden';
     statusCode?: number;
@@ -306,22 +306,22 @@ export interface TrackerStats {
   lastLoginAt?: string;
   byteUnit: 'binary' | 'decimal';
   fields: Record<string, string | number>;
-  /** Nombre de torrents en seed remonte depuis qBittorrent (host d'annonce -> tracker). null si pas de client mappe. */
+  /** Nombre de torrents en seed remonté depuis qBittorrent (host d'annonce -> tracker). null si pas de client mappé. */
   qbitSeeding?: number | null;
-  /** Types de clients BitTorrent ayant contribue au seeding ('qbittorrent' | 'rutorrent'), pour l'etiquette. */
+  /** Types de clients BitTorrent ayant contribue au seeding ('qbittorrent' | 'rutorrent'), pour l'étiquette. */
   qbitSeedingTypes?: string[];
-  /** Incident "connu" manuellement signale par l'utilisateur (auto-clear sur status=ok) */
+  /** Incident "connu" manuellement signalé par l'utilisateur (auto-clear sur status=ok) */
   incident?: { acknowledged: boolean; note: string };
   /**
-   * Login/scrap en echec alors que l'API a renvoye les stats : status reste 'ok'
-   * (stats affichees) mais le tracker doit etre signale comme en erreur (notif,
-   * badge, incident) car c'est le login qui garantit l'activite sur le site.
+   * Login/scrap en échec alors que l'API a renvoyé les stats : status reste 'ok'
+   * (stats affichées) mais le tracker doit être signalé comme en erreur (notif,
+   * badge, incident) car c'est le login qui garantit l'activité sur le site.
    */
   loginError?: string;
-  /** Resultat de la lecture API (absent si pas de bloc api ou pas de cle). */
+  /** Résultat de la lecture API (absent si pas de bloc api ou pas de clé). */
   apiStatus?: 'ok' | 'error';
   apiError?: string;
-  /** Dernieres donnees OK conservees apres un timeout ponctuel du refresh courant. */
+  /** Dernières données OK conservées après un timeout ponctuel du refresh courant. */
   stale?: {
     reason: 'timeout';
     error: string;

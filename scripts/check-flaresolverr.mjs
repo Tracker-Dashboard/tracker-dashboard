@@ -168,9 +168,9 @@ try {
     await new Promise(resolve => trawlServer.close(resolve));
   }
 
-  if (!isFlareSolverrCandidate(new Error('Challenge anti-bot/Cloudflare affiche'))
+  if (!isFlareSolverrCandidate(new Error('Challenge anti-bot/Cloudflare affiché'))
     || isFlareSolverrCandidate(new Error('Identifiants invalides'))
-    || isFlareSolverrCandidate(new Error('Aucune donnee extraite'))) {
+    || isFlareSolverrCandidate(new Error('Aucune donnée extraite'))) {
     throw new Error('FlareSolverr fallback must remain limited to explicit anti-bot failures');
   }
   console.log('FlareSolverr checks OK: proxy, cookies, session lifecycle and extra fetch.');

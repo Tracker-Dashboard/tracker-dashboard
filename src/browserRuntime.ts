@@ -1,14 +1,14 @@
 // Runtime navigateur externe `tracker-dashboard-browser`.
 //
-// Service HTTP interne, sans acces a la base : il recoit de l'app principale tout
-// ce qu'il faut (tracker, credentials, cookie, TOTP, moteur, proxy resolu) et
-// execute l'action navigateur via Playwright/CloakBrowser, en reutilisant la
+// Service HTTP interne, sans accès à la base : il reçoit de l'app principale tout
+// ce qu'il faut (tracker, credentials, cookie, TOTP, moteur, proxy résolu) et
+// exécute l'action navigateur via Playwright/CloakBrowser, en réutilisant la
 // logique de browserFetcher. Les profils persistants sont partages via le volume
 // ./config (config/browser-profile), comme l'app principale.
 //
-// Demarrage : node --experimental-sqlite dist/browserRuntime.js
+// Démarrage : node --experimental-sqlite dist/browserRuntime.js
 // (le flag est requis uniquement parce que browserFetcher importe db.js ; aucune
-// fonction DB n'est jamais appelee ici — tout passe par les overrides du payload.)
+// fonction DB n'est jamais appelée ici — tout passe par les overrides du payload.)
 
 import express from 'express';
 import { readFileSync } from 'fs';
@@ -52,12 +52,12 @@ async function chromiumVersion(executable: string): Promise<string | undefined> 
 
 async function cloakbrowserInfo(): Promise<{ available: boolean; version?: string }> {
   try {
-    const spec = 'cloakbrowser'; // specifier non litteral -> non resolu a la compilation
+    const spec = 'cloakbrowser'; // spécifier non littéral -> non résolu à la compilation
     await import(spec);
     let version: string | undefined;
     try {
       // cloakbrowser n'exporte pas son package.json : le lire depuis le module
-      // resolu conserve la version visible dans le statut WebUI.
+      // résolu conserve la version visible dans le statut WebUI.
       const packageJson = join(dirname(fileURLToPath(import.meta.resolve('cloakbrowser'))), '..', 'package.json');
       version = JSON.parse(readFileSync(packageJson, 'utf8')).version;
     } catch { /* version best-effort */ }
@@ -70,7 +70,7 @@ async function cloakbrowserInfo(): Promise<{ available: boolean; version?: strin
 const app = express();
 app.use(express.json({ limit: '2mb' }));
 
-// Auth optionnelle par token partage (si le service est expose par erreur).
+// Auth optionnelle par token partagé (si le service est exposé par erreur).
 app.use((req, res, next) => {
   if (req.path === '/health') return next();
   if (TOKEN && req.get('X-Browser-Runtime-Token') !== TOKEN) {
@@ -141,5 +141,5 @@ app.post('/close-all', async (_req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`[tracker-dashboard-browser] runtime navigateur en ecoute sur le port ${PORT}${TOKEN ? ' (token actif)' : ''}`);
+  console.log(`[tracker-dashboard-browser] runtime navigateur en écoute sur le port ${PORT}${TOKEN ? ' (token actif)' : ''}`);
 });

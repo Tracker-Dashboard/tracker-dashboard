@@ -1,11 +1,11 @@
 # Runtime navigateur externe : tracker-dashboard-browser
 #
-# Service optionnel qui execute les actions navigateur (Playwright/Chromium et
+# Service optionnel qui exécute les actions navigateur (Playwright/Chromium et
 # CloakBrowser) pour le compte de l'app principale. Il NE touche pas la base : il
-# recoit tout dans le payload HTTP. Les profils persistants sont partages via le
+# reçoit tout dans le payload HTTP. Les profils persistants sont partages via le
 # volume ./config (config/browser-profile).
 #
-# Demarrage : node --experimental-sqlite dist/browserRuntime.js (port 3001).
+# Démarrage : node --experimental-sqlite dist/browserRuntime.js (port 3001).
 
 FROM node:22-bookworm-slim AS builder
 
@@ -38,16 +38,16 @@ RUN npx playwright install --with-deps chromium \
 
 # ── CloakBrowser (moteur navigateur furtif, opt-in) ─────────────────────────
 RUN node -e "import('cloakbrowser').then(m => m.ensureBinary && m.ensureBinary()).catch(e => { console.error('CloakBrowser binary skip:', e.message); })" \
-  || echo "::warning:: CloakBrowser indisponible a la construction — Chromium par defaut."
+  || echo "::warning:: CloakBrowser indisponible à la construction — Chromium par défaut."
 
-# npm/npx ne sont necessaires qu'a la construction.
+# npm/npx ne sont nécessaires qu'à la construction.
 RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx \
   && node -e "const fs=require('fs'); for (const p of ['/usr/local/lib/node_modules/npm','/usr/local/bin/npm','/usr/local/bin/npx']) if (fs.existsSync(p)) throw new Error('Artefact npm encore present: '+p); console.log('npm retire de l image runtime');"
 
 COPY --from=builder /app/dist ./dist
 
-# Ces metadonnees changent a chaque publication : les declarer apres les couches
-# lourdes preserve le cache Playwright/Chromium/CloakBrowser entre deux SHA.
+# Ces métadonnées changent à chaque publication : les déclarer après les couches
+# lourdes préserve le cache Playwright/Chromium/CloakBrowser entre deux SHA.
 ARG APP_IMAGE_SOURCE=local
 ARG APP_IMAGE_VERSION=dev
 ARG APP_IMAGE_REVISION=unknown
