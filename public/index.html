@@ -1086,6 +1086,13 @@
     }
     .rows-table tbody tr:last-child td { border-bottom: none; }
     .rows-table tbody tr.row-main:hover { background: color-mix(in srgb, var(--blue) 6%, transparent); }
+    /* Vue lignes : site hors ligne (rouge) ou en maintenance (orange), fond teinté et filet à gauche. */
+    .rows-table tbody tr.row-main.row--offline { background: color-mix(in srgb, var(--red) 12%, transparent); }
+    .rows-table tbody tr.row-main.row--offline:hover { background: color-mix(in srgb, var(--red) 18%, transparent); }
+    .rows-table tbody tr.row-main.row--offline > td:first-child { box-shadow: inset 3px 0 0 var(--red); }
+    .rows-table tbody tr.row-main.row--maintenance { background: color-mix(in srgb, var(--orange) 12%, transparent); }
+    .rows-table tbody tr.row-main.row--maintenance:hover { background: color-mix(in srgb, var(--orange) 18%, transparent); }
+    .rows-table tbody tr.row-main.row--maintenance > td:first-child { box-shadow: inset 3px 0 0 var(--orange); }
     .rows-table .num { font-variant-numeric: tabular-nums; }
     .rows-table .u { color: var(--muted); font-size: 11px; }
     .rows-table .cell-name a { color: var(--text); text-decoration: none; font-weight: 600; }
@@ -1138,6 +1145,7 @@
     /* Couleur bord gauche selon état */
     .card.card--ok   { border-left-color: var(--accent); }
     .card.card--err  { border-left-color: var(--red); }
+    .card.card--maintenance { border-left-color: var(--orange); }
     .card.card--warn { border-left-color: var(--yellow); }
     /* Pousse le footer en bas pour aligner les cartes de hauteurs proches */
     .card-footer { margin-top: auto; }
@@ -3327,6 +3335,15 @@
     const title = escapeHtml(formatReachabilityReason(reach));
     if (reach.maintenance) return `<span class="badge badge-maintenance" title="${title}">Maintenance</span>`;
     if (reach.reachable === false) return `<span class="badge badge-offline" title="${title}">Site injoignable</span>`;
+    return '';
+  }
+
+  // État du site d'un tracker en erreur : 'maintenance', 'offline' (ping en échec) ou ''.
+  function siteState(stat) {
+    if (stat.status !== 'error') return '';
+    const reach = stat.siteReachability;
+    if (reach?.maintenance) return 'maintenance';
+    if (reach?.reachable === false) return 'offline';
     return '';
   }
 
@@ -6731,7 +6748,7 @@
       `.trim();
       const incidentBox = renderIncidentBox(stat);
       return `
-        <div class="card card--err"${cardDragAttrs(stat)}>
+        <div class="card ${siteState(stat) === 'maintenance' ? 'card--maintenance' : 'card--err'}"${cardDragAttrs(stat)}>
           <div class="card-header card-header--2l">
             ${trackerName(stat, { split: true })}
             <div class="card-header-actions">
@@ -6886,7 +6903,7 @@
       : `<td class="cell-status">${rowStatusBadges(stat)}</td>`;
 
     const mainRow = `
-      <tr class="row-main ${isOpen ? 'is-open' : ''}">
+      <tr class="row-main ${isOpen ? 'is-open' : ''}${siteState(stat) ? ` row--${siteState(stat)}` : ''}">
         <td><button class="row-refresh" data-tracker="${id}" onclick="refreshTracker(this.dataset.tracker, this)" title="Rafraîchir ce tracker">MàJ</button></td>
         <td class="cell-name">${trackerName(stat)}${rowMpBadge(stat)}<a class="row-fiche-btn" href="${escapeHtml(routeHash('fiche', stat.id))}" title="Ouvrir la fiche du tracker" aria-label="Ouvrir la fiche">Fiche</a></td>
         <td class="cell-muted">${formatDateTime(stat.lastLoginAt || stat.lastUpdated)}</td>
