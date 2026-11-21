@@ -2782,13 +2782,15 @@
       <p class="beta-note" style="margin-bottom:10px">Chaque canal est une destination indépendante. Les notifications sont envoyées sur tous les canaux actifs.<br><br>
         <strong>Discord</strong> — coller l'URL du webhook (Paramètres salon → Intégrations → Webhooks).<br>
         <strong>Apprise</strong> — URL de votre serveur Apprise + une ou plusieurs URLs de service (Pushover, Telegram…).<br>
-        <strong>Mail</strong> — envoi via votre serveur Apprise. Nécessite un canal Apprise actif.
+        <strong>Mail</strong> — envoi via votre serveur Apprise. Nécessite un canal Apprise actif.<br>
+        <strong>ntfy</strong> — URL du serveur ntfy + sujet ; identifiant/mot de passe ou jeton d'accès si le sujet est protégé.
       </p>
       <div id="beta-notification-targets"></div>
       <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap">
         <button class="beta-icon-btn" onclick="addBetaNotificationTarget('discord')" type="button">+ Discord</button>
         <button class="beta-icon-btn" onclick="addBetaNotificationTarget('apprise')" type="button">+ Apprise</button>
         <button class="beta-icon-btn" onclick="addBetaNotificationTarget('mail')" type="button">+ Mail</button>
+        <button class="beta-icon-btn" onclick="addBetaNotificationTarget('ntfy')" type="button">+ ntfy</button>
         <button class="beta-icon-btn primary" onclick="saveBetaSettings()" type="button">Enregistrer</button>
       </div>
     </section>
@@ -5746,15 +5748,17 @@
     container.innerHTML = targets.map((target, idx) => {
       const isMail = target.type === 'mail';
       const isApprise = target.type === 'apprise';
+      const isNtfy = target.type === 'ntfy';
       const typeSelect = `<select data-field="type" onchange="changeBetaNotificationType(${idx}, this.value)">
         <option value="discord" ${target.type === 'discord' ? 'selected' : ''}>Discord</option>
         <option value="apprise" ${isApprise ? 'selected' : ''}>Apprise</option>
         <option value="mail" ${isMail ? 'selected' : ''}>Mail</option>
+        <option value="ntfy" ${isNtfy ? 'selected' : ''}>ntfy</option>
       </select>`;
       const mailWarning = isMail && !hasApprise
         ? `<div class="beta-note" style="grid-column:1/-1;color:var(--yellow)">⚠ Un canal Apprise actif est requis pour le transport Mail. Ajoutez-en un.</div>` : '';
       const urlField = !isMail
-        ? `<div class="beta-field" style="grid-column:1 / -1"><label>${isApprise ? 'URL du serveur Apprise' : 'Webhook Discord'}</label><input data-field="url" value="${escapeHtml(target.url || '')}" placeholder="https://..."></div>` : '';
+        ? `<div class="beta-field" style="grid-column:1 / -1"><label>${isApprise ? 'URL du serveur Apprise' : isNtfy ? 'URL du serveur ntfy' : 'Webhook Discord'}</label><input data-field="url" value="${escapeHtml(target.url || '')}" placeholder="https://..."></div>` : '';
       const appriseUrls = isApprise
         ? `<div class="beta-field" style="grid-column:1 / -1"><label>URLs Apprise (une par ligne)</label><textarea data-field="urls" rows="3" placeholder="pover://...&#10;discord://...">${escapeHtml((target.urls || []).join('\n'))}</textarea></div>` : '';
       const mailFields = isMail ? `
@@ -5764,16 +5768,24 @@
         <div class="beta-field"><label>Destinataire (optionnel, défaut = expéditeur)</label><input data-field="mailTo" type="email" value="${escapeHtml(target.mailTo || '')}" placeholder="moi@exemple.com"></div>
         <div class="beta-field"><label>Serveur SMTP (optionnel)</label><input data-field="mailSmtp" value="${escapeHtml(target.mailSmtp || '')}" placeholder="mail.exemple.com"></div>
         <div class="beta-field"><label>Port (optionnel, défaut 587)</label><input data-field="mailPort" type="number" value="${escapeHtml(target.mailPort || '')}" placeholder="587" class="beta-port"></div>` : '';
+      const ntfyFields = isNtfy ? `
+        <div class="beta-field"><label>Sujet (topic)</label><input data-field="ntfyTopic" value="${target.ntfyTopic ? '••••••••' : ''}" placeholder="tracker-dashboard"></div>
+        <div class="beta-field"><label>Jeton d'accès (optionnel)</label><input data-field="ntfyToken" type="password" value="${target.ntfyToken ? '••••••••' : ''}" placeholder="tk_..."></div>
+        <div class="beta-field"><label>Identifiant (optionnel)</label><input data-field="ntfyUser" value="${escapeHtml(target.ntfyUser || '')}" autocomplete="off"></div>
+        <div class="beta-field"><label>Mot de passe (optionnel)</label><input data-field="ntfyPass" type="password" value="${target.ntfyPass ? '••••••••' : ''}" autocomplete="new-password"></div>
+        <div class="beta-field"><label>Priorité (1 à 5, défaut 4)</label><input data-field="ntfyPriority" type="number" min="1" max="5" value="${escapeHtml(target.ntfyPriority || '')}" placeholder="4" class="beta-port"></div>
+        <div class="beta-field"><label>Tags (séparés par des virgules, défaut warning)</label><input data-field="ntfyTags" value="${escapeHtml((target.ntfyTags || []).join(', '))}" placeholder="warning"></div>
+        <div class="beta-note" style="grid-column:1/-1">Le jeton d'accès est prioritaire sur l'identifiant et le mot de passe.</div>` : '';
       return `
       <div class="beta-form-row" data-beta-target="${idx}" style="border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px;background:color-mix(in srgb,var(--bg2) 60%,transparent)">
-        <div style="grid-column:1/-1;font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">${{discord:'Discord',apprise:'Apprise',mail:'Mail'}[target.type]||target.type}</div>
+        <div style="grid-column:1/-1;font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">${{discord:'Discord',apprise:'Apprise',mail:'Mail',ntfy:'ntfy'}[target.type]||target.type}</div>
         <div class="beta-field"><label>Nom</label><input data-field="label" value="${escapeHtml(target.label || '')}"></div>
         <div class="beta-field"><label>Type</label>${typeSelect}</div>
-        ${urlField}${appriseUrls}${mailFields}
+        ${urlField}${appriseUrls}${mailFields}${ntfyFields}
         <div class="beta-field"><label>Actif</label><select data-field="enabled"><option value="true" ${target.enabled !== false ? 'selected' : ''}>Oui</option><option value="false" ${target.enabled === false ? 'selected' : ''}>Non</option></select></div>
         <div style="display:flex; gap:6px"><button class="beta-icon-btn" onclick="testBetaNotification('${escapeHtml(target.id)}')" type="button">Tester</button><button class="beta-icon-btn" onclick="removeBetaNotificationTarget(${idx})" type="button">Supprimer</button></div>
       </div>`;
-    }).join('') || '<p class="beta-note">Ajouter Discord, Apprise et/ou Mail. Les mots de passe sont masqués au rechargement.</p>';
+    }).join('') || '<p class="beta-note">Ajouter Discord, Apprise, Mail et/ou ntfy. Les mots de passe sont masqués au rechargement.</p>';
   }
 
   // Page « Notifications par tracker » : sélecteur de tracker en haut, puis mêmes
@@ -5927,7 +5939,7 @@
     `;
   }
 
-  function collectBetaSettingsFromDom() {
+  function collectBetaSettingsFromDom(keepIncompleteTargets = false) {
     const qbitClients = Array.from(document.querySelectorAll('[data-beta-qbit]')).map((row, idx) => ({
       id: betaSettings.qbitClients?.[idx]?.id || genId(),
       type: row.querySelector('[data-field="type"]').value,
@@ -5974,8 +5986,26 @@
           mailPort: Number(row.querySelector('[data-field="mailPort"]')?.value) || undefined,
         };
       }
+      if (type === 'ntfy') {
+        const field = name => row.querySelector(`[data-field="${name}"]`)?.value ?? '';
+        const secret = (name, prevVal) => {
+          const val = name === 'ntfyPass' ? field(name) : field(name).trim();
+          return val === '••••••••' ? (prevVal || '') : val;
+        };
+        return {
+          ...base,
+          ntfyTopic: secret('ntfyTopic', prev?.ntfyTopic),
+          ntfyToken: secret('ntfyToken', prev?.ntfyToken) || undefined,
+          ntfyUser: field('ntfyUser').trim() || undefined,
+          ntfyPass: secret('ntfyPass', prev?.ntfyPass) || undefined,
+          ntfyPriority: Number(field('ntfyPriority')) || undefined,
+          ntfyTags: field('ntfyTags').split(',').map(v => v.trim()).filter(Boolean),
+        };
+      }
       return base;
-    }).filter(target => target.type === 'mail' ? Boolean(target.mailFrom) : Boolean(target.url));
+    }).filter(target => keepIncompleteTargets || (target.type === 'mail' ? Boolean(target.mailFrom)
+      : target.type === 'ntfy' ? Boolean(target.url && target.ntfyTopic)
+      : Boolean(target.url)));
     // Capturer les modifs en cours de la page « par tracker » avant relecture.
     collectBetaTrackerAlertFromDom();
     const trackerAlerts = { ...(betaSettings.trackerAlerts || {}) };
@@ -6134,16 +6164,18 @@
 
   function addBetaNotificationTarget(type) {
     betaSettings = collectBetaSettingsFromDom();
-    const labelMap = { discord: 'Discord', apprise: 'Apprise', mail: 'Mail' };
+    const labelMap = { discord: 'Discord', apprise: 'Apprise', mail: 'Mail', ntfy: 'ntfy' };
     betaSettings.notificationTargets.push({ id: genId(), type, label: labelMap[type] || type, url: '', urls: [], enabled: true });
     renderBetaNotificationTargets();
   }
 
   function changeBetaNotificationType(index, type) {
-    betaSettings = collectBetaSettingsFromDom();
+    // Le nouveau type est déjà sélectionné, mais ses champs ne sont pas encore rendus.
+    // Conserver les lignes incomplètes pour préserver les identifiants et les index.
+    betaSettings = collectBetaSettingsFromDom(true);
     if (!betaSettings.notificationTargets[index]) return;
     betaSettings.notificationTargets[index].type = type;
-    betaSettings.notificationTargets[index].label = { discord: 'Discord', apprise: 'Apprise', mail: 'Mail' }[type] || type;
+    betaSettings.notificationTargets[index].label = { discord: 'Discord', apprise: 'Apprise', mail: 'Mail', ntfy: 'ntfy' }[type] || type;
     renderBetaNotificationTargets();
   }
 

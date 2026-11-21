@@ -49,7 +49,7 @@ The project is maintained by the [Tracker-Dashboard](https://github.com/Tracker-
 | **BitTorrent clients** | qBittorrent and ruTorrent/rTorrent, announce matching, seeding comparison and links to multiple cross-seed instances |
 | **Tracker authentication** | Credentials, session cookies, TOTP and API keys according to each site's supported methods |
 | **Networking and browsers** | HTTP/HTTPS/SOCKS/SSH proxies, curl-impersonate, separate Chromium runtime, optional CloakBrowser and FlareSolverr/TRAWL fallbacks |
-| **Notifications** | Discord, Apprise and email; global or per-tracker settings, failures, recoveries, statistics and thresholds |
+| **Notifications** | Discord, Apprise, email and ntfy; global or per-tracker settings, failures, recoveries, statistics and thresholds |
 | **Monitoring** | Token-protected Prometheus export and an included Grafana dashboard |
 | **Customization** | Light/dark/system themes, card sizes, notes, known incidents and a tracker setup wizard |
 
@@ -350,7 +350,7 @@ Tracker Dashboard identifies torrents using categories and tags actually returne
 
 Under **Configuration → Notifications**, settings are split into three sections:
 
-- **Channels:** **Discord**, **Apprise** or **email** destinations.
+- **Channels:** **Discord**, **Apprise**, **email** or **ntfy** destinations (server URL + topic, username/password or access token).
 - **Global notifications:** failures, successes, recovery after failure, statistics and unread private messages.
 - **Per tracker:** specific settings (failures, successes, statistics, messages and ratio / buffer / session-age thresholds) that supplement global settings.
 
