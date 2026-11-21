@@ -28,6 +28,13 @@ try {
   assert.equal(isMaintenancePage(page('<title>Just a moment...</title><p>maintenance</p>')), false,
     'Un challenge Cloudflare n\'est pas une maintenance');
   assert.equal(isMaintenancePage(''), false);
+  assert.equal(isMaintenancePage(page('<h1>Tracker</h1><p>Invites are not available.</p>')), false,
+    'Une indisponibilité partielle ne suffit pas à déclarer le site en maintenance');
+  assert.equal(isMaintenancePage(page('<form><input type="password"></form><aside>Scheduled maintenance Sunday</aside>')), false,
+    'Une page de connexion avec une annonce ne doit pas masquer une erreur de connexion');
+  assert.equal(isMaintenancePage(page('<div hidden>Maintenance</div><h1>Accueil</h1>')), false,
+    'Un texte masqué ne compte pas');
+
 
   // 2) Ping d'un site local : classement HTTP inchangé, maintenance ajoutée.
   const routes = {
@@ -113,4 +120,25 @@ assert.deepEqual(await run([maint('M'), failed('E')], { notifyError: false, noti
 assert.deepEqual(await run([maint('M')], { notifyError: false }, { M: { ...config, notifyError: true } }), [],
   'Notification par tracker : la maintenance ne déclenche pas d\'envoi');
 
-console.log('Maintenance checks OK: visible text, ping classification, notification placement.');
+
+const apiMaintenance = { ...maint('M'), status: 'ok', loginError: 'Site en maintenance', apiStatus: 'ok' };
+assert.deepEqual(await run([apiMaintenance], { notifySuccess: true }), [],
+  'Une API encore disponible ne transforme pas la maintenance web en échec de connexion notifié');
+const oldMaintenance = { ...maint('M'), lastLoginAt: '2000-01-01T00:00:00Z' };
+assert.deepEqual(await run([oldMaintenance], { sessionEnabled: true }), [],
+  'Une session ancienne ne déclenche pas une notification pour une maintenance');
+assert.deepEqual(await run([oldMaintenance], {}, { M: { ...config, sessionEnabled: true } }), [],
+  'Même règle pour les seuils par tracker');
+assert.deepEqual(await run([maint('M'), failed('E')], { notifyError: false }, {
+  M: { ...config }, E: { ...config },
+}), [{ title: 'TD : 1 échec', message: '- E : Extraction impossible\n\nEn maintenance : M' }],
+  'La maintenance complète aussi une notification créée par les réglages par tracker');
+
+// Une maintenance reconnue après un timeout doit garder son état explicite,
+// plutôt que reprendre les anciennes statistiques comme un succès.
+context.isTimeoutStat = stat => /timeout/i.test(stat.error || '');
+vm.runInContext(between('function preserveLastKnownOnTimeout(', 'function updateRetryState('), context);
+const timedOutMaintenance = { ...maint('M'), error: 'timeout' };
+assert.equal(context.preserveLastKnownOnTimeout({}, timedOutMaintenance), timedOutMaintenance);
+
+console.log('Maintenance checks OK: visible text, ping classification, notification placement and thresholds.');

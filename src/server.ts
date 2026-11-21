@@ -681,7 +681,7 @@ function latestKnownOkStat(tracker: TrackerConfig): TrackerStats | null {
 }
 
 function preserveLastKnownOnTimeout(tracker: TrackerConfig, stat: TrackerStats): TrackerStats {
-  if (stat.status !== 'error' || !isTimeoutStat(stat)) return stat;
+  if (stat.status !== 'error' || !isTimeoutStat(stat) || stat.siteReachability?.maintenance) return stat;
   const incident = getIncident(stat.id);
   if (incident?.acknowledged) return stat;
   const previous = latestKnownOkStat(tracker);
@@ -798,7 +798,7 @@ function isFailedStat(stat: TrackerStats): boolean {
 // Comme dans Tracker-autovisit : jamais notifiée seule, seulement ajoutée à une
 // notification déjà envoyée.
 function isMaintenanceStat(stat: TrackerStats): boolean {
-  return stat.status === 'error' && stat.siteReachability?.maintenance === true;
+  return isFailedStat(stat) && stat.siteReachability?.maintenance === true;
 }
 
 function failureMessage(stat: TrackerStats): string {
@@ -1254,6 +1254,7 @@ interface AlertConfig {
 
 // Évalué les seuils ratio/buffer/session d'un tracker selon une config donnée.
 function evaluateThresholds(stat: TrackerStats, cfg: AlertConfig): string[] {
+  if (isMaintenanceStat(stat)) return [];
   const out: string[] = [];
   if (cfg.ratioEnabled && stat.status === 'ok') {
     const ratio = computeRatio(stat);
@@ -1293,7 +1294,6 @@ function buildNotifications(
   const wantMp = manual ? cfg.notifyManualMp : cfg.notifyMp;
 
   const errors = wantError ? relevant.filter(r => isFailedStat(r) && !isMaintenanceStat(r)) : [];
-  const maintenance = wantError ? relevant.filter(isMaintenanceStat) : [];
   const ok = wantSuccess ? relevant.filter(r => !isFailedStat(r)) : [];
   const recovered = ok.filter(r => previousFailures.has(r.id));
   const totalMp = wantMp ? relevant.filter(r => r.status === 'ok').reduce((s, r) => s + unreadMessagesCount(r), 0) : 0;
@@ -1343,11 +1343,6 @@ function buildNotifications(
       title: `TD : ${plural(alertMessages.length, 'alerte')}`,
       lines: alertMessages.map(m => `- ${t(m)}`),
     });
-  }
-
-  // Maintenance : ajoutée à la première notification envoyée, jamais seule.
-  if (maintenance.length > 0 && notifications.length > 0) {
-    notifications[0].lines.push('', t(`En maintenance : ${maintenance.map(r => r.name).join(', ')}`));
   }
 
   return notifications;
@@ -1427,6 +1422,15 @@ async function notifyScheduledResult(
     if (errLines.length > 0) notifications.push({ title: trackerTitle, lines: errLines });
     if (okLines.length > 0) notifications.push({ title: trackerTitle, lines: okLines });
     if (alertLines.length > 0) notifications.push({ title: `TD : ${plural(alertCount, 'alerte')}`, lines: alertLines });
+  }
+
+  // Attendre aussi les compléments par tracker avant d'ajouter la maintenance.
+  // Les préférences du mode courant s'appliquent aux réglages globaux et locaux.
+  const maintenance = relevant.filter(stat => isMaintenanceStat(stat) && (manual
+    ? (p.notifyManualError || trackerAlerts[stat.id]?.notifyManualError)
+    : (p.notifyError || trackerAlerts[stat.id]?.notifyError)));
+  if (maintenance.length > 0 && notifications.length > 0) {
+    notifications[0].lines.push('', t(`En maintenance : ${maintenance.map(stat => stat.name).join(', ')}`));
   }
 
   for (const { title, lines } of notifications) {

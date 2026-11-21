@@ -1128,8 +1128,6 @@ const MAINTENANCE_KEYWORDS = [
   'en cours de maintenance',
   'migration en cours',
   'intermission',
-  'not available',
-  'will return',
 ];
 
 /**
@@ -1142,7 +1140,15 @@ export function isMaintenancePage(html: string): boolean {
   if (!html || typeof html !== 'string') return false;
   if (isAntiBotPage(html) || isAnubisChallenge(html)) return false;
   const $ = cheerio.load(html);
-  $('script, style, noscript, template').remove();
+  $('script, style, noscript, template, nav, footer, aside, [hidden], [aria-hidden="true"]').remove();
+  $('[style]').each((_, element) => {
+    if (/(?:display\s*:\s*none|visibility\s*:\s*hidden)/i.test($(element).attr('style') || '')) {
+      $(element).remove();
+    }
+  });
+  // Une page de connexion reste une page de connexion même si elle annonce
+  // une maintenance : ne pas masquer un véritable échec d'authentification.
+  if ($('input[type="password"]').length > 0) return false;
   const text = $.root().text().replace(/\s+/g, ' ').toLowerCase();
   return MAINTENANCE_KEYWORDS.some(keyword => text.includes(keyword));
 }
