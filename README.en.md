@@ -356,6 +356,8 @@ Under **Configuration → Notifications**, settings are split into three section
 
 During a single refresh, a failure, success or threshold alert already covered by the global notification is not sent again unchanged by per-tracker settings. Additional details (statistics, unread messages) and alerts with different thresholds are still sent separately. This applies to both automatic visits and manual refreshes according to their respective options, while preserving delivery to every enabled channel. Notifications from later refreshes are not suppressed.
 
+When a tracker read fails and its home page shows a maintenance page (keywords such as “maintenance”, “temporarily unavailable”, “we'll be back”… in the visible text), the tracker gets a **Maintenance** badge instead of “Site unreachable”. Maintenance never triggers a notification on its own and is not counted as a failure: an “Under maintenance: …” line is only added to a notification already sent by that refresh.
+
 ## Prometheus and Grafana
 
 The `/metrics` endpoint exposes statistics for enabled trackers (`tracker_*`) and BitTorrent clients (`tracker_qbit_*`). The `tracker_api_up` metric reports the result of API fetches when configured.

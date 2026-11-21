@@ -301,6 +301,8 @@ export interface TrackerStats {
      */
     reason?: 'network' | 'http_5xx' | 'http_forbidden';
     statusCode?: number;
+    /** Page de maintenance reconnue dans le texte de l'accueil (lecture en échec uniquement). */
+    maintenance?: boolean;
   };
   lastUpdated: string;
   lastLoginAt?: string;

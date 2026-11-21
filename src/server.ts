@@ -787,6 +787,13 @@ function isFailedStat(stat: TrackerStats): boolean {
   return stat.status === 'error' || Boolean(stat.loginError);
 }
 
+// Lecture en échec avec page de maintenance reconnue (siteReachability.maintenance).
+// Comme dans Tracker-autovisit : jamais notifiée seule, seulement ajoutée à une
+// notification déjà envoyée.
+function isMaintenanceStat(stat: TrackerStats): boolean {
+  return stat.status === 'error' && stat.siteReachability?.maintenance === true;
+}
+
 function failureMessage(stat: TrackerStats): string {
   if (stat.loginError) return `LOGIN EN ÉCHEC (stats lues via l'API) : ${stat.loginError}`;
   return stat.error || 'erreur inconnue';
@@ -1278,7 +1285,8 @@ function buildNotifications(
   const wantStats = manual ? cfg.notifyManualStats : cfg.notifyStats;
   const wantMp = manual ? cfg.notifyManualMp : cfg.notifyMp;
 
-  const errors = wantError ? relevant.filter(isFailedStat) : [];
+  const errors = wantError ? relevant.filter(r => isFailedStat(r) && !isMaintenanceStat(r)) : [];
+  const maintenance = wantError ? relevant.filter(isMaintenanceStat) : [];
   const ok = wantSuccess ? relevant.filter(r => !isFailedStat(r)) : [];
   const recovered = ok.filter(r => previousFailures.has(r.id));
   const totalMp = wantMp ? relevant.filter(r => r.status === 'ok').reduce((s, r) => s + unreadMessagesCount(r), 0) : 0;
@@ -1328,6 +1336,11 @@ function buildNotifications(
       title: `TD : ${plural(alertMessages.length, 'alerte')}`,
       lines: alertMessages.map(m => `- ${t(m)}`),
     });
+  }
+
+  // Maintenance : ajoutée à la première notification envoyée, jamais seule.
+  if (maintenance.length > 0 && notifications.length > 0) {
+    notifications[0].lines.push('', t(`En maintenance : ${maintenance.map(r => r.name).join(', ')}`));
   }
 
   return notifications;
@@ -1380,7 +1393,7 @@ async function notifyScheduledResult(
       const globalSuccess = manual ? globalCfg.notifyManualSuccess : globalCfg.notifySuccess;
       const globalStats = manual ? globalCfg.notifyManualStats : globalCfg.notifyStats;
       const globalMp = manual ? globalCfg.notifyManualMp : globalCfg.notifyMp;
-      if (wantError && !globalError && isFailedStat(stat)) {
+      if (wantError && !globalError && isFailedStat(stat) && !isMaintenanceStat(stat)) {
         errLines.push(`- ${stat.name} : ${t(failureMessage(stat))}`);
         errCount += 1;
       }

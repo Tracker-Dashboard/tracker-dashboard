@@ -1107,15 +1107,58 @@ async function doLogin(
 
 type SiteReachability = NonNullable<TrackerStats['siteReachability']>;
 
+// Mots-clés d'une page de maintenance, repris de Tracker-autovisit
+// (detect_maintenance). Recherchés dans le texte visible seulement.
+const MAINTENANCE_KEYWORDS = [
+  'maintenance',
+  'hors ligne',
+  'back soon',
+  'temporarily unavailable',
+  'currently unavailable',
+  'site is down',
+  "we'll be back",
+  'we will be back',
+  'revenez bientot',
+  'revenez bientôt',
+  'under maintenance',
+  'scheduled maintenance',
+  'temporairement indisponible',
+  'site indisponible',
+  'service indisponible',
+  'en cours de maintenance',
+  'migration en cours',
+  'intermission',
+  'not available',
+  'will return',
+];
+
 /**
- * Ping rapide via HEAD (fallback GET) sur baseUrl pour distinguer
- * "site joignable" d'une erreur réseau / proxy / serveur.
+ * Page de maintenance : un mot-clé de MAINTENANCE_KEYWORDS dans le texte
+ * visible (balises, <script>, <style> et <noscript> exclus : un bundle JS ou un
+ * nom de classe « maintenance » ne compte pas). Une page de challenge
+ * anti-bot ou Anubis n'est jamais une maintenance.
+ */
+export function isMaintenancePage(html: string): boolean {
+  if (!html || typeof html !== 'string') return false;
+  if (isAntiBotPage(html) || isAnubisChallenge(html)) return false;
+  const $ = cheerio.load(html);
+  $('script, style, noscript, template').remove();
+  const text = $.root().text().replace(/\s+/g, ' ').toLowerCase();
+  return MAINTENANCE_KEYWORDS.some(keyword => text.includes(keyword));
+}
+
+/**
+ * Ping sur baseUrl, appelé après une lecture en échec, pour distinguer
+ * "site joignable", maintenance et erreur réseau / proxy / serveur.
  *
  * Joignable : réponse HTTP 1xx/2xx/3xx ou 4xx hors 403/451.
  * Non joignable :
  *  - 'network'       : échec réseau / TLS / proxy / DNS / timeout
  *  - 'http_5xx'      : réponse >= 500 (panne serveur / blocage Cloudflare)
  *  - 'http_forbidden': 403 ou 451 (accès refusé - IP bannie ou geo-block)
+ * Maintenance : le texte de la page reçue en GET (quel que soit son code HTTP,
+ * souvent 503 ou 200) contient un mot-clé de maintenance ; `maintenance: true`
+ * s'ajoute alors au résultat.
  */
 export async function pingTracker(tracker: TrackerConfig): Promise<SiteReachability> {
   const url = tracker.baseUrl;
@@ -1140,22 +1183,21 @@ export async function pingTracker(tracker: TrackerConfig): Promise<SiteReachabil
   try {
     const res = await axios.head(url, config);
     headStatus = res.status;
-    const classified = classify(res.status);
-    // Si HEAD est OK (joignable ou interdit explicitement), on tranche directement.
-    // Pour un 5xx, on retente en GET car certains serveurs renvoient 5xx sur HEAD mais 200 sur GET.
-    if (classified.reachable || classified.reason !== 'http_5xx') return classified;
   } catch {
     // Échec réseau sur HEAD - on tente GET avant de déclarer 'network'
   }
 
+  // GET dans tous les cas : seul le corps permet de reconnaître une maintenance.
+  // Classement HTTP inchangé : HEAD tranche, sauf 5xx ou échec (certains serveurs
+  // renvoient 5xx sur HEAD mais 200 sur GET).
   try {
     const res = await axios.get(url, { ...config, responseType: 'text' });
-    return classify(res.status);
+    const useHead = headStatus !== null && headStatus < 500;
+    const classified = classify(useHead ? headStatus as number : res.status);
+    const body = typeof res.data === 'string' ? res.data : '';
+    return isMaintenancePage(body) ? { ...classified, maintenance: true } : classified;
   } catch {
-    // GET a échoué aussi : si HEAD avait renvoyé un 5xx, on garde cette info
-    if (headStatus !== null && headStatus >= 500) {
-      return { reachable: false, reason: 'http_5xx', statusCode: headStatus };
-    }
+    if (headStatus !== null) return classify(headStatus);
     return { reachable: false, reason: 'network' };
   }
 }
