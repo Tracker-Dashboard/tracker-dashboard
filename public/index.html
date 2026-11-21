@@ -5925,7 +5925,7 @@
     `;
   }
 
-  function collectBetaSettingsFromDom() {
+  function collectBetaSettingsFromDom(keepIncompleteTargets = false) {
     const qbitClients = Array.from(document.querySelectorAll('[data-beta-qbit]')).map((row, idx) => ({
       id: betaSettings.qbitClients?.[idx]?.id || genId(),
       type: row.querySelector('[data-field="type"]').value,
@@ -5975,7 +5975,7 @@
       if (type === 'ntfy') {
         const field = name => row.querySelector(`[data-field="${name}"]`)?.value ?? '';
         const secret = (name, prevVal) => {
-          const val = field(name).trim();
+          const val = name === 'ntfyPass' ? field(name) : field(name).trim();
           return val === '••••••••' ? (prevVal || '') : val;
         };
         return {
@@ -5989,9 +5989,9 @@
         };
       }
       return base;
-    }).filter(target => target.type === 'mail' ? Boolean(target.mailFrom)
+    }).filter(target => keepIncompleteTargets || (target.type === 'mail' ? Boolean(target.mailFrom)
       : target.type === 'ntfy' ? Boolean(target.url && target.ntfyTopic)
-      : Boolean(target.url));
+      : Boolean(target.url)));
     // Capturer les modifs en cours de la page « par tracker » avant relecture.
     collectBetaTrackerAlertFromDom();
     const trackerAlerts = { ...(betaSettings.trackerAlerts || {}) };
@@ -6156,7 +6156,9 @@
   }
 
   function changeBetaNotificationType(index, type) {
-    betaSettings = collectBetaSettingsFromDom();
+    // Le nouveau type est déjà sélectionné, mais ses champs ne sont pas encore rendus.
+    // Conserver les lignes incomplètes pour préserver les identifiants et les index.
+    betaSettings = collectBetaSettingsFromDom(true);
     if (!betaSettings.notificationTargets[index]) return;
     betaSettings.notificationTargets[index].type = type;
     betaSettings.notificationTargets[index].label = { discord: 'Discord', apprise: 'Apprise', mail: 'Mail', ntfy: 'ntfy' }[type] || type;

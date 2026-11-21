@@ -65,3 +65,29 @@ assert.equal(t.ntfyToken, '••••••••');
 assert.equal(t.ntfyUser, 'u');
 
 console.log('check-ntfy OK');
+
+// Régressions du formulaire : exécuter les fonctions de production avec un DOM minimal.
+const html = fs.readFileSync(new URL('../public/index.html', import.meta.url),'utf8');
+function extract(start,end) { return html.slice(html.indexOf(start),html.indexOf(end,html.indexOf(start))); }
+let rows=[];
+const ctx={
+ betaSettings:{notificationTargets:[],features:{},trackerAlerts:{}},
+ document:{querySelectorAll:s=>s==='[data-beta-target]'?rows:[],getElementById:()=>null},
+ genId:()=> 'generated', collectBetaTrackerAlertFromDom(){},betaFeatures:()=>({}),renderBetaNotificationTargets(){},
+};
+vm.createContext(ctx);
+vm.runInContext(extract('  function collectBetaSettingsFromDom(', '  function addBetaQbitClient()')+extract('  function changeBetaNotificationType(', '  function removeBetaNotificationTarget('),ctx);
+function row(fields) {return {querySelector:s=> {const m=s.match(/data-field="([^"]+)"/);return m&&m[1] in fields?{value:fields[m[1]]}:null;}};}
+ctx.betaSettings.notificationTargets=[{id:'first',type:'discord'},{id:'second',type:'discord'}];
+rows=[row({type:'ntfy',label:'first',url:'https://example.org',enabled:'true'}),row({type:'discord',label:'second',url:'https://example.net',enabled:'true'})];
+vm.runInContext("changeBetaNotificationType(0,'ntfy')",ctx);
+assert.equal(ctx.betaSettings.notificationTargets.length,2);
+assert.equal(ctx.betaSettings.notificationTargets[0].id,'first');
+assert.equal(ctx.betaSettings.notificationTargets[0].type,'ntfy');
+assert.equal(ctx.betaSettings.notificationTargets[1].id,'second');
+assert.equal(ctx.betaSettings.notificationTargets[1].type,'discord');
+ctx.betaSettings.notificationTargets=[{id:'first',type:'ntfy'}];
+rows=[row({type:'ntfy',label:'ntfy',url:'https://example.org',enabled:'true',ntfyTopic:'td',ntfyUser:'u',ntfyPass:' pass '})];
+const result=vm.runInContext('collectBetaSettingsFromDom()',ctx);
+assert.equal(result.notificationTargets[0].ntfyPass,' pass ');
+console.log('check-ntfy UI OK: changement de type sans perte de canal et mot de passe intact.');
