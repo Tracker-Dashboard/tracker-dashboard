@@ -21,6 +21,7 @@
       --accent2:  #22c55e;
       --green:    #4ade80;
       --yellow:   #eab308;
+      --orange:   #f97316;
       --red:      #ef4444;
       --blue:     #4ade80;
       --purple:   #a855f7;
@@ -42,6 +43,7 @@
       --accent2:  #15803d;
       --green:    #16a34a;
       --yellow:   #ca8a04;
+      --orange:   #ea580c;
       --red:      #dc2626;
       --blue:     #16a34a;
       --purple:   #7c3aed;
@@ -1266,6 +1268,7 @@
     .badge-ok    { background: color-mix(in srgb, var(--green) 16%, transparent); color: var(--green); }
     .badge-error { background: color-mix(in srgb, var(--red) 16%, transparent); color: var(--red); }
     .badge-offline { background: color-mix(in srgb, var(--yellow) 16%, transparent); color: var(--yellow); }
+    .badge-maintenance { background: color-mix(in srgb, var(--orange) 16%, transparent); color: var(--orange); }
     .badge-stale { background: color-mix(in srgb, var(--yellow) 16%, transparent); color: var(--yellow); }
     .error-reason { margin: -4px 18px 12px; padding: 6px 10px; font-size: 12px; border-radius: 6px;
       background: color-mix(in srgb, var(--yellow) 10%, transparent); color: var(--yellow); }
@@ -3307,6 +3310,7 @@
 
   function formatReachabilityReason(reach) {
     if (!reach) return '';
+    if (reach.maintenance) return 'Page de maintenance affichée par le site';
     const code = reach.statusCode ? ` (${reach.statusCode})` : '';
     switch (reach.reason) {
       case 'http_5xx':       return `Le serveur répond avec une erreur${code}`;
@@ -3314,6 +3318,16 @@
       case 'network':        return 'Connexion impossible (réseau / proxy / DNS)';
       default:               return 'Site injoignable';
     }
+  }
+
+  // Badge d'état du site pour un tracker en erreur : « Maintenance » si la page de
+  // maintenance a été reconnue, sinon « Site injoignable » si le ping a échoué.
+  function siteStateBadge(reach) {
+    if (!reach) return '';
+    const title = escapeHtml(formatReachabilityReason(reach));
+    if (reach.maintenance) return `<span class="badge badge-maintenance" title="${title}">Maintenance</span>`;
+    if (reach.reachable === false) return `<span class="badge badge-offline" title="${title}">Site injoignable</span>`;
+    return '';
   }
 
   function trackerLogo(id) {
@@ -4476,7 +4490,7 @@
     const mode = trackerModeLabel(status);
     if (mode === 'captcha') return 'Captcha ou protection anti-bot détectée.';
     if (mode === 'cookie-only') return 'Fonctionnement identifié comme cookie-only.';
-    if (status?.siteReachability?.reachable === false) return formatReachabilityReason(status.siteReachability);
+    if (status?.siteReachability?.reachable === false || status?.siteReachability?.maintenance) return formatReachabilityReason(status.siteReachability);
     return 'A surveiller.';
   }
 
@@ -6697,11 +6711,9 @@
     const ratioless = isRatiolessTracker(stat);
     if (stat.status === 'error') {
       const reachability = stat.siteReachability;
-      const isUnreachable = reachability && reachability.reachable === false;
+      const isUnreachable = reachability && (reachability.reachable === false || reachability.maintenance === true);
       const reachabilityReason = isUnreachable ? formatReachabilityReason(reachability) : '';
-      const offlineBadge = isUnreachable
-        ? `<span class="badge badge-offline" title="${escapeHtml(reachabilityReason)}">Site injoignable</span>`
-        : '';
+      const offlineBadge = siteStateBadge(reachability);
       const reachabilityLine = isUnreachable
         ? `<div class="error-reason">${escapeHtml(reachabilityReason)}</div>`
         : '';
@@ -6826,10 +6838,7 @@
     if (stat.stale) return staleBadge(stat) + ' ' + ratioless;
     if (stat.loginError) return '<span class="badge badge-error" title="Login en échec, stats lues via l\'API">Login KO</span> ' + apiBadge(stat) + ' ' + ratioless;
     if (stat.status === 'error') {
-      const reach = stat.siteReachability;
-      const offline = (reach && reach.reachable === false)
-        ? `<span class="badge badge-offline" title="${escapeHtml(formatReachabilityReason(reach))}">Site injoignable</span>`
-        : '';
+      const offline = siteStateBadge(stat.siteReachability);
       const isIncident = stat.incident && stat.incident.acknowledged === true;
       const errBadge = isIncident
         ? '<span class="badge badge-incident" title="Problème connu signale manuellement">Incident connu</span>'
@@ -6895,7 +6904,7 @@
 
     // Sous-ligne dépliée : message d'erreur complet + zone d'incident (même logique que les cartes)
     const reach = stat.stale?.siteReachability || stat.siteReachability;
-    const reachLine = (reach && reach.reachable === false)
+    const reachLine = (reach && (reach.reachable === false || reach.maintenance === true))
       ? `<div class="error-reason">${escapeHtml(formatReachabilityReason(reach))}</div>`
       : '';
     const subRow = `

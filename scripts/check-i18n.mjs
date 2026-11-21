@@ -71,6 +71,13 @@ const untranslated = new Set([
   'Seeds en cours',
   'Votre solde',
   'Tigers : Seedbonus',
+  // Mots-clés des pages de maintenance (isMaintenancePage, src/fetcher.ts).
+  'revenez bientôt',
+  'temporairement indisponible',
+  'site indisponible',
+  'service indisponible',
+  'en cours de maintenance',
+  'migration en cours',
   // Gabarit dont le texte vient de ses parties internes, vérifiées et traduites à part.
   '[API] 7 : 7',
   'Active seeding torrents',
