@@ -49,7 +49,7 @@ Le projet est porté par l’organisation [Tracker-Dashboard](https://github.com
 | **Clients BitTorrent** | qBittorrent et ruTorrent/rTorrent, rapprochement des annonces, comparaison du seeding et liens vers plusieurs instances cross-seed |
 | **Authentification des trackers** | Identifiants, cookies de session, TOTP et clés API selon les méthodes prises en charge par chaque site |
 | **Réseau et navigateurs** | Proxies HTTP/HTTPS/SOCKS/SSH, curl-impersonate, runtime Chromium séparé, CloakBrowser facultatif et replis FlareSolverr/TRAWL |
-| **Notifications** | Discord, Apprise et e-mail ; réglages globaux ou par tracker, erreurs, rétablissements, statistiques et seuils |
+| **Notifications** | Discord, Apprise, e-mail et ntfy ; réglages globaux ou par tracker, erreurs, rétablissements, statistiques et seuils |
 | **Supervision** | Export Prometheus protégé par jeton et tableau de bord Grafana fourni |
 | **Personnalisation** | Thèmes clair/sombre/système, taille des cartes, notes, incidents connus et assistant d’ajout de trackers |
 
@@ -349,7 +349,7 @@ Tracker Dashboard identifie les torrents depuis les catégories et tags réellem
 
 Configurables dans **Configuration → Notifications**, en trois volets :
 
-- **Canaux** : destinations **Discord**, **Apprise** ou **e-mail**.
+- **Canaux** : destinations **Discord**, **Apprise**, **e-mail** ou **ntfy** (URL du serveur + sujet, identifiant/mot de passe ou jeton d’accès).
 - **Notifications globales** : échecs, succès, rétablissement après échec, statistiques, MP non lus.
 - **Par tracker** : réglages spécifiques (échecs, succès, stats, MP, seuils de ratio / buffer / ancienneté de session) qui complètent les réglages globaux.
 

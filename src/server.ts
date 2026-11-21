@@ -170,9 +170,9 @@ interface BetaQbitClient {
 
 interface BetaNotificationTarget {
   id: string;
-  type: 'discord' | 'apprise' | 'mail';
+  type: 'discord' | 'apprise' | 'mail' | 'ntfy';
   label: string;
-  url: string;       // webhook Discord ou URL serveur Apprise ; vide pour mail (résolu auto)
+  url: string;       // webhook Discord, URL serveur Apprise ou ntfy ; vide pour mail (résolu auto)
   urls?: string[];   // URLs Apprise (type apprise)
   enabled: boolean;
   // Champs spécifiques au type mail (construits en mailtos:// au moment de l'envoi)
@@ -181,6 +181,13 @@ interface BetaNotificationTarget {
   mailTo?: string;      // destinataire (défaut = mailFrom)
   mailSmtp?: string;    // serveur SMTP custom (optionnel, ex. mail.example.com)
   mailPort?: number;    // port custom (optionnel, défaut 587)
+  // Champs spécifiques au type ntfy (publication JSON sur la racine du serveur)
+  ntfyTopic?: string;     // sujet (topic)
+  ntfyUser?: string;      // authentification Basic (optionnel)
+  ntfyPass?: string;
+  ntfyToken?: string;     // jeton d'accès tk_... (optionnel, prioritaire sur Basic)
+  ntfyPriority?: number;  // 1 à 5 (défaut 4)
+  ntfyTags?: string[];    // tags / emojis (défaut ["warning"])
 }
 
 interface BetaScheduleSettings {
@@ -1723,6 +1730,11 @@ function sanitizeBetaSettings(settings: BetaSettings): BetaSettings {
       ...target,
       urls: target.urls?.map(() => '********'),
       url: target.url ? '••••••••' : '',
+      ...(target.type === 'ntfy' ? {
+        ntfyTopic: target.ntfyTopic ? '••••••••' : '',
+        ntfyPass: target.ntfyPass ? '••••••••' : '',
+        ntfyToken: target.ntfyToken ? '••••••••' : '',
+      } : {}),
     })),
   };
 }
@@ -1772,11 +1784,11 @@ function saveBetaSettingsPayload(raw: unknown): BetaSettings {
     const id = typeof target.id === 'string' && target.id ? target.id : crypto.randomUUID();
     const previous = previousTargets.get(id);
     const url = target.url === '••••••••' ? (previous?.url ?? '') : (target.url ?? '');
-    const type: BetaNotificationTarget['type'] = target.type === 'apprise' ? 'apprise' : target.type === 'mail' ? 'mail' : 'discord';
+    const type: BetaNotificationTarget['type'] = target.type === 'apprise' ? 'apprise' : target.type === 'mail' ? 'mail' : target.type === 'ntfy' ? 'ntfy' : 'discord';
     const base = {
       id,
       type,
-      label: String(target.label || (type === 'discord' ? 'Discord' : type === 'mail' ? 'Mail' : 'Apprise')).trim().slice(0, 80),
+      label: String(target.label || (type === 'discord' ? 'Discord' : type === 'mail' ? 'Mail' : type === 'ntfy' ? 'ntfy' : 'Apprise')).trim().slice(0, 80),
       url: String(url || '').trim(),
       urls: Array.isArray(target.urls)
         ? (target.urls.every(value => value === '********')
@@ -1797,8 +1809,29 @@ function saveBetaSettingsPayload(raw: unknown): BetaSettings {
         mailPort: target.mailPort ? Number(target.mailPort) : undefined,
       };
     }
+    if (type === 'ntfy') {
+      const resolveSecret = (val: string | undefined, prev: string | undefined) =>
+        val === '••••••••' ? (prev ?? '') : (val ?? '');
+      const priority = Math.round(Number(target.ntfyPriority));
+      const tags = Array.isArray(target.ntfyTags)
+        ? target.ntfyTags.map(tag => String(tag).trim()).filter(Boolean).slice(0, 10)
+        : undefined;
+      return {
+        ...base,
+        ntfyTopic: resolveSecret(target.ntfyTopic, previous?.ntfyTopic).trim(),
+        ntfyUser: String(target.ntfyUser || '').trim() || undefined,
+        ntfyPass: resolveSecret(target.ntfyPass, previous?.ntfyPass) || undefined,
+        ntfyToken: resolveSecret(target.ntfyToken, previous?.ntfyToken).trim() || undefined,
+        ntfyPriority: priority >= 1 && priority <= 5 ? priority : undefined,
+        ntfyTags: tags,
+      };
+    }
     return base;
-  }).filter(target => target.type === 'mail' ? Boolean((target as BetaNotificationTarget).mailFrom) : target.url) : current.notificationTargets;
+  }).filter(target => target.type === 'mail'
+    ? Boolean((target as BetaNotificationTarget).mailFrom)
+    : target.type === 'ntfy'
+      ? Boolean(target.url && (target as BetaNotificationTarget).ntfyTopic)
+      : target.url) : current.notificationTargets;
 
   const announceMappings: BetaAnnounceMapping[] = Array.isArray(body.announceMappings) ? body.announceMappings.map(rawMapping => {
     const mapping = rawMapping as Partial<BetaAnnounceMapping>;
@@ -2585,6 +2618,25 @@ async function sendBetaNotification(
   if (target.type === 'discord') {
     const content = `**${title}**\n${message}`.slice(0, 2000);
     await axios.post(target.url, { content }, { timeout: 8000 });
+    return;
+  }
+  if (target.type === 'ntfy') {
+    // Publication JSON sur la racine du serveur (https://docs.ntfy.sh/publish/) :
+    // le titre et le corps passent en UTF-8 dans le JSON, sans encodage d'en-tête.
+    if (!target.ntfyTopic) throw new Error('ntfy : aucun sujet configuré');
+    const headers: Record<string, string> = {};
+    if (target.ntfyToken) {
+      headers.Authorization = `Bearer ${target.ntfyToken}`;
+    } else if (target.ntfyUser && target.ntfyPass) {
+      headers.Authorization = `Basic ${Buffer.from(`${target.ntfyUser}:${target.ntfyPass}`, 'utf8').toString('base64')}`;
+    }
+    await axios.post(`${target.url.replace(/\/+$/, '')}/`, {
+      topic: target.ntfyTopic,
+      title: title.slice(0, 250),
+      message: message.slice(0, 4000),
+      priority: target.ntfyPriority ?? 4,
+      tags: target.ntfyTags?.length ? target.ntfyTags : ['warning'],
+    }, { headers, timeout: 10_000 });
     return;
   }
   if (target.type === 'mail') {
