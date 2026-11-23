@@ -1,0 +1,52 @@
+{
+  "id": "anthelion",
+  "name": "Anthelion",
+  "baseUrl": "https://anthelion.me",
+  "enabled": false,
+  "engine": "gazelle",
+  "login": {
+    "otpField": "twofa"
+  },
+  "fetch": {
+    "fields": {
+      "uploadedBytes": {
+        "regex": "id=\"stats_uploaded\"[\\s\\S]{0,300}?<span class=\"stat[^\"]*\"[^>]*>\\s*(?:<[^>]+>\\s*)*(?<value>[^<]+?)\\s*<",
+        "transform": "bytes"
+      },
+      "downloadedBytes": {
+        "regex": "id=\"stats_downloaded\"[\\s\\S]{0,300}?<span class=\"stat[^\"]*\"[^>]*>\\s*(?:<[^>]+>\\s*)*(?<value>[^<]+?)\\s*<",
+        "transform": "bytes"
+      },
+      "ratio": {
+        "regex": "id=\"stats_ratio\"[\\s\\S]{0,300}?<span class=\"stat[^\"]*\"[^>]*>\\s*(?:<[^>]+>\\s*)*(?<value>[^<]+?)\\s*<",
+        "transform": "number"
+      },
+      "seeding": {
+        "regex": "id=\"header_user_commstats_seeding\"[^>]*>\\s*(?<value>[\\d,.]+)\\s*<",
+        "transform": "integer"
+      },
+      "leeching": {
+        "regex": "id=\"header_user_commstats_leeching\"[^>]*>\\s*(?<value>[\\d,.]+)\\s*<",
+        "transform": "integer"
+      },
+      "tokens": {
+        "regex": "id=\"fl_tokens\"[\\s\\S]{0,300}?<span class=\"stat[^\"]*\"[^>]*>\\s*(?:<[^>]+>\\s*)*(?<value>[^<]+?)\\s*<",
+        "transform": "integer"
+      },
+      "seedBonus": {
+        "regex": "id=\"bonus_points\"[\\s\\S]{0,300}?<span class=\"stat[^\"]*\"[^>]*>\\s*(?:<[^>]+>\\s*)*(?<value>[^<]+?)\\s*<",
+        "transform": "string"
+      }
+    },
+    "extraFetch": {
+      "url": "user.php?id={{id}}",
+      "responseType": "html",
+      "field": "memberClass",
+      "idExtract": {
+        "regex": "href=\"user\\.php\\?id=(?<value>\\d+)\" class=\"username\""
+      },
+      "regex": ">\\s*Class:\\s*(?:<[^>]+>\\s*)*(?<value>[^<]+?)\\s*<",
+      "transform": "string"
+    }
+  }
+}
