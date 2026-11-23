@@ -22,11 +22,11 @@
         "transform": "number"
       },
       "seeding": {
-        "regex": "id=\"header_user_commstats_seeding\"[^>]*>\\s*(?<value>\\d+(?:(?:[,\\s]|&nbsp;|&#160;|&#xa0;)\\d{3})*)\\s*<",
+        "regex": "id=\"header_user_commstats_seeding\"[^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d+(?:(?:[,\\s]|&nbsp;|&#160;|&#xa0;)\\d{3})*)(?:\\s|&nbsp;|&#160;|&#xa0;)*<",
         "transform": "integer"
       },
       "leeching": {
-        "regex": "id=\"header_user_commstats_leeching\"[^>]*>\\s*(?<value>\\d+(?:(?:[,\\s]|&nbsp;|&#160;|&#xa0;)\\d{3})*)\\s*<",
+        "regex": "id=\"header_user_commstats_leeching\"[^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?<value>\\d+(?:(?:[,\\s]|&nbsp;|&#160;|&#xa0;)\\d{3})*)(?:\\s|&nbsp;|&#160;|&#xa0;)*<",
         "transform": "integer"
       },
       "tokens": {

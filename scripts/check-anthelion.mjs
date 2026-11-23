@@ -98,6 +98,8 @@ try {
   assert.equal(extract(header({ seeding: '12,345,678' })).seeding, 12345678);
   assert.equal(extract(header({ tokens: '1,024' })).tokens, 1024);
   assert.equal(extract(header({ seeding: '1.204' })).seeding, undefined);
+  assert.equal(extract(header({ seeding: '&nbsp;1,204&nbsp;' })).seeding, 1204);
+  assert.equal(extract(header({ leeching: '&#160;2&#xa0;' })).leeching, 2);
   // The shared integer transform only strips separators from properly grouped integers.
   const integer = value => extractExtraFieldResponse({ field: 'n', regex: '^(?<value>[\\s\\S]+)$', transform: 'integer' }, value)?.value;
   for (const [value, expected] of [
