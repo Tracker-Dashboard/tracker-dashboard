@@ -10,15 +10,15 @@
   "fetch": {
     "fields": {
       "uploadedBytes": {
-        "regex": "id=\"stats_uploaded\"(?:(?!</li>)[\\s\\S])*?<span class=\"stat[^\"]*\"[^>]*>\\s*(?:<[a-z][^>]*>\\s*)*(?<value>[^<\\s][^<]*?)\\s*<",
+        "regex": "id=\"stats_uploaded\"(?:(?!</li>)[\\s\\S])*?<span class=\"stat[^\"]*\"[^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?:<[a-z][^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*)*(?<value>(?!&(?:nbsp|#160|#xa0);)[^<\\s][^<]*?)(?:\\s|&nbsp;|&#160;|&#xa0;)*<",
         "transform": "bytes"
       },
       "downloadedBytes": {
-        "regex": "id=\"stats_downloaded\"(?:(?!</li>)[\\s\\S])*?<span class=\"stat[^\"]*\"[^>]*>\\s*(?:<[a-z][^>]*>\\s*)*(?<value>[^<\\s][^<]*?)\\s*<",
+        "regex": "id=\"stats_downloaded\"(?:(?!</li>)[\\s\\S])*?<span class=\"stat[^\"]*\"[^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?:<[a-z][^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*)*(?<value>(?!&(?:nbsp|#160|#xa0);)[^<\\s][^<]*?)(?:\\s|&nbsp;|&#160;|&#xa0;)*<",
         "transform": "bytes"
       },
       "ratio": {
-        "regex": "id=\"stats_ratio\"(?:(?!</li>)[\\s\\S])*?<span class=\"stat[^\"]*\"[^>]*>\\s*(?:<[a-z][^>]*>\\s*)*(?<value>[^<\\s][^<]*?)\\s*<",
+        "regex": "id=\"stats_ratio\"(?:(?!</li>)[\\s\\S])*?<span class=\"stat[^\"]*\"[^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?:<[a-z][^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*)*(?<value>(?!&(?:nbsp|#160|#xa0);)[^<\\s][^<]*?)(?:\\s|&nbsp;|&#160;|&#xa0;)*<",
         "transform": "number"
       },
       "seeding": {
@@ -30,11 +30,11 @@
         "transform": "integer"
       },
       "tokens": {
-        "regex": "id=\"fl_tokens\"(?:(?!</li>)[\\s\\S])*?<span class=\"stat[^\"]*\"[^>]*>\\s*(?:<[a-z][^>]*>\\s*)*(?<value>[^<\\s][^<]*?)\\s*<",
+        "regex": "id=\"fl_tokens\"(?:(?!</li>)[\\s\\S])*?<span class=\"stat[^\"]*\"[^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?:<[a-z][^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*)*(?<value>(?!&(?:nbsp|#160|#xa0);)[^<\\s][^<]*?)(?:\\s|&nbsp;|&#160;|&#xa0;)*<",
         "transform": "integer"
       },
       "seedBonus": {
-        "regex": "id=\"bonus_points\"(?:(?!</li>)[\\s\\S])*?<span class=\"stat[^\"]*\"[^>]*>\\s*(?:<[a-z][^>]*>\\s*)*(?<value>[^<\\s][^<]*?)\\s*<",
+        "regex": "id=\"bonus_points\"(?:(?!</li>)[\\s\\S])*?<span class=\"stat[^\"]*\"[^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*(?:<[a-z][^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*)*(?<value>(?!&(?:nbsp|#160|#xa0);)[^<\\s][^<]*?)(?:\\s|&nbsp;|&#160;|&#xa0;)*<",
         "transform": "string"
       }
     },
@@ -45,7 +45,7 @@
       "idExtract": {
         "regex": "href=\"user\\.php\\?id=(?<value>\\d+)\" class=\"username\""
       },
-      "regex": ">\\s*Class:\\s*(?:<[^>]+>\\s*)*(?<value>[^<]+?)\\s*<",
+      "regex": ">(?:\\s|&nbsp;|&#160;|&#xa0;)*Class:(?:\\s|&nbsp;|&#160;|&#xa0;)*(?:<[a-z][^>]*>(?:\\s|&nbsp;|&#160;|&#xa0;)*)*(?<value>(?!&(?:nbsp|#160|#xa0);)[^<\\s][^<]*?)(?:\\s|&nbsp;|&#160;|&#xa0;)*<",
       "transform": "string"
     }
   }

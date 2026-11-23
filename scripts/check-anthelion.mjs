@@ -31,6 +31,10 @@ try {
   for (const [markup, expected] of [
     ['<ul class="stats nobullet"><li>Joined: 1 year ago</li><li>Class: User</li></ul>', 'User'],
     ['<li>Class: <span class="userclass">Power User</span></li>', 'Power User'],
+    ['<li>Class:&nbsp;Elite&nbsp;</li>', 'Elite'],
+    // An empty class stays missing: the next profile item is not read instead.
+    ['<li>Class: </li><li>Joined: 1 year ago</li>', undefined],
+    ['<li>Class: <span class="userclass">&nbsp;</span></li><li>Joined: 1 year ago</li>', undefined],
   ]) {
     assert.equal(extractExtraFieldResponse(profile, markup)?.value, expected);
   }
@@ -108,10 +112,13 @@ try {
   assert.equal(emptyUpload.uploadedBytes, undefined);
   assert.equal(emptyUpload.downloadedBytes, 512 * 1024 ** 3);
   // A whitespace-only value is missing, not zero.
-  const blank = extract(header({ up: ' ', down: '\n  ', ratio: ' ', tokens: ' ', orbs: ' ' }));
-  for (const field of ['uploadedBytes', 'downloadedBytes', 'ratio', 'tokens', 'seedBonus']) {
-    assert.equal(blank[field], undefined, `${field} must stay unavailable when the value is blank`);
+  for (const space of [' ', '\n  ', '&nbsp;', ' &#160; ', '&#xa0;', '\u00a0']) {
+    const blank = extract(header({ up: space, down: space, ratio: space, tokens: space, orbs: space }));
+    for (const field of ['uploadedBytes', 'downloadedBytes', 'ratio', 'tokens', 'seedBonus']) {
+      assert.equal(blank[field], undefined, `${field} must stay unavailable when the value is ${JSON.stringify(space)}`);
+    }
   }
+  assert.equal(extract(header({ orbs: '&nbsp;12,345&nbsp;' })).seedBonus, '12,345');
   assert.equal(extract(withoutValue(header(), 'fl_tokens')).tokens, undefined);
   assert.equal(extract(withoutValue(header(), 'stats_ratio')).ratio, undefined);
 
