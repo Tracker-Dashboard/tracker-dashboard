@@ -10,31 +10,31 @@
   "fetch": {
     "fields": {
       "uploadedBytes": {
-        "regex": "id=\"stats_uploaded\"[\\s\\S]{0,300}?<span class=\"stat[^\"]*\"[^>]*>\\s*(?:<[^>]+>\\s*)*(?<value>[^<]+?)\\s*<",
+        "regex": "id=\"stats_uploaded\"(?:(?!</li>)[\\s\\S])*?<span class=\"stat[^\"]*\"[^>]*>\\s*(?:<[a-z][^>]*>\\s*)*(?<value>[^<]+?)\\s*<",
         "transform": "bytes"
       },
       "downloadedBytes": {
-        "regex": "id=\"stats_downloaded\"[\\s\\S]{0,300}?<span class=\"stat[^\"]*\"[^>]*>\\s*(?:<[^>]+>\\s*)*(?<value>[^<]+?)\\s*<",
+        "regex": "id=\"stats_downloaded\"(?:(?!</li>)[\\s\\S])*?<span class=\"stat[^\"]*\"[^>]*>\\s*(?:<[a-z][^>]*>\\s*)*(?<value>[^<]+?)\\s*<",
         "transform": "bytes"
       },
       "ratio": {
-        "regex": "id=\"stats_ratio\"[\\s\\S]{0,300}?<span class=\"stat[^\"]*\"[^>]*>\\s*(?:<[^>]+>\\s*)*(?<value>[^<]+?)\\s*<",
+        "regex": "id=\"stats_ratio\"(?:(?!</li>)[\\s\\S])*?<span class=\"stat[^\"]*\"[^>]*>\\s*(?:<[a-z][^>]*>\\s*)*(?<value>[^<]+?)\\s*<",
         "transform": "number"
       },
       "seeding": {
-        "regex": "id=\"header_user_commstats_seeding\"[^>]*>\\s*(?<value>[\\d,.]+)\\s*<",
+        "regex": "id=\"header_user_commstats_seeding\"[^>]*>\\s*(?<value>\\d+(?:[,\\s]\\d{3})*)\\s*<",
         "transform": "integer"
       },
       "leeching": {
-        "regex": "id=\"header_user_commstats_leeching\"[^>]*>\\s*(?<value>[\\d,.]+)\\s*<",
+        "regex": "id=\"header_user_commstats_leeching\"[^>]*>\\s*(?<value>\\d+(?:[,\\s]\\d{3})*)\\s*<",
         "transform": "integer"
       },
       "tokens": {
-        "regex": "id=\"fl_tokens\"[\\s\\S]{0,300}?<span class=\"stat[^\"]*\"[^>]*>\\s*(?:<[^>]+>\\s*)*(?<value>[^<]+?)\\s*<",
+        "regex": "id=\"fl_tokens\"(?:(?!</li>)[\\s\\S])*?<span class=\"stat[^\"]*\"[^>]*>\\s*(?:<[a-z][^>]*>\\s*)*(?<value>[^<]+?)\\s*<",
         "transform": "integer"
       },
       "seedBonus": {
-        "regex": "id=\"bonus_points\"[\\s\\S]{0,300}?<span class=\"stat[^\"]*\"[^>]*>\\s*(?:<[^>]+>\\s*)*(?<value>[^<]+?)\\s*<",
+        "regex": "id=\"bonus_points\"(?:(?!</li>)[\\s\\S])*?<span class=\"stat[^\"]*\"[^>]*>\\s*(?:<[a-z][^>]*>\\s*)*(?<value>[^<]+?)\\s*<",
         "transform": "string"
       }
     },

@@ -89,6 +89,23 @@ try {
   assert.equal(extract(header({ ratio: '<span class="r99">∞</span>' })).ratio, '∞');
   assert.equal(extract(header({ up: '987.65 MiB' })).uploadedBytes, Math.round(987.65 * 1024 ** 2));
 
+  // Grouped counters, read through the extractor: comma or space, never a dot (would read as 1).
+  assert.equal(extract(header({ seeding: '1 204' })).seeding, 1204);
+  assert.equal(extract(header({ seeding: '12,345,678' })).seeding, 12345678);
+  assert.equal(extract(header({ tokens: '1,024' })).tokens, 1024);
+  assert.equal(extract(header({ seeding: '1.204' })).seeding, undefined);
+
+  // A missing value stays missing: it must not be read from the next stat item.
+  const withoutValue = (html, id) => html.replace(new RegExp(`(<li id="${id}">[\\s\\S]*?)<span class="stat[^"]*"[^>]*>[\\s\\S]*?</span>`), '$1');
+  const noUpload = extract(withoutValue(header(), 'stats_uploaded'));
+  assert.equal(noUpload.uploadedBytes, undefined);
+  assert.equal(noUpload.downloadedBytes, 512 * 1024 ** 3);
+  const emptyUpload = extract(header({ up: '' }));
+  assert.equal(emptyUpload.uploadedBytes, undefined);
+  assert.equal(emptyUpload.downloadedBytes, 512 * 1024 ** 3);
+  assert.equal(extract(withoutValue(header(), 'fl_tokens')).tokens, undefined);
+  assert.equal(extract(withoutValue(header(), 'stats_ratio')).ratio, undefined);
+
   // Without the header (login page served instead of the home page), nothing is read.
   assert.ok(Object.values(extract('<form id="loginform"><input name="twofa"></form>')).every(value => value === undefined));
 
