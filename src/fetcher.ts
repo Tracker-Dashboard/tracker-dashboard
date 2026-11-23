@@ -130,6 +130,13 @@ function maybePersistByteUnit(tracker: TrackerConfig, unit: 'decimal' | 'binary'
   }
 }
 
+// « 1,204 » ou « 1 204 » valent 1204, pas 1. Seul un entier groupé par trois chiffres
+// est concerné : « 12,5 » garde sa lecture historique (12).
+const GROUPED_INTEGER = /^\s*\d{1,3}(?:(?:[,\s  ]|&nbsp;|&#160;|&#xa0;)\d{3})+\s*$/i;
+function stripThousandsSeparators(value: string): string {
+  return GROUPED_INTEGER.test(value) ? value.replace(/[,\s  ]|&nbsp;|&#160;|&#xa0;/gi, '') : value;
+}
+
 function applyTransform(raw: unknown, tf?: string): string | number {
   if (raw === undefined || raw === null || raw === '') return '';
   switch (tf) {
@@ -140,8 +147,7 @@ function applyTransform(raw: unknown, tf?: string): string | number {
       if (/^(infinite|infinity|inf|∞)$/i.test(s)) return '∞';
       return parseFloat(normalizeNumberString(s)) || 0;
     }
-    // Séparateurs de milliers retirés : « 1,204 » ou « 1 204 » valent 1204, pas 1.
-    case 'integer': return parseInt(String(raw).replace(/[\s,  ]|&nbsp;|&#160;|&#xa0;/gi, ''), 10) || 0;
+    case 'integer': return parseInt(stripThousandsSeparators(String(raw)), 10) || 0;
     default:        return String(raw);
   }
 }

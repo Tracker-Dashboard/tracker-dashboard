@@ -98,6 +98,14 @@ try {
   assert.equal(extract(header({ seeding: '12,345,678' })).seeding, 12345678);
   assert.equal(extract(header({ tokens: '1,024' })).tokens, 1024);
   assert.equal(extract(header({ seeding: '1.204' })).seeding, undefined);
+  // The shared integer transform only strips separators from properly grouped integers.
+  const integer = value => extractExtraFieldResponse({ field: 'n', regex: '^(?<value>[\\s\\S]+)$', transform: 'integer' }, value)?.value;
+  for (const [value, expected] of [
+    ['1,204', 1204], ['12,345,678', 12345678], ['1 204', 1204], ['1&nbsp;204', 1204], ['1 204', 1204],
+    ['12,5', 12], ['1,2345', 1], ['12 5', 12], ['42', 42], ['7 torrents', 7],
+  ]) {
+    assert.equal(integer(value), expected, `integer(${JSON.stringify(value)})`);
+  }
   for (const nbsp of ['&nbsp;', '&#160;', '&#xa0;', ' ']) {
     assert.equal(extract(header({ seeding: `1${nbsp}204`, leeching: `2${nbsp}048` })).seeding, 1204);
     assert.equal(extract(header({ seeding: `1${nbsp}204`, leeching: `2${nbsp}048` })).leeching, 2048);
