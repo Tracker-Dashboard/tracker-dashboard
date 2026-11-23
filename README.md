@@ -106,7 +106,7 @@ Les fonctionnalités plus anciennes sont présentées dans les sections ci-desso
 Tracker Dashboard reconnaît d’emblée les trackers ci-dessous. Pour un autre site, consultez [Sites intégrés et ajout d’un site](#sites-intégrés--ajout-dun-site).
 
 <details>
-<summary>Afficher les 74 trackers intégrés</summary>
+<summary>Afficher les 75 trackers intégrés</summary>
 
 La colonne **API** signale les définitions qui proposent une lecture par clé API personnelle ; le preset UNIT3D la permet aussi pour les sites compatibles.
 
@@ -114,6 +114,7 @@ La colonne **API** signale les définitions qui proposent une lecture par clé A
 |---|---|:---:|
 | [52PT](https://52pt.site) | Définition dédiée |  |
 | [ABNormal](https://abn.lol) | Définition dédiée |  |
+| [Anthelion](https://anthelion.me) | Gazelle |  |
 | [AstraTorrent](https://astratorrent.la) | Définition dédiée |  |
 | [AvistaZ](https://avistaz.to) | AvistaZ Network |  |
 | [BitPorn](https://bitporn.eu) | UNIT3D |  |

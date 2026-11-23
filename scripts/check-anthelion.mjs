@@ -1,0 +1,142 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+
+const raw = JSON.parse(fs.readFileSync(new URL('../config/trackers/anthelion.json', import.meta.url), 'utf8'));
+const originalCwd = process.cwd();
+const temp = fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()), 'tracker-dashboard-anthelion-'));
+
+try {
+  // Import only after isolating cwd, so the production extractor cannot open a real account database.
+  process.chdir(temp);
+  const { extractExtraFieldResponse } = await import('../dist/fetcher.js');
+  const { applyEnginePreset } = await import('../dist/trackerTemplates.js');
+  const tracker = applyEnginePreset(raw);
+  const extract = html => Object.fromEntries(Object.entries(tracker.fetch.fields).map(([field, extractor]) => [
+    field, extractExtraFieldResponse({ field, ...extractor }, html)?.value,
+  ]));
+
+  // Login form verified on anthelion.me/login.php: username, password, twofa (TOTP) on the same page.
+  assert.equal(tracker.login.url, 'login.php');
+  assert.equal(tracker.login.otpField, 'twofa');
+  assert.equal(tracker.login.body.username, '{{username}}');
+  assert.equal(tracker.login.body.password, '{{password}}');
+  // The seeding count is in the header; the member class is only on the profile page.
+  const profile = tracker.fetch.extraFetch;
+  assert.equal(profile.field, 'memberClass');
+  assert.equal(profile.url, 'user.php?id={{id}}');
+  const headerUser = '<li id="nav_user" class="nav_dropdown"><a href="user.php?id=12345" class="username">synthetic-member</a>';
+  assert.equal(new RegExp(profile.idExtract.regex).exec(headerUser)?.groups?.value, '12345');
+  for (const [markup, expected] of [
+    ['<ul class="stats nobullet"><li>Joined: 1 year ago</li><li>Class: User</li></ul>', 'User'],
+    ['<li>Class: <span class="userclass">Power User</span></li>', 'Power User'],
+    ['<li>Class:&nbsp;Elite&nbsp;</li>', 'Elite'],
+    // An empty class stays missing: the next profile item is not read instead.
+    ['<li>Class: </li><li>Joined: 1 year ago</li>', undefined],
+    ['<li>Class: <span class="userclass">&nbsp;</span></li><li>Joined: 1 year ago</li>', undefined],
+  ]) {
+    assert.equal(extractExtraFieldResponse(profile, markup)?.value, expected);
+  }
+
+  // Header structure verified from sanitized markup; every account value here is synthetic.
+  const header = ({ seeding = '1,204', leeching = '2', up = '1.23 TiB', down = '512.00 GiB',
+    ratio = '<span class="tooltip r20" title="2.46">2.46</span>', tokens = '3', orbs = '12,345' } = {}) => `
+    <ul id="userinfo_stats">
+      <li id="stats_seeding">
+        <a href="torrents.php?type=seeding&amp;userid=1">Seeding</a>:
+        <span class="stat user_commstats" id="header_user_commstats_seeding">${seeding}</span>
+      </li>
+      <li id="stats_leeching">
+        <a href="torrents.php?type=leeching&amp;userid=1">Leeching</a>:
+        <span class="stat user_commstats" id="header_user_commstats_leeching">${leeching}</span>
+      </li>
+      <li id="stats_uploaded">
+        <a href="torrents.php?type=seeding&amp;userid=1">Up</a>:
+        <span class="stat tooltip tooltipstered">${up}</span>
+      </li>
+      <li id="stats_downloaded">
+        <a href="torrents.php?type=downloaded&amp;userid=1">Down</a>:
+        <span class="stat tooltip tooltipstered">${down}</span>
+      </li>
+      <li id="stats_ratio">
+        Ratio: <span class="stat">${ratio}</span>
+      </li>
+      <li id="fl_tokens">
+        <a href="wiki.php?action=article&amp;name=tokens">Tokens</a>:
+        <span class="stat">
+          <a href="userhistory.php?action=token_history&amp;userid=1">${tokens}</a>
+        </span>
+      </li>
+      <li id="bonus_points">
+        <a href="wiki.php?action=article&amp;name=bonuspoints">Orbs</a>:
+        <span class="stat">
+          <a href="store.php">${orbs}</a>
+        </span>
+      </li>
+    </ul>`;
+
+  assert.deepEqual(extract(header()), {
+    uploadedBytes: Math.round(1.23 * 1024 ** 4),
+    downloadedBytes: 512 * 1024 ** 3,
+    ratio: 2.46,
+    memberClass: undefined,
+    seeding: 1204,
+    leeching: 2,
+    tokens: 3,
+    seedBonus: '12,345',
+  });
+  assert.deepEqual(extract(header({ seeding: '6', leeching: '0', up: '0.00 B', down: '0.00 B', ratio: '0.0', tokens: '10', orbs: '63' })), {
+    uploadedBytes: 0, downloadedBytes: 0, ratio: 0, memberClass: undefined,
+    seeding: 6, leeching: 0, tokens: 10, seedBonus: '63',
+  });
+  assert.equal(extract(header({ ratio: '<span class="r99">∞</span>' })).ratio, '∞');
+  assert.equal(extract(header({ up: '987.65 MiB' })).uploadedBytes, Math.round(987.65 * 1024 ** 2));
+
+  // Grouped counters, read through the extractor: comma or space, never a dot (would read as 1).
+  assert.equal(extract(header({ seeding: '1 204' })).seeding, 1204);
+  assert.equal(extract(header({ seeding: '12,345,678' })).seeding, 12345678);
+  assert.equal(extract(header({ tokens: '1,024' })).tokens, 1024);
+  assert.equal(extract(header({ seeding: '1.204' })).seeding, undefined);
+  assert.equal(extract(header({ seeding: '&nbsp;1,204&nbsp;' })).seeding, 1204);
+  assert.equal(extract(header({ leeching: '&#160;2&#xa0;' })).leeching, 2);
+  // The shared integer transform only strips separators from properly grouped integers.
+  const integer = value => extractExtraFieldResponse({ field: 'n', regex: '^(?<value>[\\s\\S]+)$', transform: 'integer' }, value)?.value;
+  for (const [value, expected] of [
+    ['1,204', 1204], ['12,345,678', 12345678], ['1 204', 1204], ['1&nbsp;204', 1204], ['1 204', 1204],
+    ['12,5', 12], ['1,2345', 1], ['12 5', 12], ['42', 42], ['7 torrents', 7],
+  ]) {
+    assert.equal(integer(value), expected, `integer(${JSON.stringify(value)})`);
+  }
+  for (const nbsp of ['&nbsp;', '&#160;', '&#xa0;', ' ']) {
+    assert.equal(extract(header({ seeding: `1${nbsp}204`, leeching: `2${nbsp}048` })).seeding, 1204);
+    assert.equal(extract(header({ seeding: `1${nbsp}204`, leeching: `2${nbsp}048` })).leeching, 2048);
+  }
+
+  // A missing value stays missing: it must not be read from the next stat item.
+  const withoutValue = (html, id) => html.replace(new RegExp(`(<li id="${id}">[\\s\\S]*?)<span class="stat[^"]*"[^>]*>[\\s\\S]*?</span>`), '$1');
+  const noUpload = extract(withoutValue(header(), 'stats_uploaded'));
+  assert.equal(noUpload.uploadedBytes, undefined);
+  assert.equal(noUpload.downloadedBytes, 512 * 1024 ** 3);
+  const emptyUpload = extract(header({ up: '' }));
+  assert.equal(emptyUpload.uploadedBytes, undefined);
+  assert.equal(emptyUpload.downloadedBytes, 512 * 1024 ** 3);
+  // A whitespace-only value is missing, not zero.
+  for (const space of [' ', '\n  ', '&nbsp;', ' &#160; ', '&#xa0;', '\u00a0']) {
+    const blank = extract(header({ up: space, down: space, ratio: space, tokens: space, orbs: space }));
+    for (const field of ['uploadedBytes', 'downloadedBytes', 'ratio', 'tokens', 'seedBonus']) {
+      assert.equal(blank[field], undefined, `${field} must stay unavailable when the value is ${JSON.stringify(space)}`);
+    }
+  }
+  assert.equal(extract(header({ orbs: '&nbsp;12,345&nbsp;' })).seedBonus, '12,345');
+  assert.equal(extract(withoutValue(header(), 'fl_tokens')).tokens, undefined);
+  assert.equal(extract(withoutValue(header(), 'stats_ratio')).ratio, undefined);
+
+  // Without the header (login page served instead of the home page), nothing is read.
+  assert.ok(Object.values(extract('<form id="loginform"><input name="twofa"></form>')).every(value => value === undefined));
+
+  console.log('Anthelion OK: login 2FA (twofa), header stats, member class from the profile, thousands separators in counters.');
+} finally {
+  process.chdir(originalCwd);
+  fs.rmSync(temp, { recursive: true, force: true });
+}

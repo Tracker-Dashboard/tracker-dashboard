@@ -106,7 +106,7 @@ Older features are described below. The [commit history](https://github.com/Trac
 Tracker Dashboard supports the trackers below out of the box. For another site, see [Built-in sites and adding a site](#built-in-sites-and-adding-a-site).
 
 <details>
-<summary>Show the 74 built-in trackers</summary>
+<summary>Show the 75 built-in trackers</summary>
 
 The **API** column marks definitions that can read statistics with a personal API key; the UNIT3D preset also supports it for compatible sites.
 
@@ -114,6 +114,7 @@ The **API** column marks definitions that can read statistics with a personal AP
 |---|---|:---:|
 | [52PT](https://52pt.site) | Custom definition |  |
 | [ABNormal](https://abn.lol) | Custom definition |  |
+| [Anthelion](https://anthelion.me) | Gazelle |  |
 | [AstraTorrent](https://astratorrent.la) | Custom definition |  |
 | [AvistaZ](https://avistaz.to) | AvistaZ Network |  |
 | [BitPorn](https://bitporn.eu) | UNIT3D |  |
