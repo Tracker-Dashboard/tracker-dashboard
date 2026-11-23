@@ -1569,6 +1569,29 @@ function toNumber(value: unknown): number | null {
   return null;
 }
 
+// Même convention que parseLocalizedPoints dans le dashboard, réservée aux points.
+// Un groupe final de trois chiffres désigne des milliers ; les nombres natifs
+// conservent leur précision (12.345 reste 12.345).
+function pointsToNumber(value: unknown): number | null {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value !== 'string') return null;
+  const raw = value.replace(/&nbsp;|&#160;|&#xa0;/gi, ' ').trim();
+  if (!/^[+-]?[\d\s.,]+$/.test(raw)) return null;
+  const compact = raw.replace(/\s/g, '');
+  const separators = [...compact.matchAll(/[.,]/g)];
+  let normalized = compact;
+  if (separators.length) {
+    const last = separators[separators.length - 1];
+    const index = last.index!;
+    const grouped = separators.every(match => match[0] === last[0])
+      && compact.split(last[0]).slice(1).every(group => group.length === 3);
+    normalized = grouped ? compact.replace(/[.,]/g, '')
+      : compact.slice(0, index).replace(/[.,]/g, '') + '.' + compact.slice(index + 1);
+  }
+  const number = Number(normalized);
+  return Number.isFinite(number) ? number : null;
+}
+
 function renderPrometheusMetrics(stats: TrackerStats[]): string {
   const definitions: Array<{ name: string; help: string; type: 'gauge' | 'counter'; pick: (s: TrackerStats) => number | null }> = [
     { name: 'tracker_uploaded_bytes_total',   help: 'Cumulative uploaded bytes', type: 'counter', pick: s => toNumber(s.fields.uploadedBytes) },
@@ -1590,11 +1613,11 @@ function renderPrometheusMetrics(stats: TrackerStats[]): string {
         if (up === null || down === null) return null;
         return up - down;
       } },
-    { name: 'tracker_seed_bonus',     help: 'Bonus points', type: 'gauge', pick: s => toNumber(s.fields.seedBonus) },
+    { name: 'tracker_seed_bonus',     help: 'Bonus points', type: 'gauge', pick: s => pointsToNumber(s.fields.seedBonus) },
     { name: 'tracker_seed_time_days', help: 'Average seed time in days', type: 'gauge', pick: s => toNumber(s.fields.seedTimeDays) },
     { name: 'tracker_seeding_count',  help: 'Active seeding torrents', type: 'gauge', pick: s => toNumber(s.fields.seeding) },
     { name: 'tracker_leeching_count', help: 'Active leeching torrents', type: 'gauge', pick: s => toNumber(s.fields.leeching) },
-    { name: 'tracker_points',         help: 'Points (ratioless trackers)', type: 'gauge', pick: s => toNumber(s.fields.points) },
+    { name: 'tracker_points',         help: 'Points (ratioless trackers)', type: 'gauge', pick: s => pointsToNumber(s.fields.points) },
     { name: 'tracker_rate_per_day',   help: 'Points earned per day (ratioless)', type: 'gauge', pick: s => toNumber(s.fields.rate) },
     { name: 'tracker_tokens',         help: 'Freeleech tokens', type: 'gauge', pick: s => toNumber(s.fields.tokens) },
     { name: 'tracker_up',             help: '1 if last fetch (login included) succeeded, 0 if error', type: 'gauge', pick: s => s.status === 'ok' && !s.stale && !s.loginError ? 1 : 0 },

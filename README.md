@@ -360,6 +360,8 @@ Un tracker dont la lecture échoue et dont la page d’accueil affiche une page 
 
 ## Prometheus et Grafana
 
+Les métriques `tracker_seed_bonus` et `tracker_points` suivent la convention d’affichage des points : `12,345` ou `12.345` en texte représentent 12345, tandis que `12,5` représente 12.5. Les valeurs déjà numériques conservent leur précision ; les ratios ne sont pas concernés.
+
 L’endpoint `/metrics` expose les statistiques des trackers activés (`tracker_*`) et des clients BitTorrent (`tracker_qbit_*`). La métrique `tracker_api_up` indique le résultat des lectures API lorsqu’elles sont configurées.
 
 Définissez **`METRICS_TOKEN`** sur le service principal et utilisez ce jeton comme Bearer token dans Prometheus. Sans jeton, l’export est désactivé par défaut et renvoie HTTP 503. Le fichier [grafana/dashboard.json](grafana/dashboard.json) fournit un tableau de bord à importer ; le [guide Prometheus et Grafana](grafana/README.md) détaille la configuration.
