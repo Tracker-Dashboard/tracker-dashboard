@@ -361,6 +361,8 @@ When a tracker read fails and its home page shows a maintenance page (keywords s
 
 ## Prometheus and Grafana
 
+The `tracker_seed_bonus` and `tracker_points` metrics follow the dashboard points convention: text `12,345` or `12.345` means 12345, while `12,5` means 12.5. Numeric values retain their precision; ratios are unaffected.
+
 The `/metrics` endpoint exposes statistics for enabled trackers (`tracker_*`) and BitTorrent clients (`tracker_qbit_*`). The `tracker_api_up` metric reports the result of API fetches when configured.
 
 Set **`METRICS_TOKEN`** on the main service and use it as a Bearer token in Prometheus. Without a token, the export is disabled by default and returns HTTP 503. Import [grafana/dashboard.json](grafana/dashboard.json) into Grafana; see the [Grafana guide](grafana/README.md) (in French) for configuration details.
