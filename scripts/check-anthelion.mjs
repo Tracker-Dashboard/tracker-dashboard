@@ -94,6 +94,10 @@ try {
   assert.equal(extract(header({ seeding: '12,345,678' })).seeding, 12345678);
   assert.equal(extract(header({ tokens: '1,024' })).tokens, 1024);
   assert.equal(extract(header({ seeding: '1.204' })).seeding, undefined);
+  for (const nbsp of ['&nbsp;', '&#160;', '&#xa0;', ' ']) {
+    assert.equal(extract(header({ seeding: `1${nbsp}204`, leeching: `2${nbsp}048` })).seeding, 1204);
+    assert.equal(extract(header({ seeding: `1${nbsp}204`, leeching: `2${nbsp}048` })).leeching, 2048);
+  }
 
   // A missing value stays missing: it must not be read from the next stat item.
   const withoutValue = (html, id) => html.replace(new RegExp(`(<li id="${id}">[\\s\\S]*?)<span class="stat[^"]*"[^>]*>[\\s\\S]*?</span>`), '$1');
@@ -103,6 +107,11 @@ try {
   const emptyUpload = extract(header({ up: '' }));
   assert.equal(emptyUpload.uploadedBytes, undefined);
   assert.equal(emptyUpload.downloadedBytes, 512 * 1024 ** 3);
+  // A whitespace-only value is missing, not zero.
+  const blank = extract(header({ up: ' ', down: '\n  ', ratio: ' ', tokens: ' ', orbs: ' ' }));
+  for (const field of ['uploadedBytes', 'downloadedBytes', 'ratio', 'tokens', 'seedBonus']) {
+    assert.equal(blank[field], undefined, `${field} must stay unavailable when the value is blank`);
+  }
   assert.equal(extract(withoutValue(header(), 'fl_tokens')).tokens, undefined);
   assert.equal(extract(withoutValue(header(), 'stats_ratio')).ratio, undefined);
 
