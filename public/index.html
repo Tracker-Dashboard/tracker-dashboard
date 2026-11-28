@@ -5683,6 +5683,9 @@
       <div id="beta-schedule-weekdays" class="beta-form-row" style="grid-template-columns:1fr">
         <div class="beta-field"><label>Jours</label><div style="display:flex;gap:8px;flex-wrap:wrap">${dayLabels.map((label, day) => `<label><input type="checkbox" data-beta-weekday="${day}" ${weekdays.has(day) ? 'checked' : ''}> ${label}</label>`).join('')}</div></div>
       </div>
+      <div class="beta-form-row" style="grid-template-columns:1fr">
+        <div class="beta-field"><label>Décalage aléatoire (minutes, 0 = désactivé)</label><input id="beta-schedule-jitter-minutes" type="number" min="0" max="60" value="${escapeHtml(schedule.jitterMinutes ?? 0)}"></div>
+      </div>
       <p class="beta-note">Prochaine exécution : ${schedule.nextRunAt ? escapeHtml(formatDateTime(schedule.nextRunAt)) : 'non planifiée'}${schedule.lastRunAt ? ` · Dernière : ${escapeHtml(formatDateTime(schedule.lastRunAt))}` : ''}</p>
       <div style="margin:10px 0 6px; display:flex; gap:8px; flex-wrap:wrap">
         <button class="beta-icon-btn primary" onclick="saveBetaSettings()" type="button">Enregistrer</button>
@@ -6035,6 +6038,7 @@
       intervalDays: Number(document.getElementById('beta-schedule-interval-days')?.value || 1),
       hour,
       minute,
+      jitterMinutes: Number(document.getElementById('beta-schedule-jitter-minutes')?.value ?? betaSettings.schedule?.jitterMinutes ?? 0),
       weekdays: Array.from(document.querySelectorAll('[data-beta-weekday]:checked')).map(input => Number(input.dataset.betaWeekday)),
     };
     const notificationPreferences = (() => {
