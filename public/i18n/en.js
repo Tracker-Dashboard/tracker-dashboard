@@ -452,6 +452,7 @@
     "Intervalle en heures": "Interval in hours",
     "Intervalle en jours": "Interval in days",
     "Heure": "Time",
+    "Décalage aléatoire (minutes, 0 = désactivé)": "Random delay (minutes, 0 = disabled)",
     "Fréquences individuelles": "Individual frequencies",
     "Une valeur individuelle remplace la planification globale pour le tracker concerné.": "An individual value replaces the global schedule for that tracker.",
     "non planifiée": "not scheduled",

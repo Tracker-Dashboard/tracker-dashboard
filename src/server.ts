@@ -197,8 +197,10 @@ interface BetaScheduleSettings {
   intervalDays: number;
   hour: number;
   minute: number;
+  jitterMinutes: number;
   weekdays: number[];
   nextRunAt: string | null;
+  nextNominalRunAt: string | null;
   lastRunAt: string | null;
   lastFailedTrackerIds: string[];
 }
@@ -1145,30 +1147,85 @@ async function refreshScheduledTracker(
   if (!stat.stale) saveStatSnapshots([stat]);
 }
 
-function nextBetaScheduleRun(schedule: BetaScheduleSettings, from = new Date()): string | null {
-  if (!schedule.enabled) return null;
-  const next = new Date(from);
-  next.setSeconds(0, 0);
+function clampJitterMinutes(value: unknown): number {
+  return Math.min(60, Math.max(0, Math.round(Number(value) || 0)));
+}
 
+function applyScheduleJitter(date: Date, jitterMinutes: number): Date {
+  const maxJitter = clampJitterMinutes(jitterMinutes);
+  if (maxJitter <= 0) return date;
+  const offsetMinutes = Math.floor(Math.random() * (maxJitter + 1));
+  return new Date(date.getTime() + offsetMinutes * 60_000);
+}
+
+function nominalScheduleTimeAtOrBefore(reference: Date, hour: number, minute: number): Date {
+  const year = reference.getFullYear();
+  const month = reference.getMonth();
+  let day = reference.getDate();
+  let nominal = new Date(year, month, day, hour, minute, 0, 0);
+  if (nominal > reference) {
+    day -= 1;
+    nominal = new Date(year, month, day, hour, minute, 0, 0);
+  }
+  return nominal;
+}
+
+function computeNextBetaScheduleRun(
+  schedule: BetaScheduleSettings,
+  from = new Date(),
+  previousNominalRunAt: string | null = null,
+): { nextRunAt: string | null; nextNominalRunAt: string | null } {
+  if (!schedule.enabled) return { nextRunAt: null, nextNominalRunAt: null };
+
+  let nominal: Date | null = null;
   if (schedule.mode === 'hours') {
-    next.setTime(from.getTime() + schedule.intervalHours * 3600_000);
-    return next.toISOString();
+    const stepMs = Math.max(1, Number(schedule.intervalHours) || 6) * 3600_000;
+    nominal = new Date(from.getTime() + stepMs);
+  } else {
+    const fromYear = from.getFullYear();
+    const fromMonth = from.getMonth();
+    const fromDay = from.getDate();
+
+    if (schedule.mode === 'days') {
+      const stepDays = Math.max(1, Math.round(Number(schedule.intervalDays) || 1));
+      const prevMs = previousNominalRunAt ? Date.parse(previousNominalRunAt) : NaN;
+      if (Number.isFinite(prevMs) && prevMs <= from.getTime()) {
+        const baseNominal = nominalScheduleTimeAtOrBefore(new Date(prevMs), schedule.hour, schedule.minute);
+        const baseYear = baseNominal.getFullYear();
+        const baseMonth = baseNominal.getMonth();
+        let targetDay = baseNominal.getDate();
+        let candidate = baseNominal;
+        while (candidate <= from) {
+          targetDay += stepDays;
+          candidate = new Date(baseYear, baseMonth, targetDay, schedule.hour, schedule.minute, 0, 0);
+        }
+        nominal = candidate;
+      } else {
+        let candidate = new Date(fromYear, fromMonth, fromDay, schedule.hour, schedule.minute, 0, 0);
+        if (candidate <= from) {
+          candidate = new Date(fromYear, fromMonth, fromDay + stepDays, schedule.hour, schedule.minute, 0, 0);
+        }
+        nominal = candidate;
+      }
+    } else {
+      const weekdays = new Set(schedule.weekdays);
+      if (weekdays.size > 0) {
+        for (let offset = 0; offset < 8; offset += 1) {
+          const candidate = new Date(fromYear, fromMonth, fromDay + offset, schedule.hour, schedule.minute, 0, 0);
+          if (weekdays.has(candidate.getDay()) && candidate > from) {
+            nominal = candidate;
+            break;
+          }
+        }
+      }
+    }
   }
 
-  next.setHours(schedule.hour, schedule.minute, 0, 0);
-  if (schedule.mode === 'days') {
-    if (next <= from) next.setDate(next.getDate() + schedule.intervalDays);
-    return next.toISOString();
-  }
-
-  const weekdays = new Set(schedule.weekdays);
-  if (weekdays.size === 0) return null;
-  for (let offset = 0; offset < 8; offset += 1) {
-    const candidate = new Date(next);
-    candidate.setDate(next.getDate() + offset);
-    if (weekdays.has(candidate.getDay()) && candidate > from) return candidate.toISOString();
-  }
-  return null;
+  if (!nominal) return { nextRunAt: null, nextNominalRunAt: null };
+  return {
+    nextNominalRunAt: nominal.toISOString(),
+    nextRunAt: applyScheduleJitter(nominal, schedule.jitterMinutes).toISOString(),
+  };
 }
 
 function unreadMessagesCount(stat: TrackerStats): number {
@@ -1455,6 +1512,8 @@ async function runBetaScheduledCycle(): Promise<void> {
     && (credentials[tracker.id] || storedCookieReady(tracker))
     && !overridden.has(tracker.id)
   ));
+  const startedNextRunAt = settings.schedule.nextRunAt;
+  const startedNominalRunAt = settings.schedule.nextNominalRunAt ?? settings.schedule.nextRunAt;
   const previousFailures = new Set(settings.schedule.lastFailedTrackerIds);
   pendingScheduledRuns.add('__global__');
   try {
@@ -1463,8 +1522,14 @@ async function runBetaScheduledCycle(): Promise<void> {
     settings.schedule.lastFailedTrackerIds = results.filter(isFailedStat).map(result => result.id);
   } finally {
     const current = loadBetaSettings();
-    current.schedule.lastRunAt = new Date().toISOString();
-    current.schedule.nextRunAt = nextBetaScheduleRun(current.schedule);
+    const completedRunAt = new Date();
+    current.schedule.lastRunAt = completedRunAt.toISOString();
+    if (current.schedule.nextRunAt === startedNextRunAt) {
+      Object.assign(
+        current.schedule,
+        computeNextBetaScheduleRun(current.schedule, completedRunAt, startedNominalRunAt),
+      );
+    }
     current.schedule.lastFailedTrackerIds = settings.schedule.lastFailedTrackerIds;
     setJsonSetting(BETA_SETTINGS_KEY, current);
     pendingScheduledRuns.delete('__global__');
@@ -1498,7 +1563,7 @@ function startScheduler(): void {
     const settings = loadBetaSettings();
     if (settings.schedule.enabled) {
       if (!settings.schedule.nextRunAt) {
-        settings.schedule.nextRunAt = nextBetaScheduleRun(settings.schedule);
+        Object.assign(settings.schedule, computeNextBetaScheduleRun(settings.schedule));
         setJsonSetting(BETA_SETTINGS_KEY, settings);
       } else if (Date.parse(settings.schedule.nextRunAt) <= Date.now()) {
         void runBetaScheduledCycle().catch(err => console.error('[Beta Scheduler] cycle en erreur :', err));
@@ -1696,8 +1761,10 @@ function defaultBetaSettings(): BetaSettings {
       intervalDays: 1,
       hour: 3,
       minute: 0,
+      jitterMinutes: 0,
       weekdays: [],
       nextRunAt: null,
+      nextNominalRunAt: null,
       lastRunAt: null,
       lastFailedTrackerIds: [],
     },
@@ -1944,26 +2011,50 @@ function saveBetaSettingsPayload(raw: unknown): BetaSettings {
     intervalDays: Math.min(30, Math.max(1, Number(rawSchedule.intervalDays) || 1)),
     hour: Math.min(23, Math.max(0, Number(rawSchedule.hour) || 0)),
     minute: Math.min(59, Math.max(0, Number(rawSchedule.minute) || 0)),
+    jitterMinutes: clampJitterMinutes(rawSchedule.jitterMinutes),
     weekdays: Array.isArray(rawSchedule.weekdays)
       ? [...new Set(rawSchedule.weekdays.map(Number).filter(day => Number.isInteger(day) && day >= 0 && day <= 6))]
       : [],
     nextRunAt: current.schedule.nextRunAt,
+    nextNominalRunAt: current.schedule.nextNominalRunAt,
     lastRunAt: current.schedule.lastRunAt,
     lastFailedTrackerIds: Array.isArray(current.schedule.lastFailedTrackerIds)
       ? current.schedule.lastFailedTrackerIds
       : [],
   };
-  const scheduleChanged = schedule.enabled !== current.schedule.enabled
+  const cadenceChanged = schedule.enabled !== current.schedule.enabled
     || schedule.mode !== current.schedule.mode
     || schedule.intervalHours !== current.schedule.intervalHours
     || schedule.intervalDays !== current.schedule.intervalDays
     || schedule.hour !== current.schedule.hour
     || schedule.minute !== current.schedule.minute
     || schedule.weekdays.join(',') !== current.schedule.weekdays.join(',');
-  if (scheduleChanged || (schedule.enabled && !schedule.nextRunAt)) {
-    schedule.nextRunAt = nextBetaScheduleRun(schedule);
+  const jitterChanged = schedule.jitterMinutes !== current.schedule.jitterMinutes;
+  if (cadenceChanged || (schedule.enabled && !schedule.nextRunAt)) {
+    Object.assign(schedule, computeNextBetaScheduleRun(schedule));
+  } else if (jitterChanged && schedule.enabled && current.schedule.nextRunAt) {
+    const nowMs = Date.now();
+    const pendingMs = Date.parse(current.schedule.nextRunAt);
+    if (Number.isFinite(pendingMs) && pendingMs > nowMs) {
+      const storedNominalMs = current.schedule.nextNominalRunAt ? Date.parse(current.schedule.nextNominalRunAt) : NaN;
+      let nominal: Date | null = null;
+      if (Number.isFinite(storedNominalMs)) {
+        nominal = new Date(storedNominalMs);
+      } else if (schedule.mode !== 'hours') {
+        nominal = nominalScheduleTimeAtOrBefore(new Date(pendingMs), schedule.hour, schedule.minute);
+      } else if (clampJitterMinutes(current.schedule.jitterMinutes) === 0) {
+        nominal = new Date(pendingMs);
+      }
+      if (nominal) {
+        schedule.nextNominalRunAt = nominal.toISOString();
+        schedule.nextRunAt = applyScheduleJitter(nominal, schedule.jitterMinutes).toISOString();
+      }
+    }
   }
-  if (!schedule.enabled) schedule.nextRunAt = null;
+  if (!schedule.enabled) {
+    schedule.nextRunAt = null;
+    schedule.nextNominalRunAt = null;
+  }
 
   const previousOverrides = new Map(current.scheduleOverrides.map(override => [override.trackerId, override]));
   const scheduleOverrides: BetaTrackerScheduleOverride[] = Array.isArray(body.scheduleOverrides)
